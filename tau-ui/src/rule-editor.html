@@ -1,0 +1,392 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-layout.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-styles/color.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-data-table/iron-data-table.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html">
+<link rel="import" href="./condition-editor.html">
+<link rel="import" href="./action-editor.html">
+<script src="https://code.jquery.com/jquery-2.1.4.js"></script>
+
+<dom-module id="rule-editor">
+	<style>
+	    #rulesTable {
+	      width: 100%;
+	      display: flex;
+	      align-items: center;
+	      max-height: 300px;
+	      min-height: 200px;
+	      z-index: 100;
+	    }
+	    
+	    pre { }
+		.string { color: royalblue; }
+		.action { color: green; }
+		.condition { color: brown; }
+		.number { color: darkorange; }
+		.boolean-true { color: green; }
+		.boolean-false { color: red; }
+		.null { color: magenta; }
+		.key { color: gray; }
+		
+		paper-menu {
+			display: block;
+		}
+		
+		.rgItem {
+			max-width: 100px;
+			font-size: 8pt;
+		}
+		
+		paper-dropdown-menu {
+			width: 150px;
+ 			float: right;
+		}
+		
+		.yellow-button {
+		  text-transform: none;
+		  color: orange;
+		}
+		
+		#rulesTable data-table-row:not([header]) data-table-cell {
+	      height: 60px;
+	    }
+	
+	    #rulesTable {
+	      --default-primary-color: #D9D9D9;
+	      --iron-data-table-header: {
+	        background-color: #F4CF4C;
+	        color: black;
+	        font-size: 12pt;
+	      }
+	      --iron-data-table-row: {
+	        align-items: center;
+	      }
+	      --iron-data-table-row-hover: {
+	        background-color: #eee !important;
+	      }
+	      --iron-data-table-row-selected: {
+	        background-color: var(--default-primary-color) !important;
+	        color: black;
+	      }
+	      --iron-data-table-row-after: {
+	        background-color: #fff;
+	        content: "";
+	        pointer-events: none;
+	        position: absolute;
+	        right: 0px;
+	      }
+	    }
+	    
+	    paper-button.custom {
+	    --paper-button-ink-color: var(--paper-green-a200);
+	    /* These could also be individually defined for each of the
+	      specific css classes, but we'll just do it once as an example */
+	    --paper-button-flat-keyboard-focus: {
+	      background-color: var(--paper-green-a200);
+	      color: white !important;
+	    };
+	    --paper-button-raised-keyboard-focus: {
+	      background-color: var(--paper-green-a200) !important;
+	      color: white !important;
+	    };
+	  }
+	  paper-button.custom:hover {
+	    background-color: var(--paper-green-100);
+	  }
+	  
+	  .atrue {
+	  	color: black;
+	  }
+	  
+	  .afalse {
+	  	color: gray;
+	  }
+	</style>
+	<template>
+		<iron-localstorage id="cache" name="tau-rule-cache"
+		    value="{{rules}}"
+		    on-iron-localstorage-load-empty="initCacheRules"></iron-localstorage>
+		<iron-ajax id="ruleCreate"
+			method="POST"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/rules"
+		    params=''
+		    handle-as="json"
+		    on-response="addRuleToList"
+		    on-error="handleRequestError"
+		    last-response="{{response}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<iron-ajax id="ruleDelete"
+			method="DELETE"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/rules/{{rule.ruleId}}"
+		    params=''
+		    handle-as="json"
+		    on-response="deleteRuleFromList"
+		    on-error="handleRequestError"
+		    last-response="{{response}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<iron-ajax id="ruleUpdate"
+			method="PUT"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/rules/{{rule.ruleId}}"
+		    params=''
+		    body="{{rule}}"
+		    handle-as="json"
+		    on-error="handleRequestError"
+		    last-response="{{response}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<iron-ajax id="ruleLoad"
+			method="GET"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/rules"
+		    params=''
+		    handle-as="json"
+		    on-error="handleRequestError"
+		    last-response="{{rules}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<div style="width:100%;height:100%;">
+			<div style="display:inline;">
+				<h1 style="float:left">Rules</h1>
+				<div style="float:right;position:relative;display:block;padding-top:20px">
+					<paper-icon-button id="btnRefresh" icon="refresh" on-tap="reloadRules">
+					</paper-icon-button>
+					<paper-icon-button id="btnAdd" icon="add-circle" on-tap="addRule">
+					</paper-icon-button>
+					<template is="dom-if" if="{{rule}}">
+						<paper-icon-button id="btnDelete" icon="cancel" on-tap="deleteRule">
+						</paper-icon-button>
+					</template>
+				</div>
+			</div><br/>
+			<div style="clear: both;">
+				<iron-data-table id="rulesTable" items="{{rules}}" selected-item="{{rule}}" selection-enabled>
+					<data-table-column name="Rule Id">
+						<template>
+							<span class="a{{item.active}}">{{item.ruleId}}</span>
+						</template>
+					</data-table-column>
+					<data-table-column name="Name">
+						<template>
+							<span class="a{{item.active}}">{{item.name}}</span>
+						</template>
+					</data-table-column>
+					<data-table-column name="Description">
+						<template>
+							<span class="a{{item.active}}">{{item.description}}</span>
+						</template>
+					</data-table-column>
+				</iron-data-table>
+			</div>
+		</div><hr>
+		<div style="padding:5px;">
+			<template is="dom-if" if="{{rule}}">
+				<div style="float:left;display:block;width:70%;text-align: left;clear: both;height:100%">
+					<div style="display:block;height:70px;width:100%;min-width:200px;clear: both;">
+						<div>
+							<h2 style="float:left">Editor</h2>
+							<div style="margin-top:10px;margin-left:84%">
+								<paper-button class="custom" raised style="" icon="backup" title="Save Rule" on-tap="validateRule">Validate</paper-button>
+								<paper-button class="custom" raised style="" icon="backup" title="Save Rule" on-tap="saveRule">Save</paper-button>
+							</div>
+						</div>
+						<div style="float:left;margin-left:0px;margin-top: 5px;">
+							<paper-input style="float:left;width:150px;padding-right:10px" label="Name" value="{{rule.name}}" ></paper-input>
+							<paper-input style="float:left;min-width:200px;max-width:400px" label="Description" value="{{rule.description}}" ></paper-input>
+							<paper-checkbox style="margin-top:15px;" checked="{{rule.active}}" on-change="ruleEnabledChanged">Enabled?</paper-checkbox>
+						</div>
+					</div>
+					<div style="display: block;clear: both;">
+						<div style="display:block;overflow: visible;" >
+							<b>Conditions:</b><br/>
+							<condition-editor conditions="{{rule.condition}}" parent="true"></condition-editor>
+						</div>
+						<div style="float:left;display:block;text-align: left;clear:both">
+							<action-editor actions="{{rule.actions}}"></action-editor>
+						</div>
+					</div>
+				</div>
+				<div style="float:left;position:relative;width:29%;min-width:300px;padding-top:10px;display:block;">
+					<b>JSON Preview:</b>
+					<div style="border: 1px dashed;;max-height:450px;overflow: auto;">
+						<pre style="padding:0px;width:90%">
+							<div inner-h-t-m-l="{{ruleString}}" style="width:80%">
+							</div>
+						</pre>					
+					</div>
+				</div>
+			</template>
+			<template is="dom-if" if="{{!rule}}">
+				<center>Select a Rule to View/Edit</center>
+			</template>
+		</div>
+		<paper-toast id="errorToast" duration="0" text="{{response}}" >
+			<paper-button on-tap="closeErrorToast" class="yellow-button">Dismiss</paper-button>
+		</paper-toast>
+		<paper-toast id="infoToast" text="{{response}}" >
+			<paper-button on-tap="closeInfoToast" class="yellow-button">Dismiss</paper-button>
+		</paper-toast>
+	</template>
+	<script>
+		Polymer({
+			is:"rule-editor",
+			properties: {
+				rulegroup: {
+					type: String,
+					notify: true,
+					observer: 'reloadRules'
+				},
+				rules: {
+					type: Array,
+					value: [],
+					notify: true
+				},
+				rule: {
+					type: Object,
+					notify: true
+				},
+				ruleString: {
+					type: String,
+					notify: true
+				},
+				response: {
+				},
+				serverAddress: {
+					type: String,
+					value: "localhost:9000",
+					notify: true
+				}
+			},
+			observers: [
+			    '_ruleChanged(rule.*)'
+			],
+			ruleJson: function(rule) {
+				return this.stringify(rule);
+			},
+			_ruleChanged: function(n, o) {
+				this.ruleString = this.ruleJson(this.rule);
+			},
+			initCacheRules: function(obj) {
+				console.log(obj);
+				this.$.ruleLoad.generateRequest();
+			},
+			ready: function() {
+				this.reloadRules();
+		    },
+		    closeErrorToast: function() {
+		    	this.$.errorToast.close();
+		    },
+		    ruleEnabledChanged: function() {
+		    	this.response =  "Rule "+(this.rule.active?"enabled":"disabled");
+		    	this.$.infoToast.open();
+		    },
+		    reloadRules: function(e) {
+		    	var cache = this.$.cache;
+				var ajax = this.$.ruleLoad;
+				ajax.generateRequest();
+				cache.save();
+                cache.reload();
+                this.response = "Loaded";
+                this.$.infoToast.open();
+		    },
+		    handleRequestError: function(e, detail) {
+				if(detail.request.xhr.status==0) {
+					this.response="Unable to connect to server";
+				}else {
+					this.response="Request failed:"+e.detail.request.xhr.statusText;
+				}
+		    	this.$.errorToast.open();
+		    },
+		    addRule: function(e) {
+		    	var cache = this.$.cache;
+				var ajax = this.$.ruleCreate;
+				ajax.generateRequest();
+		    },
+		    addRuleToList: function(e) {
+		    	console.log(r);
+		    	var r = {
+		    		condition: null,
+	    		    "actions": [
+	    		    ],
+	    		    "ruleId": e.detail.response,
+	    		    "name": "",
+	    		    "active": true,
+	    		    "description": ""
+	    		}
+		    	this.push('rules', r);
+		    	this.set('rule', r);
+		    	this.response = "Created empty rule with id:"+r.ruleId;
+		    	this.$.infoToast.open();
+		    },
+		    deleteRule: function(e) {
+		    	var cache = this.$.cache;
+				var ajax = this.$.ruleDelete;
+				ajax.generateRequest();
+		    },
+		    deleteRuleFromList: function(r) {
+		    	if(this.rules) {
+		    		var ruleId = this.rule.ruleId;
+		    		var idx = this.rules.indexOf(this.rule);
+		    		this.splice('rules', idx, 1);
+		    		this.response = "Deleted rule with id:"+ruleId;
+			    	this.$.infoToast.open();
+		    	}
+		    },
+		    saveRule: function(e) {
+		    	this.response = "Rule saved!";
+		    	this.$.infoToast.open();
+		    },
+		    validateRule: function(e) {
+		    	this.response = "Rule is valid!";
+		    	this.$.infoToast.open();
+		    },
+		    highlight: function syntaxHighlight(json) {
+		        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+		            var cls = 'number';
+		            if (/^"/.test(match)) {
+		                if (/:$/.test(match)) {
+		                    cls = 'key';
+		                } else {
+		                    if(/EQUALS|GREATER|LESS|MATCH/.test(match)) {
+		                    	cls = 'condition';
+		                    } else if(/ALERT|STATE/.test(match)) {
+		                    	cls = 'action';
+		                    }else {
+		                    	cls = 'string';
+		                    }
+		                }
+		            } else if (/true/.test(match)) {
+		                cls = 'boolean-true';
+		            } else if (/false/.test(match)) {
+		            	cls = 'boolean-false';
+		            } else if (/null/.test(match)) {
+		                cls = 'null';
+		            }
+		            return '<span class="' + cls + '">' + match + '</span>';
+		        });
+		    },
+		    stringify: function(obj) {
+		    	if(obj) {
+					return this.highlight(JSON.stringify(obj, undefined, 3));
+		    	}else {
+		    		return '';
+		    	}
+			}
+		});
+	</script>
+</dom-module>

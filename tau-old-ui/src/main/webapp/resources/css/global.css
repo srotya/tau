@@ -1,0 +1,246 @@
+body {
+	padding: 0px;
+	margin: 0px;
+	font-size: large;
+	height: 100%;
+}
+
+html {
+	height:100%;
+}
+
+.baseListPanels {
+	height: 300px;
+}
+
+.row {
+	padding-bottom: 0px;
+	margin-bottom: 0px;
+}
+
+.deploymentsPanel {
+	height: 300px;
+}
+
+.active {
+	color: black;
+}
+
+.inactive {
+	color: gray;
+}
+
+.ui-widget {
+	padding: 0px;
+}
+
+.ui-button {
+	/* 	background-color: black; */
+	background-image: none !important;
+	border: 0px !important;
+	border-radius: 0.5 !important;
+	min-height: 28px;
+	text-shadow: none !important;
+}
+
+.ui-inputfield, .ui-widget-content .ui-inputfield, .ui-widget-header .ui-inputfield
+	{
+	border-radius: 0px !important;
+}
+
+.btnDelete {
+	color: white !important;
+	background-color: #D50000 !important;
+}
+
+.ui-button .ui-icon {
+	background-image: url(../ui-icons_ffffff_256x240.png);
+}
+
+.ui-dialog-titlebar {
+	background-color: #FCA812 !important;
+}
+
+.conditionButton {
+	font-size: 10pt !important;
+	color: white !important;
+	margin-left: 4%;
+}
+
+.ui-selectonemenu .ui-selectonemenu-trigger {
+	border-right: none;
+	border-top: none;
+	border-bottom: none;
+	border-radius: 0px;
+	cursor: pointer;
+	width: 22px;
+	height: 100%;
+	position: absolute;
+	right: 0;
+	top: 0;
+	padding: 0 3px;
+	padding-top: 3px;
+}
+
+.conditionJSONContainer {
+	width: 100%;
+	max-height: 320px;
+	margin-top: 5px;
+	/* 	max-height: 550px; */
+	border: 1px dashed black;
+}
+
+.conditionJSON {
+	width: 100%;
+	height: 90%;
+	font-weight: normal;
+	word-wrap: break-word;
+	padding: 5px;
+}
+
+.conditionTree {
+	width: 100%;
+}
+
+.conditionTreeContainer {
+	max-height: 320px;
+	margin-bottom: 5px;
+}
+
+input {
+	font-size: 10pt !important;
+}
+
+.ui-panel-grid {
+	border: none;
+}
+
+.panel-group {
+	margin-bottom: 0px;
+}
+
+.ui-panel {
+	border: none;
+	box-shadow: 1px 1px 5px #888888;
+	padding: 0px;
+	margin: 0px;
+}
+
+.ui-panel-titlebar {
+	background-color: #FCA812;
+	background-image: none;
+	text-align: center;
+	border: none;
+	padding: 0x;
+	margin: 0px;
+}
+
+.ui-panel-title {
+	color: black;
+	font-family: sans-serif;
+	font-weight: normal;
+	font-style: normal;
+	text-shadow: none;
+}
+
+.ui-datatable-header {
+	background-color: black;
+}
+
+.ui-datatable {
+	border: none;
+}
+
+.ui-datatable thead th, .ui-datatable tbody, .ui-datatable tbody tr,
+	.ui-datatable tbody td {
+	border-style: none;
+}
+
+th {
+	background-color: #FCA812 !important;
+	color: black !important;
+	font-family: sans-serif !important;
+	font-weight: normal !important;
+	font-style: normal !important;
+	text-shadow: none !important;
+	background-image: none !important;
+	boder: none !important;
+	padding: 5px !important;
+}
+
+.ruleInput {
+	width: 100%;
+	height: 30px;
+	font-size: 12pt;
+}
+
+.conditionInput {
+	width: 35%;
+	height: 30px;
+	padding: 5px;
+	font-size: 12pt;
+}
+
+.ui-selectonemenu {
+	padding-right: 5 !important;
+}
+
+.ui-selectonemenu label {
+	width: auto !important;
+}
+
+.conditionType {
+	width: 30%;
+	vertical-align: top;
+	font-size: 12pt;
+}
+
+.iconOnly {
+	border: none;
+	padding: 5px;
+	float: right;
+}
+
+.ui-panelgrid>*>tr, .ui-panelgrid .ui-panelgrid-cell {
+	border: none;
+}
+
+.navbar {
+	margin-bottom: 5px;
+}
+
+.navbar-custom {
+	background-color: #FCA812;
+	color: black;
+	border-radius: 0;
+	border: 0px;
+}
+
+.navbar-custom .navbar-nav>li>a {
+	color: black;
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+.navbar-custom .navbar-nav>.active>a, .navbar-nav>.active>a:hover,
+	.navbar-nav>.active>a:focus {
+	color: color;
+	background-color: transparent;
+}
+
+.navbar-custom .navbar-nav>li>a:hover, .nav>li>a:focus {
+	text-decoration: none;
+	background-color: black;
+}
+
+.navbar-custom .navbar-brand {
+	color: black;
+}
+
+.navbar-custom .navbar-toggle {
+	background-color: black;
+}
+
+.navbar-custom .icon-bar {
+	background-color: #FCA812;
+}

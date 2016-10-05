@@ -1,0 +1,15 @@
+{
+  "entrypoint": "index.html",
+  "shell": "src/tau.html",
+  "fragments": [
+  ],
+  "sourceGlobs": [
+   "src/**/*",
+   "images/**/*",
+   "bower.json"
+  ],
+  "includeDependencies": [
+    "manifest.json",
+    "bower_components/webcomponentsjs/webcomponents-lite.min.js"
+  ]
+}

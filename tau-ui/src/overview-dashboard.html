@@ -1,0 +1,165 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/app-layout/app-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-grid/app-grid-style.html">
+<link rel="import"
+	href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../bower_components/google-chart/google-chart.html">
+<link rel="import" href="../bower_components/iron-data-table/iron-data-table.html">
+<link rel="import" href="../bower_components/iron-media-query/iron-media-query.html">
+<link rel="import"
+	href="../bower_components/paper-input/paper-input.html">
+<link rel="import"
+	href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<!--[if lte IE 8]><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/flot/0.8.2/excanvas.min.js"></script><![endif]-->
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/flot/0.8.2/jquery.flot.min.js"></script>
+
+<dom-module id="overview-dashboard">
+	<style>
+		paper-input {
+			width: 150px;
+			float: left;
+		}
+		
+		paper-dropdown-menu {
+			width: 150px;
+			float: left;
+		}
+		
+		paper-icon-button {
+			margin-top: 20px;
+		}
+		
+		.smallChart {
+		  height: 300px;
+		  width: 50em;
+		}
+		
+		.largeChart {
+		  height: 500px;
+		  width: 50em;
+		}
+	</style>
+	
+	<template>
+		<iron-ajax id="ruleHitsLoad"
+			auto
+			method="GET"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/perf/hits"
+		    params=''
+		    handle-as="json"
+		    on-error="handleRequestError"
+		    last-response="{{ruleHitsSeries}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<iron-ajax id="rulePerfLoad"
+			auto
+			method="GET"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/perf/efficiency"
+		    params=''
+		    handle-as="json"
+		    on-error="handleRequestError"
+		    last-response="{{rulePerfSeries}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<iron-media-query query="(min-width: 600px)" query-matches="{{layout}}"></iron-media-query>
+		
+		<!-- Larger screen -->
+		<template is="dom-if" if="{{layout}}" >
+			<google-chart
+			  type='line'
+			  class="smallChart"
+			  options='{"title": "Distribution of days in 2001Q1"}'
+			  data={{strV}}>
+			</google-chart>
+		</template>
+		
+		<!-- Smaller screen -->
+		<template is="dom-if" if="{{!layout}}" >
+			<google-chart
+			  type='pie'
+			  class="smallChart"
+			  options='{"title": "Distribution of days in 2001Q1"}'
+			  cols='[{"label":"Month", "type":"number"}, {"label":"Days", "type":"number"}]'
+			  rows='[["Jan", 31],["Feb", 28],["Mar", 31]]'>
+			</google-chart>
+		</template>
+	</template>
+	
+	<script>
+		Polymer({
+			is : "overview-dashboard",
+			properties : {
+				rulegroup: {
+					type: String,
+					value: "all",
+					notify: true
+				},
+				serverAddress: {
+					type: String,
+					value: "localhost:9000",
+					notify: true
+				},
+				epsSeries: {
+					type: Array,
+					notify: true
+				},
+				ruleHitsSeries: {
+					type: Object,
+					notify: true
+				},
+				rulePerfSeries: {
+					type: Object,
+					notify: true
+				},
+				layout: {
+					notify: true
+				},
+				strV: {
+					computed: '_strHits(rulePerfSeries)'
+				}
+			},
+			_strHits: function(r) {
+				var ds = Object.keys(r);
+				var results = [];
+				
+				var headers = [];
+				headers.push("Time");
+				for(var sId in ds) {
+					var entry = r[ds[sId]];
+					headers.push("Rule:"+ds[sId]);
+					for(var e in entry) {
+						var series = [];
+						series.push(new Date(entry[e].key));
+						for(var idx in ds) {
+							if(sId==idx) {
+								series.push(entry[e].value);
+							}else {
+								series.push(undefined);
+							}
+						}
+						results.push(series);
+					}
+				}
+				results.splice(0, 0, headers);
+				return results;//JSON.stringify(results, undefined, 3);
+			},
+			ready : function() {
+				var ajax = [ this.$.ruleHitsLoad, this.$.rulePerfLoad ];
+				setInterval(function() {
+					for(var i in ajax) {
+						ajax[i].generateRequest();
+					}
+					console.log("Refreshing graphs");
+				}, 5000);
+				
+				
+			},
+			refreshMetrics : function(e) {
+			}
+		});
+	</script>
+</dom-module>

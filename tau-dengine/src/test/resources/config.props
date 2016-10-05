@@ -1,0 +1,14 @@
+local=true
+log.dir=~/hendrix/test-data
+rstore.type=io.symcpe.wraith.silo.sql.SQLRulesStore
+rstore.sql.url=jdbc:mysql://192.168.99.101:32770/
+rstore.sql.db=hendrix
+rstore.sql.table=rules_table
+rstore.username=root
+rstore.password=root
+spooling.file.path=~/hendrix/rule-updates.txt
+rule.group.active=true
+mode=metric
+log.slow=1000
+enable.alert.viewer=true
+ui.endpoint=http://192.168.99.101:9000/api/receive/

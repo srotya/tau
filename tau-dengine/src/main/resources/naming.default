@@ -1,0 +1,13 @@
+com.srotya.tau.wraith.conditions.relational.JavaRegexCondition=REGEX
+com.srotya.tau.wraith.conditions.relational.EqualsCondition=EQUALS
+com.srotya.tau.wraith.conditions.relational.GreaterThanCondition=GREATER THAN
+com.srotya.tau.wraith.conditions.relational.GreaterThanEqualToCondition=GREATER THAN EQUALS
+com.srotya.tau.wraith.conditions.relational.LessThanCondition=LESS THAN
+com.srotya.tau.wraith.conditions.relational.LessThanEqualToCondition=LESS THAN EQUALS
+com.srotya.tau.wraith.conditions.relational.NotEqualsCondition=NOT EQUALS
+com.srotya.tau.wraith.conditions.logical.AndCondition=AND
+com.srotya.tau.wraith.conditions.logical.OrCondition=OR
+com.srotya.tau.wraith.conditions.logical.XorCondition=XOR
+com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertAction=ALERT
+com.srotya.tau.wraith.actions.TagEvent=TAG
+com.srotya.tau.wraith.actions.aggregations.StateAggregationAction=STATE

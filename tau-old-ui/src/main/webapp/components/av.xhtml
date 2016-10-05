@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui" xmlns:b="http://bootsfaces.net/ui">
+<ui:composition template="/templates/main.xhtml">
+	<ui:define name="title"></ui:define>
+	<ui:define name="body">
+		<h:form style="width: 100%; max-height: 90%; float:left">
+			<p:growl autoUpdate="true" showDetail="true" />
+			<p:selectOneMenu id="somRuleId" value="#{av.ruleId}" style="min-width:60px">
+				<p:ajax event="change" process="@this" update="@all" />
+				<f:selectItems id="siRuleItems" value="#{av.rules.rules}" var="rule"
+					itemLabel="#{rule.name}" itemValue="#{rule.ruleId}" />
+			</p:selectOneMenu>
+			<p:commandButton id="cbOpenChannel" value="Open Channel" style="background-color: #4CAF50" styleClass="conditionButton"
+				actionListener="#{av.openChannel}" update="@form" />
+			<p:commandButton id="cbCloseChannel" value="Close Channel" style="background-color: #4CAF50" styleClass="conditionButton"
+				actionListener="#{av.closeChannel}" update="@form" />
+			<p:panel id="pAlertViewer" header="Alert Viewer" style="height:100%">
+				<div style="float: right">
+					<p:commandButton id="cbColumn" value="Column Editor" type="button" />
+					<p:overlayPanel id="overlayColumnEditor" for="cbColumn"
+						dynamic="false">
+						<p:inputText id="itColumnName" value="#{av.columnName}">
+							<p:ajax event="change" process="@this" update="@all" />
+						</p:inputText>
+						<p:commandButton id="cbAddColumn" value="Add"
+							actionListener="#{av.addColumn}" update="@form" />
+						<p:dataTable id="dtColumnEditor" var="col" value="#{av.columns}"
+							rowIndexVar="index">
+							<p:column id="colColumnName" headerText="Column">
+								<h:outputText id="otColumnName" value="#{col}" />
+								<p:commandButton id="cbDeleteColumn" value="Delete"
+									style="float:right" actionListener="#{av.removeColumn(index)}"
+									update="@all" />
+							</p:column>
+						</p:dataTable>
+					</p:overlayPanel>
+				</div>
+				<p:inputText id="itUpdateFrequency" value="#{av.updateFrequency}">
+					<p:ajax event="change" process="@this" update="@form" />
+				</p:inputText>
+				<br />
+				<br />
+				<p:poll id="pollEventUpdate" autoStart="true" update="dtEvent"
+					interval="#{av.updateFrequency}" />
+				<p:dataTable id="dtEvent" value="#{av.channel}" var="event"
+					style="margin-top:5px;">
+					<c:forEach items="#{av.columns}" var="col">
+						<p:column headerText="#{col}">
+							<h:outputText value="#{event.get(col)}" />
+						</p:column>
+					</c:forEach>
+					<p:column headerText="Raw">
+						<h:outputText value="#{event}" />
+					</p:column>
+				</p:dataTable>
+			</p:panel>
+		</h:form>
+	</ui:define>
+</ui:composition>
+</html>

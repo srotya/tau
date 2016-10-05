@@ -1,0 +1,391 @@
+# Topology definition
+# name to be used when submitting
+name: "HendrixRulesTopology"
+
+# NOTE: We may want to consider some level of spring integration. For example, allowing component references
+# to a spring `ApplicationContext`.
+
+# topology configuration
+# this will be passed to the submitter as a map of config options
+#
+config:
+    topology.workers: 1
+    store.sql.url: "${javax.persistence.jdbc.url}"
+    store.username: "${javax.persistence.jdbc.user}"
+    store.password: "${javax.persistence.jdbc.password}"
+    store.sql.db: "${javax.persistence.jdbc.db}"
+    rstore.type: "com.srotya.tau.wraith.silo.sql.SQLRulesStore"
+    tstore.type: "com.srotya.tau.wraith.silo.sql.SQLRulesStore"
+    rstore.sql.table: "rules_table"
+    tstore.sql.table: "alert_template"
+#    astore.type: "com.srotya.tau.wraith.silo.redis.RedisAggregationStore"
+#    astore.redis.sentinel: "true"
+#    astore.redis.host: "${redis.sentinel}"
+#    astore.redis.clusterName: "${redis.clusterName}"
+    rule.group.active: "true"
+    topology.builtin.metrics.bucket.size.secs: 10
+    topology.metrics.consumer.register:
+      - class: "com.srotya.tau.dengine.metrics.HendrixMetricsCollector"
+        parallelism.hint: 1
+#    ui.endpoint: "http://${ui.host.port}/api/receive/"
+    metrics.syslog.destination: "${api.host}"
+    metrics.syslog.port: "5140"
+
+
+# Components
+# Components are analagous to Spring beans. They are meant to be used as constructor,
+# property(setter), and builder arguments.
+#
+# for the time being, components must be declared in the order they are referenced
+components:
+  - id: "stringScheme"
+    className: "storm.kafka.StringScheme"
+
+  - id: "stringMultiScheme"
+    className: "backtype.storm.spout.SchemeAsMultiScheme"
+    constructorArgs:
+      - ref: "stringScheme"
+
+  - id: "zkHosts"
+    className: "storm.kafka.ZkHosts"
+    constructorArgs:
+      - "${kafka.zk.host}"
+
+  - id: "logSpoutConfig"
+    className: "storm.kafka.SpoutConfig"
+    constructorArgs:
+      # brokerHosts
+      - ref: "zkHosts"
+      # topic
+      - "logTopic"
+      # zkRoot
+      - ""
+      # id
+      - "logTopic"
+    properties:
+      - name: "ignoreZkOffsets"
+        value: false
+      - name: "bufferSizeBytes"
+        value: 2097152
+#      - name: "fetchMaxWait"
+#        value:
+      - name: "fetchSizeBytes"
+        value: 2097152
+      - name: "scheme"
+        ref: stringMultiScheme
+
+  - id: "ruleSpoutConfig"
+    className: "storm.kafka.SpoutConfig"
+    constructorArgs:
+      # brokerHosts
+      - ref: "zkHosts"
+      # topic
+      - "ruleTopic"
+      # zkRoot
+      - ""
+      # id
+      - "ruleTopic"
+    properties:
+      - name: "ignoreZkOffsets"
+        value: false
+      - name: "bufferSizeBytes"
+        value: 1048576
+#      - name: "fetchMaxWait"
+#        value:
+      - name: "fetchSizeBytes"
+        value: 1048576
+      - name: "scheme"
+        ref: stringMultiScheme
+
+  - id: "templateSpoutConfig"
+    className: "storm.kafka.SpoutConfig"
+    constructorArgs:
+      # brokerHosts
+      - ref: "zkHosts"
+      # topic
+      - "templateTopic"
+      # zkRoot
+      - ""
+      # id
+      - "templateTopic"
+    properties:
+      - name: "ignoreZkOffsets"
+        value: false
+      - name: "bufferSizeBytes"
+        value: 1048576
+#      - name: "fetchMaxWait"
+#        value:
+      - name: "fetchSizeBytes"
+        value: 1048576
+      - name: "scheme"
+        ref: stringMultiScheme
+
+  - id: "topicSelector"
+    className: "storm.kafka.bolt.selector.DefaultTopicSelector"
+    constructorArgs:
+      - "alertTopic"
+  - id: "kafkaMapper"
+    className: "com.srotya.tau.dengine.bolts.AlertTupleMapper"
+
+  - id: "evTopicSelector"
+    className: "storm.kafka.bolt.selector.DefaultTopicSelector"
+    constructorArgs:
+      - "eventViewerTopic"
+  - id: "evKafkaMapper"
+    className: "com.srotya.tau.dengine.bolts.helpers.EventViewerTupleMapper"
+
+  - id: "kafkaProducerProps"
+    className: "java.util.Properties"
+    configMethods:
+      - name: "put"
+        args:
+          - "bootstrap.servers"
+          - "${bootstrap.servers}"
+      - name: "put"
+        args:
+          - "acks"
+          - "1"
+      - name: "put"
+        args:
+          - "key.serializer"
+          - "org.apache.kafka.common.serialization.StringSerializer"
+      - name: "put"
+        args:
+          - "value.serializer"
+          - "org.apache.kafka.common.serialization.StringSerializer"
+
+# spout definitions
+spouts:
+  - id: "logSpout"
+    className: "storm.kafka.KafkaSpout"
+    constructorArgs:
+      - ref: "logSpoutConfig"
+    parallelism: 5
+
+  - id: "ruleSpout"
+    className: "storm.kafka.KafkaSpout"
+    constructorArgs:
+      - ref: "ruleSpoutConfig"
+    parallelism: 1
+
+  - id: "templateSpout"
+    className: "storm.kafka.KafkaSpout"
+    constructorArgs:
+      - ref: "templateSpoutConfig"
+    parallelism: 1
+
+# bolt definitions
+bolts:
+  - id: "interceptionBolt"
+    className: "com.srotya.tau.dengine.bolts.InterceptionBolt"
+    parallelism: 1
+
+  - id: "translatorBolt"
+    className: "com.srotya.tau.dengine.bolts.JSONTranslatorBolt"
+    parallelism: 1
+
+  - id: "templateComponent"
+    className: "com.srotya.tau.dengine.bolts.TemplateTranslatorBolt"
+    parallelism: 1
+
+  - id: "ruleComponent"
+    className: "com.srotya.tau.dengine.bolts.RuleTranslatorBolt"
+    parallelism: 1
+
+  - id: "ruleEngineBolt"
+    className: "com.srotya.tau.dengine.bolts.RulesEngineBolt"
+    parallelism: 1
+
+  - id: "eventViewerBolt"
+    className: "com.srotya.tau.dengine.bolts.KafkaBolt"
+    parallelism: 5
+    configMethods:
+      - name: "withTopicSelector"
+        args: [ref: "evTopicSelector"]
+      - name: "withTupleToKafkaMapper"
+        args: [ref: "evKafkaMapper"]
+      - name: "withProducerProperties"
+        args: [ref: "kafkaProducerProps"]
+
+  - id: "templatedAlertEngineBolt"
+    className: "com.srotya.tau.dengine.bolts.TemplatedAlertingEngineBolt"
+    parallelism: 1
+
+  - id: "errorBolt"
+    className: "com.srotya.tau.dengine.bolts.ErrorBolt"
+    parallelism: 1
+
+  - id: "printerBolt"
+    className: "com.srotya.tau.dengine.bolts.helpers.PrinterBolt"
+    parallelism: 1
+
+  - id: "alertSinkBolt"
+    className: "com.srotya.tau.dengine.bolts.KafkaBolt"
+    parallelism: 5
+    configMethods:
+      - name: "withTopicSelector"
+        args: [ref: "topicSelector"]
+      - name: "withTupleToKafkaMapper"
+        args: [ref: "kafkaMapper"]
+      - name: "withProducerProperties"
+        args: [ref: "kafkaProducerProps"]
+
+  - id: "aggregationController"
+    className: "com.srotya.tau.dengine.bolts.AggregationControllerBolt"
+    parallelism: 1
+
+  - id: "stateTrackingBolt"
+    className: "com.srotya.tau.dengine.bolts.StateTrackingBolt"
+    parallelism: 1
+
+#stream definitions
+# stream definitions define connections between spouts and bolts.
+# note that such connections can be cyclical
+# custom stream groupings are also supported
+
+streams:
+
+  # Log Spout
+  - name: "Kafka->Interception" # name isn't used (placeholder for logging, UI, etc.)
+    from: "logSpout"
+    to: "interceptionBolt"
+    grouping:
+      type: SHUFFLE
+
+  # Rule Spout
+  - name: "Kafka Rules->Rule Translator"
+    from: "ruleSpout"
+    to: "ruleComponent"
+    grouping:
+      type: SHUFFLE
+
+  - name: "Kafka Templates->Template Translator"
+    from: "templateSpout"
+    to: "templateComponent"
+    grouping:
+      type: SHUFFLE
+
+  - name: "Interception->Translator"
+    from: "interceptionBolt"
+    to: "translatorBolt"
+    grouping:
+      type: SHUFFLE
+
+  - name: "Translator->Rule Engine"
+    from: "translatorBolt"
+    to: "ruleEngineBolt"
+    grouping:
+      type: SHUFFLE
+
+  - name: "Rule Engine->Templated Alert Engine"
+    from: "ruleEngineBolt"
+    to: "templatedAlertEngineBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "alertStream"
+
+  - name: "Rule Engine->Event Viewer"
+    from: "ruleEngineBolt"
+    to: "eventViewerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "alertStream"
+
+  - name: "Templated Alert Engine->Alert Sink"
+    from: "templatedAlertEngineBolt"
+    to: "alertSinkBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "alertStream"
+
+  - name: "Rule Translator->Rule Engine"
+    from: "ruleComponent"
+    to: "ruleEngineBolt"
+    grouping:
+      type: ALL
+      streamId: "syncStream"
+
+  - name: "Template Translator->Templated Alert Engine"
+    from: "templateComponent"
+    to: "templatedAlertEngineBolt"
+    grouping:
+      type: ALL
+      streamId: "syncStream"
+
+  - name: "Rule Translator->Aggregation Controller"
+    from: "ruleComponent"
+    to: "aggregationController"
+    grouping:
+      type: ALL
+      streamId: "syncStream"
+
+  - name: "Aggregation Controller->State Tracker"
+    from: "aggregationController"
+    to: "stateTrackingBolt"
+    grouping:
+      type: ALL
+      streamId: "tickStream"
+
+  - name: "Rule Engine->State Tracking"
+    from: "ruleEngineBolt"
+    to: "stateTrackingBolt"
+    grouping:
+      type: FIELDS
+      args: ["_ri", "_a"]
+      streamId: stateStream
+
+  - name: "State Tracker->Printer"
+    from: "stateTrackingBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "aggregationOutputStream"
+
+  - name: "Translator->Error"
+    from: "translatorBolt"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+
+  - name: "Rule Translator->Error"
+    from: "ruleComponent"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+
+  - name: "Rule Translator->Error"
+    from: "ruleComponent"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+
+  - name: "Rule Engine->Error"
+    from: "ruleEngineBolt"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+
+  - name: "Templated Alert Engine->Error"
+    from: "templatedAlertEngineBolt"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+
+  - name: "Error->Printer"
+    from: "errorBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "kafkaErrorStream"
+
+#  - name: "Rule Engine->Event Viewer"
+#    from: "ruleEngineBolt"
+#    to: "printerBolt"
+#    grouping:
+#      type: SHUFFLE
+#      streamId: "alertStream"

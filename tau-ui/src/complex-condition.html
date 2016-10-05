@@ -1,0 +1,94 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="./condition-editor.html">
+<link rel="import"
+	href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import"
+	href="../bower_components/paper-input/paper-input.html">
+<link rel="import"
+	href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<dom-module id="complex-condition">
+<style>
+paper-input {
+	width: 150px;
+	float: left;
+}
+
+paper-dropdown-menu {
+	width: 150px;
+	float: left;
+}
+
+paper-icon-button {
+	margin-top: 20px;
+}
+</style>
+<template>
+	<template id="tConditons" is="dom-if" if="{{conditions}}">
+		<template is="dom-if" if="{{conditions.props.conditions}}">
+			<div style="float: left;display:block">
+				<paper-dropdown-menu label="Type" vertical-align="bottom"
+					horizontal-align="left">
+					<paper-menu
+						class="dropdown-content" selected="{{conditions.type}}"
+						attr-for-selected="data-value">
+						<paper-item data-value="AND">AND</paper-item>
+						<paper-item data-value="OR">OR</paper-item>
+					</paper-menu>
+				</paper-dropdown-menu>
+				<paper-icon-button src="/images/icons/Equals.png" title="Add Simple Condition" on-tap="addConditionS"></paper-icon-button>
+				<paper-icon-button src="/images/icons/And.png" title="Add Complex Condition" on-tap="addConditionC"></paper-icon-button>
+				<template is="dom-repeat" items="{{conditions.props.conditions}}">
+					<div style="padding-left: 50px;display:block;clear:both">
+						<paper-icon-button  style="float:left;position:relative" icon="cancel" title="Delete" on-tap="deleteCondition"></paper-icon-button>
+						<condition-editor style="float:left" conditions="{{item}}"></condition-editor>
+					</div>
+				</template>
+			</div>
+		</template>
+	</template>
+</template>
+<script>
+	Polymer({
+		is : "complex-condition",
+		properties : {
+			conditions : {
+				type: Object,
+				notify : true
+			}
+		},
+		ready : function() {
+		},
+		deleteCondition : function(e) {
+			if(this.conditions) {
+				console.log("deleting")
+				var idx = this.conditions.props.conditions.indexOf(e.model.item);
+				this.splice('conditions.props.conditions', idx, 1);
+			}
+		},
+		addConditionS : function(e) {
+			if(this.conditions) {
+				var c={
+					"type" : "EQUALS",
+					"props" : {
+						"key" : "",
+						"value" : ""
+					}
+				}
+				this.push('conditions.props.conditions', c);
+			}
+		},
+		addConditionC : function(e) {
+			if(this.conditions) {
+				var c={
+					"type" : "AND",
+					"props" : {
+						"conditions": []
+					}
+				}
+				this.push('conditions.props.conditions', c);
+			}
+		}
+	});
+</script> </dom-module>

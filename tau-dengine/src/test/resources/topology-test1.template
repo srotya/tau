@@ -1,0 +1,1 @@
+[{"templateId":1,"templateName":"test name1","destination":"test@gmail.com","media":"http","subject":"test","body":"$host","throttleDuration":120,"throttleLimit":1},{"templateId":2,"templateName":"test name1","destination":"test@gmail.com","media":"http","subject":"test","body":"$host","throttleDuration":120,"throttleLimit":1}]

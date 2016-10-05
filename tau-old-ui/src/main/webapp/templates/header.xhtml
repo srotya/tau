@@ -1,0 +1,40 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui" xmlns:b="http://bootsfaces.net/ui">
+<f:view>
+	<h:form>
+		<b:navBar brand="Hendrix" fluid="false" styleClass="navbar-custom"
+			brandHref="${request.contextPath}/" inverse="true">
+			<b:navbarLinks pull="left" rendered="#{lb.authenticated}">
+				<b:navLink value="Rules" href="${request.contextPath}/rules.xhtml" />
+				<c:choose>
+					<c:when test="#{not am.enableAuth}">
+						<b:navLink value="Tenants"
+							href="${request.contextPath}/tenants.xhtml" />
+					</c:when>
+				</c:choose>
+				<b:navLink value="Templates"
+					href="${request.contextPath}/templates.xhtml" />
+
+				<b:navLink value="Alert Viewer"
+					href="${request.contextPath}/components/av.xhtml" />
+			</b:navbarLinks>
+			<b:navbarLinks pull="right" rendered="#{lb.authenticated}">
+				<h:selectOneMenu value="#{ub.tenant}" converter="tenantConverter"
+					style="float:left;margin-top:12px">
+					<f:selectItems value="#{ub.tenants}" var="tenant"
+						itemLabel="#{tenant.tenantName}" itemValue="#{tenant.tenantId}" />
+					<p:ajax event="change" process="@this" update="@all" />
+				</h:selectOneMenu>
+				<b:dropMenu value="#{ub.userId}" style="padding-left:10px;">
+					<p:commandLink value="Logout" actionListener="#{lb.logout}"
+						style="font-size:12pt;text-align:center" update="@all" />
+				</b:dropMenu>
+			</b:navbarLinks>
+		</b:navBar>
+	</h:form>
+</f:view>
+</html>

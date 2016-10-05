@@ -1,0 +1,85 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="./condition-editor.html">
+<link rel="import"
+	href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import"
+	href="../bower_components/paper-input/paper-input.html">
+<link rel="import"
+	href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<dom-module id="simple-condition">
+<style>
+	paper-input {
+		width: 100px;
+		float: left;
+		font-size: 10pt !important;
+	}
+	
+	:host {
+		--paper-input-container-input: {
+			font-size: 10pt;
+		};
+		--paper-input-container-label: {
+			font-size: 12pt;
+		};
+		--paper-input-container-underline: {
+           visibility:hidden; 
+        };
+	}
+	
+	paper-dropdown-menu {
+		width: 80px;
+		float: left;
+	}
+	
+	paper-icon-button {
+		margin-top: 20px;
+	}
+	
+	paper-item {
+		font-size: 12pt;
+	}
+	
+	paper-menu {
+		font-size: 10pt;
+	}
+</style>
+<template>
+	<template is="dom-if" if="{{conditions}}">
+		<template is="dom-if" if="{{!conditions.props.conditions}}">
+			<paper-input label="Key" value="{{conditions.props.key}}"></paper-input>
+			<paper-dropdown-menu label="Type" vertical-align="bottom" horizontal-align="left">
+				<paper-menu
+					class="dropdown-content" selected="{{conditions.type}}"
+					attr-for-selected="data-value">
+					<paper-item data-value="EQUALS">=</paper-item>
+					<paper-item data-value="GREATER THAN EQUALS">&gt;=</paper-item>
+					<paper-item data-value="LESS THAN EQUALS">&lt;=</paper-item>
+					<paper-item data-value="LESS THAN">&lt;</paper-item>
+					<paper-item data-value="GREATER THAN">&gt;</paper-item>
+					<paper-item data-value="MATCHES">RegEx</paper-item>
+				</paper-menu> 
+			</paper-dropdown-menu>
+			<paper-input label="Value" value="{{conditions.props.value}}"></paper-input>
+		</template>
+	</template>
+ </template>
+ <script>
+	Polymer({
+		is : "simple-condition",
+		properties : {
+			conditions : {
+				notify : true
+			}
+		},
+		observers: [
+				    '_changed(scondition.*)'
+				],
+		ready : function() {
+		},
+		_changed : function(e) {
+			console.log(this.scondition);
+		}
+	});
+</script> </dom-module>

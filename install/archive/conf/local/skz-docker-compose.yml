@@ -1,0 +1,62 @@
+##############################################################################################################
+# Derived from https://github.com/wurstmeister/storm-docker and https://github.com/wurstmeister/kafka-docker
+# Apache 2.0 License
+# Purpose: To deploy a Storm-Kafka-Zookeeper in docker
+# 
+# Steps:
+# 1. Download and install Docker 1.12 or higher
+# 2. cd to the directory of this file
+# 3. docker-compose up -d
+##############################################################################################################
+version: '2'
+services:
+  zookeeper:
+    image: ambuds/zookeeper
+    ports: 
+      - "2181:2181"
+  nimbus:
+    image: ambuds/storm-nimbus
+    ports:
+      - "49773:3773"
+      - "49772:3772"
+      - "49627:6627"
+    environment:
+      ZOOKEEPER_HOST: zookeeper
+      ZOOKEEPER_PORT: 2181
+      NIMBUS: nimbus
+    depends_on:
+      - zookeeper
+  supervisor:
+    image: ambuds/storm-supervisor
+    ports:
+      - "8000"
+    environment:
+      ZOOKEEPER_HOST: zookeeper
+      ZOOKEEPER_PORT: 2181
+      NIMBUS: nimbus
+    depends_on:
+      - nimbus
+  stormui:
+    image: ambuds/storm-ui
+    ports:
+      - "8084:8080"
+    environment:
+      ZOOKEEPER_HOST: zookeeper
+      ZOOKEEPER_PORT: 2181
+      NIMBUS: nimbus
+    depends_on:
+      - nimbus
+  kafka:
+    image: wurstmeister/kafka:0.8.2.2
+    ports:
+      - "9092"
+    links:
+      - zookeeper:zookeeper
+    environment:
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      HOSTNAME_COMMAND: hostname -i
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper

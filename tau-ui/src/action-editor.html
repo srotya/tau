@@ -1,0 +1,82 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import"
+	href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../bower_components/iron-data-table/iron-data-table.html">
+<link rel="import"
+	href="../bower_components/paper-input/paper-input.html">
+<link rel="import"
+	href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<dom-module id="action-editor">
+	<style>
+		paper-input {
+			width: 150px;
+			float: left;
+		}
+		
+		paper-dropdown-menu {
+			width: 150px;
+			float: left;
+		}
+		
+		paper-icon-button {
+			margin-top: 20px;
+		}
+	</style>
+	
+	<template>
+		 <template is="dom-if" if="{{actions}}">
+		 	<b>Actions:</b><paper-icon-button icon="add-alert" on-tap="addActionA"></paper-icon-button>
+		 	<div style="clear:both">
+				<template is="dom-repeat" items="{{actions}}" as="action">
+					<paper-dropdown-menu label="Type" vertical-align="bottom"
+						horizontal-align="left">
+						<paper-menu
+							class="dropdown-content" selected="{{action.type}}"
+							attr-for-selected="data-value">
+							<paper-item data-value="ALERT">ALERT</paper-item>
+							<paper-item data-value="STATE">STATE</paper-item>
+						</paper-menu>
+					</paper-dropdown-menu><br/>
+				</template>
+			</div>
+		</template>
+	</template>
+	
+	<script>
+		Polymer({
+			is : "action-editor",
+			properties : {
+				actions : {
+					type: Array,
+					notify : true
+				}
+			},
+			ready : function() {
+			},
+			deleteActions : function(e) {
+				this.set('actions', []); 
+			},
+			addActionA : function(e) {
+				var a={
+			            "type": "ALERT",
+			            "props": {
+			                "actionId": 0,
+			                "templateId": -1
+			            }
+			        }
+				this.push('actions', a);
+			},
+			addActionS : function(e) {
+				var c={
+					"type" : "AND",
+					"props" : {
+						"conditions": []
+					}
+				}
+				this.set('conditions', c);
+			}
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,7 @@
+local=true
+rstore.type=io.symcpe.hendrix.storm.TopologyTestRulesStore
+tstore.type=io.symcpe.hendrix.storm.TopologyTestRulesStore
+store.username=root
+store.password=root
+spooling.file.path=/tmp/rule-updates.txt
+rule.group.active=true

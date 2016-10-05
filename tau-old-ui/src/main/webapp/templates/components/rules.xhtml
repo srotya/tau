@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui" xmlns:b="http://bootsfaces.net/ui">
+<ui:composition template="/templates/main.xhtml">
+	<ui:define name="title"></ui:define>
+	<ui:define name="body">
+		<h:form style="width: 100%; max-height: 90%; float:left">
+			<p:growl autoUpdate="true" showDetail="true" showSummary="true" />
+			<p:panel header="Rule Builder" style="height:100%">
+				<b:panelGrid columns="7,5" style="height:100%">
+					<b:panel
+						style="width:100%;height:100%;border:none;box-shadow: none">
+						<p:panelGrid columns="2" style="width:100%;border: none">
+							<p:outputLabel value="Rule ID" />
+							<p:inputText value="#{rb.currRule.ruleId}" styleClass="ruleInput"
+								readonly="true">
+							</p:inputText>
+							<p:outputLabel value="Rule Name" />
+							<p:inputText value="#{rb.currRule.name}" styleClass="ruleInput" >
+								<p:ajax async="true" process="@this" event="change"
+									update="@form" />
+							</p:inputText>
+
+							<p:outputLabel value="Enabled?" />
+							<p:selectBooleanCheckbox value="#{rb.currRule.active}"
+								label="Enabled">
+								<p:ajax async="true" process="@this" event="change"
+									update="@form" />
+							</p:selectBooleanCheckbox>
+
+						</p:panelGrid>
+						<p:outputLabel value="Description" style="margin-left: 10px" />
+
+						<p:inputTextarea value="#{rb.currRule.description}"
+							autoResize="true" scrollHeight="40"
+							style="height: 50px;width: 98%;margin-left: 10px; marign-right: 10px">
+							<p:ajax async="true" process="@this" event="change"
+								update="@form" />
+						</p:inputTextarea>
+
+						<p:panel header="Condition Builder" style="box-shadow:none">
+							<div style="padding-bottom: 5px">
+								<p:commandButton id="btnComplex" alt="Add Complex Condition" icon="ui-icon-plus" value="Complex" styleClass="conditionButton"
+									actionListener="#{cb.addCondition(true)}" update="@form" />
+								<p:tooltip for="btnComplex" value="Add Complex Condition"/>
+								<p:commandButton id="btnSimple" alt="Add Simple Condition" icon="ui-icon-plus" value="Simple" styleClass="conditionButton"
+									actionListener="#{cb.addCondition(false)}" update="@form" />
+								<p:tooltip for="btnSimple" value="Add Simple Condition"/>
+								<p:commandButton id="btnRemove" alt="Remove" icon="ui-icon-minus" value="Remove" styleClass="conditionButton"
+									actionListener="#{cb.removeCondition}" update="@form" />
+								<p:tooltip for="btnRemove" value="Remove Condition"/>
+								<p:commandButton id="btnTruncate" alt="Delete All" icon="ui-icon-trash" value="Truncate" styleClass="conditionButton"
+									actionListener="#{cb.truncateConditions}" update="@form" />
+								<p:tooltip for="btnTruncate" value="Delete All"/>
+								<p:commandButton id="btnBuild" alt="Build" icon="ui-icon-arrowreturn-1-e" value="Build" styleClass="conditionButton"
+									actionListener="#{cb.buildCondition}" update="@form" />
+								<p:tooltip for="btnBuild" value="Build"/>
+							</div>
+							<p:scrollPanel styleClass="conditionTreeContainer" mode="native">
+								<p:tree value="#{cb.root}" var="node" dynamic="true" 
+									selectionMode="single" styleClass="conditionTree"
+									selection="#{cb.selectedNode}" animate="true"
+									orientation="vertical">
+									<p:ajax event="select" listener="#{cb.selectionChange}"
+										update="@form" />
+									<p:treeNode>
+										<h:outputText value="#{node}" />
+									</p:treeNode>
+								</p:tree>
+							</p:scrollPanel>
+							<c:catch>
+								<c:choose>
+									<c:when test="#{cb.isComplex(cb.selectedNode)}">
+										<p:panel header="Condition Editor">
+											<p:selectOneMenu value="#{cb.conditionType}">
+												<p:ajax event="change" process="@this"
+													listener="#{cb.changeComplexCondition}" update="@form" />
+												<f:selectItems value="#{cb.complexConditions}" />
+											</p:selectOneMenu>
+										</p:panel>
+									</c:when>
+									<c:otherwise>
+										<p:panel header="Condition Editor" >
+											<p:inputText value="#{cb.headerKey}" styleClass="conditionInput">
+												<p:ajax event="change" process="@this"
+													listener="#{cb.changeSimpleCondition}" update="@form" />
+											</p:inputText>
+											<p:selectOneMenu value="#{cb.conditionType}" styleClass="conditionType">
+												<p:ajax event="change" process="@this"
+													listener="#{cb.changeSimpleCondition}" update="@form" />
+												<f:selectItems value="#{cb.simpleConditions}" />
+											</p:selectOneMenu>
+											<p:inputText value="#{cb.matchValue}" styleClass="conditionInput">
+												<p:ajax event="change" process="@this"
+													listener="#{cb.changeSimpleCondition}" update="@form" />
+											</p:inputText>
+										</p:panel>
+									</c:otherwise>
+								</c:choose>
+							</c:catch>
+						</p:panel>
+						<c:choose>
+							<c:when test="#{not empty rb.currRule.actions}">
+								<b:dataTable id="dtActions" value="#{rb.currRule.actions}"
+									var="act" style="width:100%">
+									<h:column>
+										<f:facet name="Id">
+											<h:outputText value="Action Type" />
+										</f:facet>
+										<h:outputText value="#{act.actionType}" />
+									</h:column>
+								</b:dataTable>
+							</c:when>
+						</c:choose>
+					</b:panel>
+					<b:panel
+						style="height:100%;border:none;box-shadow: none;overflow:hidden">
+						<p:outputLabel value="Rule JSON" />
+						<p:commandButton value="Download" icon="ui-icon-disk" styleClass="conditionButton" style="float:right;" ajax="false">
+							<p:fileDownload value="#{rb.file}" />
+						</p:commandButton>
+						<br />
+						<p:scrollPanel styleClass="conditionJSONContainer" mode="native">
+							<p:outputLabel escape="false" id="lblRule"
+								styleClass="conditionJSON" value="#{rb.json}" />
+						</p:scrollPanel>
+					</b:panel>
+				</b:panelGrid>
+			</p:panel>
+		</h:form>
+	</ui:define>
+</ui:composition>
+</html>

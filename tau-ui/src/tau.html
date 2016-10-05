@@ -1,0 +1,205 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-layout.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-styles/color.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-data-table/iron-data-table.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html">
+<link rel="import" href="./rule-editor.html">
+<link rel="import" href="./template-editor.html">
+<link rel="import" href="./overview-dashboard.html">
+<link rel="import" href="./rulegroup-editor.html">
+<script src="https://code.jquery.com/jquery-2.1.4.js"></script>
+
+<dom-module id="tau-ui">
+	<style>
+		#startDrawer {
+	      --app-drawer-content-container: {
+	        box-shadow: 1px 0 2px 1px rgba(0,0,0,0.18);
+	      }
+	    }
+	    #endDrawer {
+	      --app-drawer-content-container: {
+	        box-shadow: -1px 0 2px 1px rgba(0,0,0,0.18);
+	      }
+	    }
+	    app-header {
+	      position: fixed;
+	      top: 0;
+	      left: 0;
+	      width: 100%;
+	      background-color: gray;
+	      color: white;
+	    }
+	    app-header paper-icon-button {
+	      --paper-icon-button-ink-color: white;
+	    }
+	
+		paper-menu {
+			display: block;
+		}
+		
+		.rgItem {
+			max-width: 100px;
+			font-size: 8pt;
+		}
+		
+		paper-dropdown-menu {
+			width: 150px;
+ 			float: right;
+ 			color: white;
+		}
+		
+		.yellow-button {
+		  text-transform: none;
+		  color: #eeff41;
+		}
+		
+	</style>
+	<template>
+		<app-location route="{{route}}" use-hash-as-path></app-location>
+		<app-header>
+      		<app-toolbar>
+				<paper-icon-button icon="menu" on-tap="openDrawer"></paper-icon-button>
+			</app-toolbar>
+		</app-header>
+		<div>
+			<iron-ajax id="ruleGroups"
+				method="GET"
+				auto="true"
+				url="http://{{serverAddress}}/api/rulegroups"
+			    params=''
+			    handle-as="json"
+			    last-response="{{ruleGroups}}"
+			    on-response="closeErrorToast"
+			    on-error="handleRequestError"
+			    debounce-duration="300">
+			</iron-ajax>
+			<div>
+				<paper-dropdown-menu label="Rule Group" vertical-align="top" horizontal-align="right" >
+					<paper-menu class="dropdown-content" selected="{{ruleGroup}}" attr-for-selected="data-value">
+						<template is="dom-repeat" items="{{ruleGroups}}" as="group">
+							<paper-item class="rgItem" data-value="{{group.ruleGroupId}}">{{group.ruleGroupName}}</paper-item>
+						</template>
+					</paper-menu> 
+				</paper-dropdown-menu>
+			</div>
+			<paper-toast id="errorToast" duration="0" text="{{response}}" >
+				<paper-button on-tap="closeErrorToast" class="yellow-button">Dismiss</paper-button>
+			</paper-toast>
+			<paper-toast id="infoToast" text="{{response}}" >
+				<paper-button on-tap="closeInfoToast" class="yellow-button">Dismiss</paper-button>
+			</paper-toast>
+			<br/>
+			<div style="padding-top:50px;padding-left:10%;padding-right:10%">
+				<iron-pages selected="[[page.view]]" attr-for-selected="name">
+					<overview-dashboard id="re" name="home" rulegroup="{{ruleGroup}}"></overview-dashboard> 
+					<rule-editor id="re" name="rules" rulegroup="{{ruleGroup}}"></rule-editor>
+					<template-editor id="te" name="templates" rulegroup="{{ruleGroup}}"></template-editor>
+				</iron-pages>
+			</div>
+			<br>
+		  	<div style="display:block;clear:both;padding-top:20px;font-size:8pt">
+		  		<center>Copyright© 2016 Ambud Sharma</center>
+		  	</div>
+		</div>
+		
+		<app-drawer id="drawer" style="z-index:200" swipe-open>
+			<center>
+				<img src="/images/tau.png" style="width:50px" >
+			</center>
+			<paper-menu attr-for-selected="name" selected="{{route.path}}">
+				<paper-item name="/home">Home</paper-item>
+				<paper-item name="/rules">Rules</paper-item>
+				<paper-item name="/templates">Templates</paper-item>
+				<paper-item name="/rulegroups">Rule Groups</paper-item>
+			</paper-menu>
+		</app-drawer>
+		
+		<app-route
+		    route="{{route}}"
+		    pattern="/:view"
+		    data="{{page}}"
+		    tail="{{tail}}">
+		</app-route>
+	</template>
+	<script>
+		Polymer({
+			is:"tau-ui",
+			properties: {
+				ruleGroup: {
+					type: String,
+					value: "all",
+					notify: true
+				},
+				ruleGroups: {
+					type: Array,
+					notify: true
+				},
+				serverAddress: {
+					type: String,
+					value: "localhost:9000",
+					notify: true
+				},
+				route: {
+					type: Object
+				},
+				page: {
+					type: Object,
+					notify: true,
+		            value:  {view: 'rules'}
+				},
+				tail: {
+					type: Object
+				}
+			},
+			ready: function() {
+		    },
+		    observers: [
+             '_onRoutePathChanged(route.path)'
+             ],
+             _onRoutePathChanged: function(path) {
+               // If we do not have an initial URL, we redirect to /rules
+               if (!path) {
+                 this.set('route.path', '/rules');
+               }else{
+            	   this.set('page.view', path.replace('/',''));
+               }
+             },
+		    openDrawer: function() {
+		    	this.$.drawer.toggle();
+		    },
+		    closeErrorToast: function() {
+		    	this.$.errorToast.close();
+		    },
+		    handleRequestError: function(e, detail) {
+				if(detail.request.xhr.status==0) {
+					this.response="Unable to connect to server";
+				}else {
+					this.response="Request failed:"+e.detail.request.xhr.statusText;
+				}
+		    	this.$.errorToast.open();
+		    },
+		    stringify: function(obj) {
+		    	if(obj) {
+					return this.highlight(JSON.stringify(obj, undefined, 4));
+		    	}else {
+		    		return '';
+		    	}
+			}
+		});
+	</script>
+</dom-module>

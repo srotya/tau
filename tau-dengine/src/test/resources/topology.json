@@ -1,0 +1,8 @@
+{ "@timestamp" : "2016-01-10 20:10:11", "message" : "hello world", "fields" : 4, "host" : "test1" }
+{ "@timestamp" : "2016-01-10 20:10:11", "message" : "hello world", "fields" : 4, "host" : "test2" }
+{ "@timestamp" : "2016-01-10 20:10:11", "message" : "hello world", "fields" : 4, "host" : "test3" }
+{ "@timestamp" : "2016-01-10 20:10:11", "message" : "hello world", "fields" : 4, "host" : "test4" }
+{ "@timestamp" : "2016-01-10 20:10:11", "message" : "hello world", "fields" : 4, "value": 10 }
+{ "@timestamp" : "2016-01-10 20:10:11", "message" : "hello world", "fields" : 4, "value": 10 }
+{ "@timestamp" : "2016-01-10 20:10:11", "message" : "hello world", "fields" : 4, "value": 10 }
+{ "@timestamp" : "2016-01-10 20:10:11", "message" : "hello world", "fields" : 4, "value": 10 }

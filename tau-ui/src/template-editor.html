@@ -1,0 +1,329 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import"
+	href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import"
+	href="../bower_components/paper-input/paper-input.html">
+<link rel="import"
+	href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<dom-module id="template-editor">
+	<style>
+		paper-input {
+			width: 150px;
+			float: left;
+		}
+		
+		paper-dropdown-menu {
+			width: 150px;
+			float: left;
+		}
+		
+		paper-icon-button {
+			margin-top: 20px;
+		}
+		
+		#templatesTable {
+	      width: 100%;
+	      display: flex;
+	      align-items: center;
+	      max-height: 300px;
+	      min-height: 200px;
+	      z-index: 100;
+	    }
+	    
+	    #templatesTable data-table-row:not([header]) data-table-cell {
+	      height: 60px;
+	    }
+	
+	    #templatesTable {
+	      --default-primary-color: #D9D9D9;
+	      --iron-data-table-header: {
+	        background-color: #F4CF4C;
+	        color: black;
+	        font-size: 12pt;
+	      }
+	      --iron-data-table-row: {
+	        align-items: center;
+	      }
+	      --iron-data-table-row-hover: {
+	        background-color: #eee !important;
+	      }
+	      --iron-data-table-row-selected: {
+	        background-color: var(--default-primary-color) !important;
+	        color: black;
+	      }
+	      --iron-data-table-row-after: {
+	        background-color: #fff;
+	        content: "";
+	        pointer-events: none;
+	        position: absolute;
+	        right: 0px;
+	      }
+	    }
+	</style>
+	<template>
+		<iron-localstorage id="cache" name="tau-template-cache"
+		    value="{{template}}"
+		    on-iron-localstorage-load-empty="initCacheTemplates"></iron-localstorage>
+		<iron-ajax id="templateCreate"
+			method="POST"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/templates"
+		    params=''
+		    handle-as="json"
+		    on-response="addTemplateToList"
+		    on-error="handleRequestError"
+		    last-response="{{response}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<iron-ajax id="templateDelete"
+			method="DELETE"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/templates/{{template.templateId}}"
+		    params=''
+		    handle-as="json"
+		    on-response="deleteTemplateFromList"
+		    on-error="handleRequestError"
+		    last-response="{{response}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<iron-ajax id="templateUpdate"
+			method="PUT"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/templates/{{template.templateId}}"
+		    params=''
+		    body="{{template}}"
+		    handle-as="json"
+		    on-error="handleRequestError"
+		    last-response="{{response}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<iron-ajax id="templateLoad"
+			method="GET"
+			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/templates"
+		    params=''
+		    handle-as="json"
+		    on-error="handleRequestError"
+		    last-response="{{templates}}"
+		    debounce-duration="300">
+		</iron-ajax>
+		<div style="width:100%;height:100%;">
+			<div style="display:inline;">
+				<h1 style="float:left">Templates</h1>
+				<div style="float:right;position:relative;display:block;">
+					<paper-icon-button id="btnRefresh" icon="refresh" on-tap="reloadTemplates">
+					</paper-icon-button>
+					<paper-icon-button id="btnAdd" icon="add-circle" on-tap="addTemplate">
+					</paper-icon-button>
+					<template is="dom-if" if="{{template}}">
+						<paper-icon-button id="btnDelete" icon="cancel" on-tap="deleteTemplate">
+						</paper-icon-button>
+					</template>
+				</div>
+			</div>
+			<br/>
+			<div style="clear: both;">
+				<iron-data-table id="templatesTable" items="{{templates}}" selected-item="{{template}}" selection-enabled>
+					<data-table-column name="Template Id">
+						<template>
+							<span class="a{{item.active}}">{{item.templateId}}</span>
+						</template>
+					</data-table-column>
+					<data-table-column name="Name">
+						<template>
+							<span class="a{{item.active}}">{{item.templateName}}</span>
+						</template>
+					</data-table-column>
+					<data-table-column name="Destination">
+						<template>
+							<span class="a{{item.active}}">{{item.destination}}</span>
+						</template>
+					</data-table-column>
+				</iron-data-table>
+			</div>
+		</div><hr>
+		<div style="padding:5px;">
+			<template is="dom-if" if="{{template}}">
+				<div style="float:left;display:block;width:70%;text-align: left;clear: both;height:100%">
+					<div style="display:block;height:70px;width:100%;min-width:200px;clear: both;">
+						<div>
+							<h2 style="float:left">Editor</h2>
+							<div style="margin-top:10px;margin-left:84%">
+								<paper-button class="custom" raised style="" icon="backup" title="Save Rule" on-tap="validateTemplate">Validate</paper-button>
+								<paper-button class="custom" raised style="" icon="backup" title="Save Rule" on-tap="saveTemplate">Save</paper-button>
+							</div>
+						</div>
+						<div style="float:left;margin-left:0px;margin-top: 5px;">
+							<paper-input style="float:left;width:150px;padding-right:10px" label="Name" value="{{template.templateName}}" ></paper-input>
+							<paper-input-container style="float:left;width:150px;padding-right:10px" >
+							  <label>Throttle Limit</label>
+							  <input is="iron-input"  type="number" value-as-number="{{template.throttleLimit::input}}">
+							</paper-input-container>
+							<paper-input-container style="float:left;width:150px;padding-right:10px" >
+							  <label>Throttle Duration</label>
+							  <input is="iron-input"  type="number" value-as-number="{{template.throttleDuration::input}}">
+							</paper-input-container>
+						</div>
+					</div>
+					<div style="display: block;clear: both;">
+						<div style="display:block;overflow: visible;" >
+						</div>
+					</div>
+				</div>
+				<div style="float:left;position:relative;width:29%;min-width:300px;padding-top:10px;display:block;">
+					<b>JSON Preview:</b>
+					<div style="border: 1px dashed;;max-height:450px;overflow: auto;">
+						<pre style="padding:0px;width:90%">
+							<div inner-h-t-m-l="{{templateString}}" style="width:80%">
+							</div>
+						</pre>					
+					</div>
+				</div>
+			</template>
+			<template is="dom-if" if="{{!template}}">
+				<center>Select a Template to View/Edit</center>
+			</template>
+		</div>
+		<paper-toast id="errorToast" duration="0" text="{{response}}" >
+			<paper-button on-tap="closeErrorToast" class="yellow-button">Dismiss</paper-button>
+		</paper-toast>
+		<paper-toast id="infoToast" text="{{response}}" >
+			<paper-button on-tap="closeInfoToast" class="yellow-button">Dismiss</paper-button>
+		</paper-toast>
+	</template>
+	<script>
+		Polymer({
+			is : "template-editor",
+			properties : {
+				rulegroup: {
+					type: String,
+					notify: true,
+					observer: 'reloadTemplates'
+				},
+				templates : {
+					type: Array,
+					notify : true
+				},
+				template: {
+					type: Object,
+					notify: true
+				},
+				templateString: {
+					type: String,
+					notify: true
+				},
+				response: {
+				},
+				serverAddress: {
+					type: String,
+					value: "localhost:9000",
+					notify: true
+				}
+			},
+			ready : function() {
+			},
+			observers: [
+			    '_templateChanged(template.*)'
+			],
+			templateJson: function(template) {
+				return this.stringify(template);
+			},
+			_templateChanged: function(n, o) {
+				this.set('templateString', this.templateJson(this.template));
+			},
+			initCacheTemplates: function(obj) {
+				this.$.templateLoad.generateRequest();
+			},
+			reloadTemplates: function(e) {
+		    	var cache = this.$.cache;
+				var ajax = this.$.templateLoad;
+				ajax.generateRequest();
+				cache.save();
+                cache.reload();
+                this.response = "Loaded";
+                this.$.infoToast.open();
+		    },
+		    closeErrorToast: function() {
+		    	this.$.errorToast.close();
+		    },
+			handleRequestError: function(e, detail) {
+				if(detail.request.xhr.status==0) {
+					this.response="Unable to connect to server";
+				}else {
+					this.response="Request failed:"+e.detail.request.xhr.statusText;
+				}
+		    	this.$.errorToast.open();
+		    },
+			deleteTemplate : function(e) {
+				var cache = this.$.cache;
+				var ajax = this.$.templateDelete;
+				ajax.generateRequest();
+			},
+			addTemplate : function(e) {
+				var cache = this.$.cache;
+				var ajax = this.$.templateCreate;
+				ajax.generateRequest();
+			},
+			addRuleToList: function(e) {
+		    	var r = {"templateId":e.detail.response,"templateName":"","destination":"","media":"","subject":"","body":"","throttleDuration":300,"throttleLimit":1}
+		    	this.push('templates', r);
+		    	this.set('template', r);
+		    	this.response = "Created empty template with id:"+r.templateId;
+		    	this.$.infoToast.open();
+		    },
+			deleteTemplateFromList: function(r) {
+		    	if(this.templates) {
+		    		var templateId = this.template.templateId;
+		    		var idx = this.templates.indexOf(this.template);
+		    		this.splice('templates', idx, 1);
+		    		this.response = "Deleted template with id:"+templateId;
+			    	this.$.infoToast.open();
+		    	}
+		    },
+		    saveRule: function(e) {
+		    	this.response = "Template saved!";
+		    	this.$.infoToast.open();
+		    },
+		    validateRule: function(e) {
+		    	this.response = "Template is valid!";
+		    	this.$.infoToast.open();
+		    },
+		    convertType: function(e) {
+		    	var parent = e.target.getAttribute('parent-value')
+		    	console.log(parent);
+		    	console.log(e);
+		    },
+		    highlight: function syntaxHighlight(json) {
+		        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+		            var cls = 'number';
+		            if (/^"/.test(match)) {
+		                if (/:$/.test(match)) {
+		                    cls = 'key';
+		                } else {
+		                    if(/EQUALS|GREATER|LESS|MATCH/.test(match)) {
+		                    	cls = 'condition';
+		                    } else if(/ALERT|STATE/.test(match)) {
+		                    	cls = 'action';
+		                    }else {
+		                    	cls = 'string';
+		                    }
+		                }
+		            } else if (/true/.test(match)) {
+		                cls = 'boolean-true';
+		            } else if (/false/.test(match)) {
+		            	cls = 'boolean-false';
+		            } else if (/null/.test(match)) {
+		                cls = 'null';
+		            }
+		            return '<span class="' + cls + '">' + match + '</span>';
+		        });
+		    },
+		    stringify: function(obj) {
+		    	if(obj) {
+					return this.highlight(JSON.stringify(obj, undefined, 3));
+		    	}else {
+		    		return '';
+		    	}
+			}
+		});
+	</script>
+</dom-module>

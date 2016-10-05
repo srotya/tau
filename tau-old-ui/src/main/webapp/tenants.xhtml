@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui" xmlns:b="http://bootsfaces.net/ui">
+<ui:composition template="/templates/main.xhtml">
+	<ui:define name="title">Tenants</ui:define>
+	<ui:define name="body">
+		<h:form>
+			<p:commandButton icon="ui-icon-refresh" value="Refresh"
+				actionListener="#{ub.init}"
+				style="float:right;background-color: #2196F3;color: white"
+				update="@all" />
+			<p:commandButton icon="ui-icon-plus" value="Tenant"
+				actionListener="#{tb.addTenant}"
+				style="float:right;background-color: #4CAF50;color: white" />
+			<br />
+			<br />
+			<p:dataTable value="#{tb.tenants}" var="t">
+				<p:column headerText="Tenant Id">
+					<h:outputText value="#{t.tenantId}" />
+				</p:column>
+				<p:column headerText="Tenant Name">
+					<h:outputText value="#{t.tenantName}" />
+				</p:column>
+				<p:column headerText="" style="width:110px">
+					<p:commandButton icon="ui-icon-pencil"
+						style="background-color:black"
+						actionListener="#{tb.changeCurrentTenant(t.tenantId)}" />
+					<p:commandButton icon="ui-icon-trash" styleClass="btnDelete"
+						actionListener="#{tb.deleteTenant(t.tenantId)}" update="@form">
+						<p:confirm header="Confirm tenant delete"
+							message="Are you sure about deleting #{t.tenantName}?"
+							icon="ui-icon-alert" />
+					</p:commandButton>
+				</p:column>
+			</p:dataTable>
+			<p:dialog visible="#{tb.enableEdit}" widgetVar="re"
+				header="Create Tenant" modal="true" closeOnEscape="true"
+				closable="true" style="max-width:1200px" dynamic="true">
+				<p:ajax event="close" listener="#{tb.onClose}" update="@all" />
+				<p:panelGrid columns="2">
+					<p:outputLabel value="Tenant Id:" />
+					<p:inputText value="#{tb.tenant.tenantId}" />
+
+					<p:outputLabel value="Tenant Name:" />
+					<p:inputText value="#{tb.tenant.tenantName}" />
+				</p:panelGrid>
+				<center>
+					<p:commandButton value="Save" actionListener="#{tb.save}" style="background-color:#8BC34A;color:white;" icon="ui-icon-disk" 
+						update="@all" />
+				</center>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+</ui:composition>
+</html>

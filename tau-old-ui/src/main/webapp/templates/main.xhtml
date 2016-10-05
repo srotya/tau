@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:h="http://java.sun.com/jsf/html">
+<h:head>
+	<meta content="text/html; charset=UTF-8" http-equiv="Content-type" />
+	<link rel="stylesheet"
+		href="${request.contextPath}/resources/css/global.css"></link>
+	<link rel="icon" type="image/png" href="${request.contextPath}/resources/favicon.png" ></link>
+	<title>Hendrix <ui:insert name="title">
+		</ui:insert>
+	</title>
+</h:head>
+<h:body>
+	<div class="span12">
+		<ui:include src="/templates/header.xhtml" />
+		<div id="content" class="container" style="min-height: 700px;">
+			<p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+				<center>
+					<p:commandButton value="Yes" type="button" style="background-color:#4CAF50;color:white"
+						styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+					<p:commandButton value="No" type="button" style="background-color:#F44336;color:white"
+						styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+				</center>
+			</p:confirmDialog>
+			<ui:insert name="body">
+			</ui:insert>
+		</div>
+		<ui:include src="/templates/footer.xhtml" />
+	</div>
+</h:body>
+</html>

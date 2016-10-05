@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui" xmlns:b="http://bootsfaces.net/ui">
+<ui:composition template="/templates/main.xhtml">
+	<ui:define name="title">Login</ui:define>
+	<ui:define name="body">
+		<style type="text/css">
+body {
+	background-image: url("${request.contextPath}/resources/bg.png");
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+}
+</style>
+		<h:form>
+			<p:panel header="Login"
+				style="width:300px;margin:0 auto;font-size:12pt;margin-top:22%">
+				<p:panelGrid columns="2">
+					<p:outputLabel value="Username" />
+					<p:inputText value="#{lb.user}" />
+
+					<p:outputLabel value="Password" />
+					<p:password value="#{lb.pwd}" />
+				</p:panelGrid>
+				<center>
+					<p:commandButton action="#{lb.validateUsernamePassword}"
+						value="Login" style="font-size:10pt;background-color:#FCA812"
+						ajax="false" async="false" />
+				</center>
+			</p:panel>
+		</h:form>
+		<br/><br/><br/><br/>
+		<center>
+			<p:graphicImage url="/resources/cf.png" style="height:120px;"></p:graphicImage>
+		</center>
+	</ui:define>
+</ui:composition>
+</html>

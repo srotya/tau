@@ -1,0 +1,242 @@
+# Topology definition
+# name to be used when submitting
+name: "HendrixAlertsTopology"
+
+# NOTE: We may want to consider some level of spring integration. For example, allowing component references
+# to a spring `ApplicationContext`.
+
+# topology configuration
+# this will be passed to the submitter as a map of config options
+#
+config:
+    topology.workers: 1
+    store.sql.url: "${javax.persistence.jdbc.url}"
+    store.username: "${javax.persistence.jdbc.user}"
+    store.password: "${javax.persistence.jdbc.password}"
+    store.sql.db: "${javax.persistence.jdbc.db}"
+    tstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
+    tstore.sql.table: "alert_template"
+    mail.smtp.from: ${mail.smtp.from}
+    mail.smtp.starttls.enable: false
+    mail.smtp.host: ${mail.smtp.host}
+    mail.smtp.socketFactory.fallback: true
+    mail.smtp.port: 25
+    mail.smtp.socketFactory.port: 465
+    mail.smtps.auth: false
+
+# Components
+# Components are analagous to Spring beans. They are meant to be used as constructor,
+# property(setter), and builder arguments.
+#
+# for the time being, components must be declared in the order they are referenced
+components:
+  - id: "stringScheme"
+    className: "storm.kafka.StringScheme"
+
+  - id: "stringMultiScheme"
+    className: "backtype.storm.spout.SchemeAsMultiScheme"
+    constructorArgs:
+      - ref: "stringScheme"
+
+  - id: "zkHosts"
+    className: "storm.kafka.ZkHosts"
+    constructorArgs:
+      - "${kafka.zk.host}"
+
+  - id: "alertSpoutConfig"
+    className: "storm.kafka.SpoutConfig"
+    constructorArgs:
+      # brokerHosts
+      - ref: "zkHosts"
+      # topic
+      - "awsAlertTopic"
+      # zkRoot
+      - ""
+      # id
+      - "hendrixAlertsConsumer"
+    properties:
+      - name: "ignoreZkOffsets"
+        value: false
+      - name: "bufferSizeBytes"
+        value: 2097152
+#      - name: "fetchMaxWait"
+#        value:
+      - name: "fetchSizeBytes"
+        value: 2097152
+      - name: "scheme"
+        ref: stringMultiScheme
+
+  - id: "templateSpoutConfig"
+    className: "storm.kafka.SpoutConfig"
+    constructorArgs:
+      # brokerHosts
+      - ref: "zkHosts"
+      # topic
+      - "templateTopic"
+      # zkRoot
+      - ""
+      # id
+      - "hendrixAlertTemplateConsumer"
+    properties:
+      - name: "ignoreZkOffsets"
+        value: false
+      - name: "bufferSizeBytes"
+        value: 1048576
+#      - name: "fetchMaxWait"
+#        value:
+      - name: "fetchSizeBytes"
+        value: 1048576
+      - name: "scheme"
+        ref: stringMultiScheme
+
+# spout definitions
+spouts:
+  - id: "alertSpout"
+    className: "storm.kafka.KafkaSpout"
+    constructorArgs:
+      - ref: "alertSpoutConfig"
+    parallelism: 40
+
+  - id: "templateSpout"
+    className: "storm.kafka.KafkaSpout"
+    constructorArgs:
+      - ref: "templateSpoutConfig"
+    
+# bolt definitions
+bolts:
+  - id: "alertTranslatorBolt"
+    className: "io.symcpe.hendrix.alerts.AlertTranslatorBolt"
+    parallelism: 4
+
+  - id: "templateComponent"
+    className: "io.symcpe.hendrix.storm.bolts.TemplateTranslatorBolt"
+    parallelism: 1
+
+  - id: "suppressionBolt"
+    className: "io.symcpe.hendrix.alerts.SuppressionBolt"
+    parallelism: 4
+    
+  - id: "alertRouterBolt"
+    className: "io.symcpe.hendrix.alerts.AlertRouterBolt"
+    parallelism: 2
+    
+  - id: "suppressionMonitorBolt"
+    className: "io.symcpe.hendrix.alerts.SuppressionMonitorBolt"
+    parallelism: 1
+    
+  - id: "mailBolt"
+    className: "io.symcpe.hendrix.alerts.MailBolt"
+    parallelism: 2    
+    
+  - id: "httpBolt"
+    className: "io.symcpe.hendrix.alerts.HttpBolt"
+    parallelism: 2
+    
+  - id: "errorBolt"
+    className: "io.symcpe.hendrix.storm.bolts.ErrorBolt"
+    parallelism: 1
+    
+  - id: "printerBolt"
+    className: "io.symcpe.hendrix.storm.bolts.helpers.PrinterBolt"
+    parallelism: 1
+
+#stream definitions
+# stream definitions define connections between spouts and bolts.
+# note that such connections can be cyclical
+# custom stream groupings are also supported
+
+streams:
+  - name: "Kafka->Alert Translator"
+    from: "alertSpout"
+    to: "alertTranslatorBolt"
+    grouping:
+      type: SHUFFLE
+
+  - name: "Kafka Templates->Template Translator"
+    from: "templateSpout"
+    to: "templateComponent"
+    grouping:
+      type: SHUFFLE
+
+  - name: "Alert Translator->Suppression"
+    from: "alertTranslatorBolt"
+    to: "suppressionBolt"
+    grouping:
+      type: FIELDS
+      args: ["_id"]
+
+#  - name: "Print Alerts"
+#    from: "alertTranslatorBolt"
+#    to: "printerBolt"
+#    grouping:
+#      type: SHUFFLE
+
+  - name: "Suppresion->Suppression Monitor"
+    from: "suppressionBolt"
+    to: "suppressionMonitorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: suppressionStream    
+
+  - name: "Suppresion->Printer"
+    from: "suppressionBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: deliveryStream
+
+  - name: "Template Translator->Suppression"
+    from: "templateComponent"
+    to: "suppressionBolt"
+    grouping:
+      type: ALL
+      streamId: "syncStream"
+      
+  - name: "Suppresion->Router"
+    from: "suppressionBolt"
+    to: "alertRouterBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: deliveryStream
+
+  - name: "Router->Mail"
+    from: "alertRouterBolt"
+    to: "mailBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: mail
+
+  - name: "Router->HTTP"
+    from: "alertRouterBolt"
+    to: "httpBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: http
+
+  - name: "Translator->Error"
+    from: "alertTranslatorBolt"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+      
+  - name: "Suppression->Error"
+    from: "suppressionBolt"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+
+  - name: "Template Translator->Error"
+    from: "templateComponent"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+
+  - name: "Error->Printer"
+    from: "errorBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "kafkaErrorStream"

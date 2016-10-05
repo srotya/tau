@@ -1,0 +1,93 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import"
+	href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import"
+	href="../bower_components/paper-input/paper-input.html">
+<link rel="import"
+	href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import"
+	href="./complex-condition.html">
+<link rel="import"
+	href="./simple-condition.html">
+
+<dom-module id="condition-editor">
+	<style>
+		paper-input {
+			width: 150px;
+			float: left;
+		}
+		
+		paper-dropdown-menu {
+			width: 150px;
+			float: left;
+		}
+		
+		paper-icon-button {
+			margin-top: 20px;
+		}
+	</style>
+	
+	<template>
+		 <template id="tConditons" is="dom-if" if="{{conditions}}">
+			<template is="dom-if" if="{{conditions.props.conditions}}">
+				<div style="clear:both;overflow: visible;float:left;display: block;">
+					<template is="dom-if" if="{{parent}}">
+						<paper-icon-button style="float:left;position:relative" icon="cancel" title="Delete" on-tap="deleteCondition"></paper-icon-button>
+					</template>
+					<complex-condition conditions="{{conditions}}" ></complex-condition>
+				</div>
+			</template>
+			<template is="dom-if" if="{{!conditions.props.conditions}}">
+				<div style="clear:both;overflow: visible;float:left;min-width: 100px;display: block;">
+					<template is="dom-if" if="{{parent}}">
+						<paper-icon-button style="float:left;position:relative" icon="cancel" title="Delete" on-tap="deleteCondition"></paper-icon-button>
+					</template>
+					<simple-condition conditions="{{conditions}}" ></simple-condition>
+				</div>
+			</template>
+		</template>
+		<template id="tConditons" is="dom-if" if="{{!conditions}}">
+			<paper-icon-button src="/images/icons/Equals.png" title="Add Simple Condition" on-tap="addConditionS"></paper-icon-button>
+			<paper-icon-button src="/images/icons/And.png" title="Add Complex Condition" on-tap="addConditionC"></paper-icon-button>
+		</template>
+	</template>
+	
+	<script>
+		Polymer({
+			is : "condition-editor",
+			properties : {
+				conditions : {
+					type: Object,
+					notify : true
+				},
+				parent: {
+				}
+			},
+			ready : function() {
+			},
+			deleteCondition : function(e) {
+				this.set('conditions', null); 
+			},
+			addConditionS : function(e) {
+				var c={
+					"type" : "EQUALS",
+					"props" : {
+						"key" : "",
+						"value" : ""
+					}
+				}
+				this.set('conditions', c);
+			},
+			addConditionC : function(e) {
+				var c={
+					"type" : "AND",
+					"props" : {
+						"conditions": []
+					}
+				}
+				this.set('conditions', c);
+			}
+		});
+	</script>
+</dom-module>

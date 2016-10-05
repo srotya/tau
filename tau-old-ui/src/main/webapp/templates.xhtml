@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui" xmlns:b="http://bootsfaces.net/ui">
+<ui:composition template="/templates/main.xhtml">
+	<ui:define name="title">Templates</ui:define>
+	<ui:define name="body">
+		<h:form>
+			<p:commandButton icon="ui-icon-plus" value="Template"
+				actionListener="#{atb.newTemplate}"
+				style="float:right;background-color: #4CAF50;color: white" />
+			<br />
+			<br />
+			<p:dataTable value="#{atb.templates}" var="t">
+				<p:column style="width:30px">
+					<p:rowToggler />
+				</p:column>
+				<p:column headerText="Template Id">
+					<h:outputText value="#{t.templateId}" />
+				</p:column>
+				<p:column headerText="Template Name">
+					<h:outputText value="#{t.templateName}" />
+				</p:column>
+				<p:column headerText="" style="width:110px">
+					<p:commandButton icon="ui-icon-pencil"
+						style="background-color:black"
+						actionListener="#{atb.changeCurrentTemplate(t.templateId)}" />
+					<p:commandButton icon="ui-icon-trash" styleClass="btnDelete"
+						actionListener="#{atb.deleteTemplate(t.templateId)}" update="@form">
+						<p:confirm header="Confirm template delete"
+							message="Are you sure about deleting #{t.templateName}?"
+							icon="ui-icon-alert" />
+					</p:commandButton>
+				</p:column>
+				<p:rowExpansion>
+					<p:panel header="Template JSON" style="max-width:800px;">
+						<h:outputText value="#{atb.templateToJson(t)}" escape="false" />
+					</p:panel>
+				</p:rowExpansion>
+			</p:dataTable>
+			<p:dialog visible="#{atb.enableEdit}" widgetVar="re"
+				header="Create Template" modal="true" closeOnEscape="true"
+				closable="true" style="max-width:1200px" dynamic="true">
+				<p:ajax event="close" listener="#{atb.onClose}" update="@all" />
+				<p:panelGrid columns="2">
+					<p:outputLabel value="Template Id:" />
+					<p:inputText value="#{atb.template.templateId}" />
+
+					<p:outputLabel value="Template Name:" />
+					<p:inputText value="#{atb.template.templateName}" />
+					
+					<p:outputLabel value="Destination:" />
+					<p:inputText value="#{atb.template.destination}" />
+					
+					<p:outputLabel value="Media:" />
+					<p:selectOneMenu value="#{atb.template.media}" style="width:120px">
+						<f:selectItem itemLabel="mail" itemValue="mail" />
+						<f:selectItem itemLabel="http" itemValue="http" />
+						<f:selectItem itemLabel="slack" itemValue="slack" />
+					</p:selectOneMenu>
+					
+					<p:outputLabel value="Subject:" />
+					<p:inputText value="#{atb.template.subject}" />
+					
+					<p:outputLabel value="Body:" />
+					<p:inputText value="#{atb.template.body}" />
+					
+					<p:outputLabel value="Throttle Limit" />
+					<p:inputText value="#{atb.template.throttleLimit}" />
+					
+					<p:outputLabel value="Throttle Duration:" />
+					<p:inputText value="#{atb.template.throttleDuration}" />
+				</p:panelGrid>
+				<center>
+					<p:commandButton value="Save" actionListener="#{atb.save}" style="background-color:#8BC34A;color:white;" icon="ui-icon-disk" 
+						update="@all" />
+				</center>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+</ui:composition>
+</html>
