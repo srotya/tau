@@ -122,7 +122,7 @@
 		    on-iron-localstorage-load-empty="initCacheRules"></iron-localstorage>
 		<iron-ajax id="ruleCreate"
 			method="POST"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/rules"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/rules"
 		    params=''
 		    handle-as="json"
 		    on-response="addRuleToList"
@@ -132,7 +132,7 @@
 		</iron-ajax>
 		<iron-ajax id="ruleDelete"
 			method="DELETE"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/rules/{{rule.ruleId}}"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/rules/{{rule.ruleId}}"
 		    params=''
 		    handle-as="json"
 		    on-response="deleteRuleFromList"
@@ -142,17 +142,18 @@
 		</iron-ajax>
 		<iron-ajax id="ruleUpdate"
 			method="PUT"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/rules/{{rule.ruleId}}"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/rules/{{rule.ruleId}}"
 		    params=''
 		    body="{{rule}}"
 		    handle-as="json"
+		    content-type="application/json"
 		    on-error="handleRequestError"
 		    last-response="{{response}}"
 		    debounce-duration="300">
 		</iron-ajax>
 		<iron-ajax id="ruleLoad"
 			method="GET"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/rules"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/rules"
 		    params=''
 		    handle-as="json"
 		    on-error="handleRequestError"
@@ -200,7 +201,7 @@
 						<div>
 							<h2 style="float:left">Editor</h2>
 							<div style="margin-top:10px;margin-left:84%">
-								<paper-button class="custom" raised style="" icon="backup" title="Save Rule" on-tap="validateRule">Validate</paper-button>
+								<paper-button class="custom" raised style="" icon="backup" title="Validate Rule" on-tap="validateRule">Validate</paper-button>
 								<paper-button class="custom" raised style="" icon="backup" title="Save Rule" on-tap="saveRule">Save</paper-button>
 							</div>
 						</div>
@@ -347,6 +348,8 @@
 		    	}
 		    },
 		    saveRule: function(e) {
+		    	var ajax = this.$.ruleUpdate;
+		    	ajax.generateRequest();
 		    	this.response = "Rule saved!";
 		    	this.$.infoToast.open();
 		    },

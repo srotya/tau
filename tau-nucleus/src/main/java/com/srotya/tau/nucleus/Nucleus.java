@@ -28,7 +28,9 @@ import com.srotya.tau.nucleus.api.QueryPerfStats;
 import com.srotya.tau.nucleus.ingress.IngressManager;
 import com.srotya.tau.nucleus.ingress.IngressManager.IngresserFactory;
 import com.srotya.tau.nucleus.processor.AlertingProcessor;
+import com.srotya.tau.nucleus.processor.EmissionProcessor;
 import com.srotya.tau.nucleus.processor.RuleProcessor;
+import com.srotya.tau.nucleus.processor.StateProcessor;
 
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
@@ -39,23 +41,36 @@ import io.dropwizard.setup.Environment;
 public class Nucleus extends Application<NucleusConfig> {
 
 	private static final Logger logger = Logger.getLogger(Nucleus.class.getName());
-	private RuleProcessor ruleProcessor;
-	private IngressManager ingressManager;
-	private AlertingProcessor alertProcessor;
 
 	public Nucleus() {
 	}
 
 	@Override
 	public void run(NucleusConfig configuration, Environment environment) throws Exception {
-		initializeAlertProcessor(configuration, environment);
-		initializeRuleProcessor(configuration, environment);
+		AlertingProcessor alertingProcessor = initializeAlertProcessor(configuration, environment);
+		StateProcessor stateProcessor = initializeStateProcessor(configuration, environment);
+		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor);
+		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor, stateProcessor);
+		stateProcessor.setOutputProcessors(ruleProcessor);
 		// initializeIngressManager(configuration, environment);
-		registerAPIs(environment);
+		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor);
 		logger.info("Initialization complete");
 	}
 
-	private void initializeAlertProcessor(NucleusConfig configuration, Environment environment)
+	private EmissionProcessor initializeEmissionController(NucleusConfig configuration, Environment environment, StateProcessor stateProcessor) throws IOException {
+		Properties reConfig = new Properties();
+		if (configuration.isIntegrationTest()) {
+			reConfig.load(ClassLoader.getSystemResourceAsStream(configuration.getRuleEngineConfiguration()));
+		} else {
+			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
+		}
+		Map<String, String> conf = Utils.hashTableTohashMap(reConfig);
+		EmissionProcessor emissionProcessor = new EmissionProcessor(new DisruptorUnifiedFactory(), conf, stateProcessor);
+		environment.lifecycle().manage(emissionProcessor);
+		return emissionProcessor;
+	}
+
+	private AlertingProcessor initializeAlertProcessor(NucleusConfig configuration, Environment environment)
 			throws FileNotFoundException, IOException {
 		Properties reConfig = new Properties();
 		if (configuration.isIntegrationTest()) {
@@ -64,19 +79,35 @@ public class Nucleus extends Application<NucleusConfig> {
 			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
 		}
 		Map<String, String> conf = Utils.hashTableTohashMap(reConfig);
-		alertProcessor = new AlertingProcessor(new DisruptorUnifiedFactory(), configuration.getAlertEngineParallelism(),
+		AlertingProcessor alertProcessor = new AlertingProcessor(new DisruptorUnifiedFactory(), configuration.getAlertEngineParallelism(),
 				1024 * 2, conf, null);
 		environment.lifecycle().manage(alertProcessor);
+		return alertProcessor;
 	}
 
-	private void registerAPIs(Environment environment) {
+	private StateProcessor initializeStateProcessor(NucleusConfig configuration, Environment environment)
+			throws FileNotFoundException, IOException {
+		Properties reConfig = new Properties();
+		if (configuration.isIntegrationTest()) {
+			reConfig.load(ClassLoader.getSystemResourceAsStream(configuration.getRuleEngineConfiguration()));
+		} else {
+			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
+		}
+		Map<String, String> conf = Utils.hashTableTohashMap(reConfig);
+		StateProcessor stateProcessor = new StateProcessor(new DisruptorUnifiedFactory(), configuration.getRuleEngineParallelism(),
+				1024 * 2, conf, null);
+		environment.lifecycle().manage(stateProcessor);
+		return stateProcessor;
+	}
+
+	private void registerAPIs(Environment environment, RuleProcessor ruleProcessor, AlertingProcessor alertingProcessor, EmissionProcessor emissionProcessor) {
 		environment.jersey().register(new QueryPerfStats());
 		environment.jersey().register(new EventReceiver(new DisruptorUnifiedFactory(), ruleProcessor));
 		environment.jersey()
-				.register(new CommandReceiver(new DisruptorUnifiedFactory(), ruleProcessor, alertProcessor));
+				.register(new CommandReceiver(new DisruptorUnifiedFactory(), ruleProcessor, alertingProcessor, emissionProcessor));
 	}
 
-	private void initializeRuleProcessor(NucleusConfig configuration, Environment environment)
+	private RuleProcessor initializeRuleProcessor(NucleusConfig configuration, Environment environment, AlertingProcessor alertingProcessor, StateProcessor stateProcessor)
 			throws IOException, FileNotFoundException {
 		Properties reConfig = new Properties();
 		if (configuration.isIntegrationTest()) {
@@ -84,12 +115,13 @@ public class Nucleus extends Application<NucleusConfig> {
 		} else {
 			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
 		}
-		ruleProcessor = new RuleProcessor(new DisruptorUnifiedFactory(), configuration.getRuleEngineParallelism(),
-				1024 * 2, Utils.hashTableTohashMap(reConfig), alertProcessor);
+		RuleProcessor ruleProcessor = new RuleProcessor(new DisruptorUnifiedFactory(), configuration.getRuleEngineParallelism(),
+				1024 * 2, Utils.hashTableTohashMap(reConfig), alertingProcessor, stateProcessor);
 		environment.lifecycle().manage(ruleProcessor);
+		return ruleProcessor;
 	}
 
-	private void initializeIngressManager(NucleusConfig configuration, Environment environment)
+	private IngressManager initializeIngressManager(NucleusConfig configuration, Environment environment, RuleProcessor ruleProcessor)
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException,
 			FileNotFoundException {
 		Class<?> ingresser = Class.forName(configuration.getIngresserFactoryClass());
@@ -98,8 +130,9 @@ public class Nucleus extends Application<NucleusConfig> {
 		Properties ingresserConf = new Properties();
 		ingresserConf.load(new FileInputStream(configuration.getIngresserFactoryConfiguration()));
 		factory.setConf(ingresserConf);
-		ingressManager = new IngressManager(ruleProcessor, factory);
+		IngressManager ingressManager = new IngressManager(ruleProcessor, factory);
 		environment.lifecycle().manage(ingressManager);
+		return ingressManager;
 	}
 
 	/**

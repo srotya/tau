@@ -19,33 +19,39 @@ import com.lmax.disruptor.EventHandler;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MurmurHash;
+import com.srotya.tau.wraith.MutableInt;
 
 /**
  * 
  * 
  * @author ambudsharma
  */
-public abstract class GroupByHandler implements EventHandler<Event>{
-	
+public abstract class GroupByHandler implements EventHandler<Event> {
+
 	private int taskId;
-	
+	private MutableInt taskCount;
+
 	/**
 	 * @param taskId
 	 */
-	public GroupByHandler(int taskId) {
+	public GroupByHandler(int taskId, MutableInt taskCount) {
 		this.taskId = taskId;
+		this.taskCount = taskCount;
 	}
 
 	@Override
 	public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 		Object key = event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
-		if(key!=null) {
-			if(MurmurHash.hash32(key.toString())%taskId == 0) {
+		if (key != null) {
+			if (MurmurHash.hash32(key.toString()) % taskCount.getVal() == taskId) {
 				consumeEvent(event, sequence, endOfBatch);
 			}
+		}else {
+			//broadcast events
+			consumeEvent(event, sequence, endOfBatch);
 		}
 	}
-	
+
 	/**
 	 * Consume event
 	 * 

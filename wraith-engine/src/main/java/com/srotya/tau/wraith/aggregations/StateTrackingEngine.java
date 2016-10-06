@@ -130,6 +130,10 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 		SortedMap<String, MutableBoolean> map = getAggregationMap().subMap(
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR, String.valueOf(Character.MAX_VALUE)));
+		if(map.isEmpty()) {
+			// no emits
+			return;
+		}
 		int lastTs = 0;
 		if (getLastEmittedBucketMap().containsKey(ruleActionId)) {
 			lastTs = getLastEmittedBucketMap().get(ruleActionId) + aggregationWindow;
@@ -150,7 +154,10 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 				String[] keyParts = Utils.splitMapKey(entry.getKey());
 				long ts = MarkovianAggregationEngineImpl.extractTsFromAggregationKey(entry.getKey());
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, keyParts[keyParts.length - 1]);
-				event.getHeaders().put(Constants.FIELD_TIMESTAMP, ts*1000);
+				event.getHeaders().put(Constants.FIELD_TIMESTAMP, ts * 1000);
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, aggregationWindow);
+				event.setEventId(new StringBuilder().append(keyParts[keyParts.length - 1]).append("_").append(ts * 1000)
+						.toString());
 				events.add(event);
 			}
 			if (store != null) {

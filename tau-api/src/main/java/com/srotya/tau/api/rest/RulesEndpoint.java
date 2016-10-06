@@ -171,7 +171,7 @@ public class RulesEndpoint {
 				throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Invalid JSON").build());
 			} else if (e.getMessage().contains("IllegalStateException")) {
 				throw new BadRequestException(Response.status(Status.BAD_REQUEST)
-						.entity("Expecting a singel rule object not an array").build());
+						.entity("Invalid single rule").build());
 			} else {
 				throw new BadRequestException(
 						Response.status(Status.BAD_REQUEST).entity(e.getLocalizedMessage()).build());

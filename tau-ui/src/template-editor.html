@@ -68,7 +68,7 @@
 		    on-iron-localstorage-load-empty="initCacheTemplates"></iron-localstorage>
 		<iron-ajax id="templateCreate"
 			method="POST"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/templates"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/templates"
 		    params=''
 		    handle-as="json"
 		    on-response="addTemplateToList"
@@ -78,7 +78,7 @@
 		</iron-ajax>
 		<iron-ajax id="templateDelete"
 			method="DELETE"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/templates/{{template.templateId}}"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/templates/{{template.templateId}}"
 		    params=''
 		    handle-as="json"
 		    on-response="deleteTemplateFromList"
@@ -88,7 +88,7 @@
 		</iron-ajax>
 		<iron-ajax id="templateUpdate"
 			method="PUT"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/templates/{{template.templateId}}"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/templates/{{template.templateId}}"
 		    params=''
 		    body="{{template}}"
 		    handle-as="json"
@@ -98,7 +98,7 @@
 		</iron-ajax>
 		<iron-ajax id="templateLoad"
 			method="GET"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/templates"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/templates"
 		    params=''
 		    handle-as="json"
 		    on-error="handleRequestError"

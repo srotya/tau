@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventHandler;
@@ -36,18 +37,27 @@ import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
 
 /**
- * An abstract processor is responsible for internalizing the concept of guaranteed at least once event processing
- * for Tau's components. Each {@link AbstractProcessor} contains an in-memory {@link RingBuffer} and a persistent {@link WAL} (Write-ahead-log)
- * <br><br>
- * An {@link Event} is only safe from faults when it has been successfully been written to both the {@link RingBuffer} and the {@link WAL}.
- * This functionality is exposed via the processEvent method that synchronously writes to both buffer and wal and only then returns the call.
- * <br><br>
- * An exception may be thrown if there's a fault while writing to the {@link WAL} or the {@link RingBuffer} which is to be handled by the caller.
- * <br><br>
- * Callers can be an {@link PullIngresser} or other {@link AbstractProcessor} which is why the constructor requires an array of forward {@link AbstractProcessor}
- * which makes allows for the processing DAG to be constructed (allowing loops).
- * <br><br>
- * Each {@link AbstractProcessor} is independently parallelized and therefore can be independently scale as necessary given that resources are available. 
+ * An abstract processor is responsible for internalizing the concept of
+ * guaranteed at least once event processing for Tau's components. Each
+ * {@link AbstractProcessor} contains an in-memory {@link RingBuffer} and a
+ * persistent {@link WAL} (Write-ahead-log) <br>
+ * <br>
+ * An {@link Event} is only safe from faults when it has been successfully been
+ * written to both the {@link RingBuffer} and the {@link WAL}. This
+ * functionality is exposed via the processEvent method that synchronously
+ * writes to both buffer and wal and only then returns the call. <br>
+ * <br>
+ * An exception may be thrown if there's a fault while writing to the
+ * {@link WAL} or the {@link RingBuffer} which is to be handled by the caller.
+ * <br>
+ * <br>
+ * Callers can be an {@link PullIngresser} or other {@link AbstractProcessor}
+ * which is why the constructor requires an array of forward
+ * {@link AbstractProcessor} which makes allows for the processing DAG to be
+ * constructed (allowing loops). <br>
+ * <br>
+ * Each {@link AbstractProcessor} is independently parallelized and therefore
+ * can be independently scale as necessary given that resources are available.
  * 
  * @author ambudsharma
  */
@@ -65,8 +75,8 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	private boolean started;
 	private CopyTranslator copyTranslator;
 
-	public AbstractProcessor(DisruptorUnifiedFactory factory, int parallelism, int bufferSize,
-			Map<String, String> conf, AbstractProcessor... outputProcessors) {
+	public AbstractProcessor(DisruptorUnifiedFactory factory, int parallelism, int bufferSize, Map<String, String> conf,
+			AbstractProcessor... outputProcessors) {
 		this.outputProcessors = outputProcessors;
 		this.parallelism = new MutableInt();
 		this.parallelism.setVal(parallelism);
@@ -75,12 +85,17 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 		this.conf = conf;
 		this.copyTranslator = new CopyTranslator();
 	}
-	
+
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	@Override
 	public final void start() throws Exception {
-		selfWal = factory.newWalInstance(conf.get(getConfigPrefix()+".wal.wdir"), conf.get(getConfigPrefix()+".wal.mdir"));
-		selfWal.start();
+		if (getConfigPrefix() != null) {
+			selfWal = factory.newWalInstance(conf.get(getConfigPrefix() + ".wal.wdir"),
+					conf.get(getConfigPrefix() + ".wal.mdir"));
+			selfWal.start();
+		}else {
+			getLogger().warning("WAL is disabled");
+		}
 		pool = Executors.newFixedThreadPool(parallelism.getVal());
 		disruptor = new Disruptor<>(factory, bufferSize, pool, ProducerType.MULTI, new BlockingWaitStrategy());
 		List<EventHandler<Event>> handlers = getInitializedHandlers(parallelism, conf, factory);
@@ -88,7 +103,7 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 		buffer = disruptor.start();
 		started = true;
 	}
-	
+
 	@Override
 	public final void stop() throws Exception {
 		pool.shutdownNow();
@@ -97,7 +112,8 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 		started = false;
 	}
 
-	public abstract List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf, DisruptorUnifiedFactory factory) throws Exception;
+	public abstract List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
+			DisruptorUnifiedFactory factory) throws Exception;
 
 	/**
 	 * @param event
@@ -107,7 +123,7 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 		selfWal.writeEvent(event.getEventId(), event.getBody());
 		buffer.publishEvent(copyTranslator, event);
 	}
-	
+
 	/**
 	 * @param event
 	 * @throws IOException
@@ -115,14 +131,23 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	public final void processEventNonWaled(Event event) {
 		buffer.publishEvent(copyTranslator, event);
 	}
-	
+
 	/**
 	 * @return the outputProcessors
 	 */
 	public final AbstractProcessor[] getOutputProcessors() {
 		return outputProcessors;
 	}
-	
+
+	/**
+	 * @param outputProcessors
+	 */
+	public final void setOutputProcessors(AbstractProcessor... outputProcessors) {
+		if (outputProcessors != null) {
+			this.outputProcessors = outputProcessors;
+		}
+	}
+
 	/**
 	 * @return
 	 */
@@ -139,16 +164,18 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	public final void ackEvent(String eventId) throws IOException {
 		selfWal.ackEvent(eventId);
 	}
-	
+
 	@Override
 	public final RingBuffer<Event> getDisruptorBuffer() {
 		return buffer;
 	}
-	
+
 	@Override
 	public final WAL getProcessorWal() {
 		return selfWal;
 	}
-	
+
 	public abstract String getConfigPrefix();
+	
+	public abstract Logger getLogger();
 }

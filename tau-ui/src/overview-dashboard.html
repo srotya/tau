@@ -48,7 +48,7 @@
 		<iron-ajax id="ruleHitsLoad"
 			auto
 			method="GET"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/perf/hits"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/perf/hits"
 		    params=''
 		    handle-as="json"
 		    on-error="handleRequestError"
@@ -58,7 +58,7 @@
 		<iron-ajax id="rulePerfLoad"
 			auto
 			method="GET"
-			url="http://{{serverAddress}}/api/rulegroups/{{rulegroup}}/perf/efficiency"
+			url="http://{{serverAddress}}/rulegroups/{{rulegroup}}/perf/efficiency"
 		    params=''
 		    handle-as="json"
 		    on-error="handleRequestError"

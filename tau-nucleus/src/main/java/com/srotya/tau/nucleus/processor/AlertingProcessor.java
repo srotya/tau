@@ -35,6 +35,8 @@ import com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertEngineImpl;
  */
 public class AlertingProcessor extends AbstractProcessor {
 
+	private static final Logger logger = Logger.getLogger(AlertingProcessor.class.getName());
+	
 	public AlertingProcessor(DisruptorUnifiedFactory factory, int parallelism, int bufferSize, Map<String, String> conf,
 			AbstractProcessor[] outputProcessors) {
 		super(factory, parallelism, bufferSize, conf, outputProcessors);
@@ -42,7 +44,6 @@ public class AlertingProcessor extends AbstractProcessor {
 
 	public static class AlertActionHandler extends ShuffleHandler {
 
-		private static final Logger logger = Logger.getLogger(AlertActionHandler.class.getName());
 		private TemplatedAlertEngine engine;
 
 		public AlertActionHandler(int taskId, MutableInt taskCount, DisruptorUnifiedFactory factory) {
@@ -94,5 +95,10 @@ public class AlertingProcessor extends AbstractProcessor {
 	@Override
 	public String getConfigPrefix() {
 		return "alerts";
+	}
+	
+	@Override
+	public Logger getLogger() {
+		return logger;
 	}
 }

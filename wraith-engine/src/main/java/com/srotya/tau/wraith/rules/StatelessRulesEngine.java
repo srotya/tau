@@ -267,6 +267,8 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 					((AggregationAction) action).getAggregationWindow(), ruleActionId,
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString(),
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
+			event.getHeaders().remove(Constants.FIELD_AGGREGATION_KEY);
+			event.getHeaders().remove(Constants.FIELD_AGGREGATION_VALUE);
 			break;
 		case STATE:
 			// find the correct stream id based on the aggregation action class
@@ -276,6 +278,8 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 					(Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
 					((AggregationAction) action).getAggregationWindow(), stateRuleActionId,
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString());
+			event.getHeaders().remove(Constants.FIELD_AGGREGATION_KEY);
+			event.getHeaders().remove(Constants.FIELD_STATE_TRACK);
 			break;
 		case NEW:
 			outputEvent.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);

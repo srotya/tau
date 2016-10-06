@@ -38,6 +38,8 @@ import com.srotya.tau.wraith.rules.StatelessRulesEngine;
  *
  */
 public class RuleProcessor extends AbstractProcessor {
+	
+	private static final Logger logger = Logger.getLogger(RuleProcessor.class.getName());
 
 	public RuleProcessor(DisruptorUnifiedFactory factory, int parallelism, int bufferSize, Map<String, String> conf,
 			AbstractProcessor... outputProcessors) {
@@ -58,13 +60,12 @@ public class RuleProcessor extends AbstractProcessor {
 
 	public static class RulesEngineHandler extends ShuffleHandler implements RulesEngineCaller<Object, Object> {
 
-		private static final Logger logger = Logger.getLogger(RulesEngineHandler.class.getName());
 		private StatelessRulesEngine<Object, Object> rulesEngine;
 		private DisruptorUnifiedFactory factory;
 		private AbstractProcessor caller;
 		private AbstractProcessor alertProcessor;
 		private AbstractProcessor stateProcessor;
-		private AbstractProcessor aggregationProcessor;
+		private AbstractProcessor fineCountingProcessor;
 		private Gson gson;
 
 		/**
@@ -94,7 +95,7 @@ public class RuleProcessor extends AbstractProcessor {
 				stateProcessor = outputProcessors[1];
 			}
 			if (outputProcessors.length >= 3) {
-				aggregationProcessor = outputProcessors[2];
+				fineCountingProcessor = outputProcessors[2];
 			}
 		}
 
@@ -111,6 +112,7 @@ public class RuleProcessor extends AbstractProcessor {
 						((Boolean) event.getHeaders().get(Constants.FIELD_RULE_DELETE)));
 				logger.info("Processed rule update:" + event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString());
 			} else {
+//				logger.info("Saw event:"+event);
 				rulesEngine.evaluateEventAgainstGroupedRules(null, null, event);
 				caller.ackEvent(event.getEventId());
 			}
@@ -151,8 +153,7 @@ public class RuleProcessor extends AbstractProcessor {
 
 		@Override
 		public void handleRuleNoMatch(Object eventCollector, Object eventContainer, Event inputEvent, Rule rule) {
-			// TODO Auto-generated method stub
-
+			logger.info("Rule no match:"+inputEvent.getEventId()+"\t"+rule.getRuleId());
 		}
 
 		@Override
@@ -184,8 +185,19 @@ public class RuleProcessor extends AbstractProcessor {
 		@Override
 		public void emitStateTrackingEvent(Object eventCollector, Object eventContainer, Boolean track,
 				Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey) {
-			// TODO Auto-generated method stub
-
+			Event event = factory.buildEvent();
+			event.setEventId(originalEvent.getEventId());
+			event.getHeaders().put(Constants.FIELD_STATE_TRACK, track);
+			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
+			event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
+			event.getHeaders().put(Constants.FIELD_RULE_ACTION_ID, ruleActionId);
+			event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, aggregationKey);
+			event.setBody(gson.toJson(event.getHeaders()).getBytes());
+			try {
+				stateProcessor.processEventWaled(event);
+			} catch (IOException e) {
+				emitActionErrorEvent(eventCollector, eventContainer, originalEvent);
+			}
 		}
 
 		@Override
@@ -219,4 +231,8 @@ public class RuleProcessor extends AbstractProcessor {
 		return "rules";
 	}
 
+	@Override
+	public Logger getLogger() {
+		return logger;
+	}
 }
