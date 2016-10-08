@@ -17,8 +17,11 @@ package com.srotya.tau.nucleus.wal;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.rocksdb.CompactionStyle;
@@ -27,16 +30,28 @@ import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.WriteOptions;
 import org.rocksdb.util.SizeUnit;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.srotya.tau.nucleus.processor.AbstractProcessor;
+import com.srotya.tau.wraith.Event;
+import com.srotya.tau.wraith.EventFactory;
+
 /**
- * {@link WAL} implementation based on Facebook's {@link RocksDB} which is sorted key value store inspired by HBase.
- * <br><br>
- * It offers high performance features with persistence making it really good for a {@link WAL} use case as 
- * it's optimized for flash storage thus keeping the primary tree in memory (RAMFS) and {@link RocksDB}'s Write-Ahead-Log on disk.
- * <br><br>
- * Therefore faults can be reliably tolerated while achieving fairly high performance. This is better than Kafka for the Nucleus inter-processor 
- * queue use case since individual events can be acknowledged without loosing track of the earliest unacknowledged event. 
+ * {@link WAL} implementation based on Facebook's {@link RocksDB} which is
+ * sorted key value store inspired by HBase. <br>
+ * <br>
+ * It offers high performance features with persistence making it really good
+ * for a {@link WAL} use case as it's optimized for flash storage thus keeping
+ * the primary tree in memory (RAMFS) and {@link RocksDB}'s Write-Ahead-Log on
+ * disk. <br>
+ * <br>
+ * Therefore faults can be reliably tolerated while achieving fairly high
+ * performance. This is better than Kafka for the Nucleus inter-processor queue
+ * use case since individual events can be acknowledged without loosing track of
+ * the earliest unacknowledged event.
  * 
  * @author ambudsharma
  */
@@ -47,16 +62,22 @@ public class RocksDBWALService implements WAL {
 	private RocksDB wal;
 	private String walDirectory;
 	private Options options;
-	private boolean autoResetWal = true;
-	private String walMapDirectory;
+	private boolean autoResetWal = false;
+	private String mapDirectory;
+	private AbstractProcessor processor;
+	private EventFactory factory;
+	private Gson gson;
+	private Type type;
+	private WriteOptions opts;
 
 	static {
 		RocksDB.loadLibrary();
 	}
 
-	public RocksDBWALService(String walDirectory, String walMapDirectory) {
-		this.walDirectory = walDirectory;
-		this.walMapDirectory = walMapDirectory;
+	public RocksDBWALService() {
+		gson = new Gson();
+		type = new TypeToken<HashMap<String, Object>>() {
+		}.getType();
 	}
 
 	@SuppressWarnings("resource")
@@ -64,17 +85,41 @@ public class RocksDBWALService implements WAL {
 	public void start() throws Exception {
 		if (autoResetWal) {
 			wipeDirectory(walDirectory);
-			wipeDirectory(walMapDirectory);
+			wipeDirectory(mapDirectory);
 			logger.info("Cleared WAL directory:" + walDirectory);
 		}
 		options = new Options().setCreateIfMissing(true).setAllowMmapReads(true).setAllowMmapWrites(true)
 				.setIncreaseParallelism(2).setFilterDeletes(true).setMaxBackgroundCompactions(10)
-				.setMaxBackgroundFlushes(10).setUseFsync(false).setUseAdaptiveMutex(false)
+				.setMaxBackgroundFlushes(10).setDisableDataSync(false).setUseFsync(false).setUseAdaptiveMutex(false)
 				.setWriteBufferSize(1 * SizeUnit.MB).setCompactionStyle(CompactionStyle.UNIVERSAL)
 				.setCompressionType(CompressionType.SNAPPY_COMPRESSION).setMaxWriteBufferNumber(6).setWalTtlSeconds(60)
-				.setWalSizeLimitMB(512).setMaxTotalWalSize(1024 * SizeUnit.MB).setErrorIfExists(true)
+				.setWalSizeLimitMB(512).setMaxTotalWalSize(1024 * SizeUnit.MB).setErrorIfExists(false)
 				.setAllowOsBuffer(true).setWalDir(walDirectory).setOptimizeFiltersForHits(false);
-		wal = RocksDB.open(options, walMapDirectory);
+		wal = RocksDB.open(options, mapDirectory);
+		opts = new WriteOptions().setDisableWAL(false).setSync(false);
+		recoverAndReplayEvents();
+	}
+
+	public void recoverAndReplayEvents() {
+		RocksIterator itr = wal.newIterator();
+		try {
+			itr.seekToFirst();
+			while (itr.isValid() && itr.key() != null) {
+				String id = new String(itr.key(), charset);
+				String body = new String(itr.value(), charset);
+				logger.fine("Recovered non-acked event, eventid:" + id + "\tbody:" + body);
+				Event event = factory.buildEvent();
+				event.setEventId(id);
+				event.getHeaders().putAll(gson.fromJson(body, type));
+				event.setBody(itr.value());
+				processor.processEventNonWaled(event);
+				itr.next();
+			}
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Unable to recover events", e);
+		} finally {
+			itr.close();
+		}
 	}
 
 	private void wipeDirectory(String directory) {
@@ -91,6 +136,7 @@ public class RocksDBWALService implements WAL {
 	@Override
 	public void stop() throws Exception {
 		wal.close();
+		opts.close();
 		options.close();
 	}
 
@@ -112,7 +158,7 @@ public class RocksDBWALService implements WAL {
 	@Override
 	public void ackEvent(String eventId) throws IOException {
 		try {
-			wal.remove(eventId.getBytes(charset));
+			wal.remove(opts, eventId.getBytes(charset));
 		} catch (RocksDBException e) {
 			throw new IOException(e);
 		}
@@ -122,7 +168,45 @@ public class RocksDBWALService implements WAL {
 	public String getEarliestEventId() throws IOException {
 		RocksIterator itr = wal.newIterator();
 		itr.seekToFirst();
-		return new String(itr.key(), charset);
+		if(!itr.isValid()) {
+			return null;
+		}
+		String val = new String(itr.key(), charset);
+		itr.close();
+		return val;
 	}
 
+	@Override
+	public void setPersistentDirectory(String persistentDirectory) {
+		walDirectory = persistentDirectory;
+	}
+
+	@Override
+	public void setTransientDirectory(String transientDirectory) {
+		mapDirectory = transientDirectory;
+	}
+
+	@Override
+	public void setCallingProcessor(AbstractProcessor processor) {
+		this.processor = processor;
+	}
+
+	@Override
+	public void setEventFactory(EventFactory factory) {
+		this.factory = factory;
+	}
+
+	/**
+	 * For simple rocksdb testing
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
+	public static void main(String[] args) throws Exception {
+		RocksDBWALService wal = new RocksDBWALService();
+		wal.setPersistentDirectory("target/wal");
+		wal.setTransientDirectory("target/mem");
+		wal.start();
+		wal.writeEvent("event1", "{ \"event\":\"header\"}".getBytes());
+	}
 }

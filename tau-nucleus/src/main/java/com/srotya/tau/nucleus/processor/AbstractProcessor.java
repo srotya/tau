@@ -25,10 +25,7 @@ import java.util.logging.Logger;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.EventProcessor;
 import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.Sequence;
-import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
@@ -38,7 +35,6 @@ import com.srotya.tau.nucleus.ingress.IngressManager.PullIngresser;
 import com.srotya.tau.nucleus.wal.WAL;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
-import com.srotya.tau.wraith.TauEvent;
 
 /**
  * An abstract processor is responsible for internalizing the concept of
@@ -90,36 +86,33 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 		this.copyTranslator = new CopyTranslator();
 	}
 
-	@SuppressWarnings({ "unchecked" })
 	@Override
 	public final void start() throws Exception {
+		startDisruptor();
+		startWAL();
+		started = true;
+	}
+
+	@SuppressWarnings({ "unchecked" })
+	private void startDisruptor() throws Exception {
+		pool = Executors.newFixedThreadPool(parallelism.getVal());
+		disruptor = new Disruptor<>(factory, bufferSize, pool, ProducerType.MULTI, new BlockingWaitStrategy());
+		List<EventHandler<Event>> handlers = getInitializedHandlers(parallelism, conf, factory);
+		disruptor.handleEventsWith(handlers.toArray(new EventHandler[1]));
+		buffer = disruptor.start();
+	}
+
+	@SuppressWarnings({ "unchecked" })
+	private void startWAL() throws InstantiationException, IllegalAccessException, ClassNotFoundException, Exception {
 		if (getConfigPrefix() != null) {
-			selfWal = factory.newWalInstance(conf.get(getConfigPrefix() + ".wal.wdir"),
-					conf.get(getConfigPrefix() + ".wal.mdir"));
+			selfWal = factory.newWalInstance(
+					(Class<? extends WAL>) Class.forName(conf.getOrDefault(getConfigPrefix() + ".wal.class",
+							"com.srotya.tau.nucleus.wal.RocksDBWALService")), factory, this,
+					conf.get(getConfigPrefix() + ".wal.wdir"), conf.get(getConfigPrefix() + ".wal.mdir"));
 			selfWal.start();
 		} else {
 			getLogger().warning("WAL is disabled");
 		}
-
-		class Test implements EventHandler<Event> {
-
-			@Override
-			public void onEvent(Event event, long arg1, boolean arg2) throws Exception {
-				if (event.getEventId() != null)
-					selfWal.writeEvent(event.getEventId(), event.getBody());
-			}
-
-		}
-
-//		pool = Executors.newFixedThreadPool(parallelism.getVal() + 1);
-		pool = Executors.newFixedThreadPool(parallelism.getVal());
-		disruptor = new Disruptor<>(factory, bufferSize, pool, ProducerType.MULTI, new BlockingWaitStrategy());
-		List<EventHandler<Event>> handlers = getInitializedHandlers(parallelism, conf, factory);
-		// disruptor.handleEventsWith(new Test()).then(handlers.toArray(new
-		// EventHandler[1]));
-		disruptor.handleEventsWith(handlers.toArray(new EventHandler[1]));
-		buffer = disruptor.start();
-		started = true;
 	}
 
 	@Override
@@ -138,8 +131,8 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	 * @throws IOException
 	 */
 	public final void processEventWaled(Event event) throws IOException {
-		selfWal.writeEvent(event.getEventId(), event.getBody());
-		buffer.publishEvent(copyTranslator, event);
+		getProcessorWal().writeEvent(event.getEventId(), event.getBody());
+		getDisruptorBuffer().publishEvent(getCopyTranslator(), event);
 	}
 
 	/**
@@ -147,7 +140,7 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	 * @throws IOException
 	 */
 	public final void processEventNonWaled(Event event) {
-		buffer.publishEvent(copyTranslator, event);
+		getDisruptorBuffer().publishEvent(getCopyTranslator(), event);
 	}
 
 	/**
@@ -180,19 +173,26 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 
 	@Override
 	public final void ackEvent(String eventId) throws IOException {
-		selfWal.ackEvent(eventId);
+		getProcessorWal().ackEvent(eventId);
 	}
 
 	@Override
-	public final RingBuffer<Event> getDisruptorBuffer() {
+	public RingBuffer<Event> getDisruptorBuffer() {
 		return buffer;
 	}
 
 	@Override
-	public final WAL getProcessorWal() {
+	public WAL getProcessorWal() {
 		return selfWal;
 	}
-
+	
+	/**
+	 * @return translator
+	 */
+	public CopyTranslator getCopyTranslator() {
+		return copyTranslator;
+	}
+	
 	public abstract String getConfigPrefix();
 
 	public abstract Logger getLogger();

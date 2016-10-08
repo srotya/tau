@@ -15,6 +15,7 @@
  */
 package com.srotya.tau.nucleus.processor;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ import com.srotya.tau.wraith.MutableInt;
 import com.srotya.tau.wraith.aggregations.StateTrackingEngine;
 
 public class StateProcessor extends AbstractProcessor {
-	
+
 	private static final Logger logger = Logger.getLogger(StateProcessor.class.getName());
 
 	public StateProcessor(DisruptorUnifiedFactory factory, int parallelism, int bufferSize, Map<String, String> conf,
@@ -87,43 +88,55 @@ public class StateProcessor extends AbstractProcessor {
 		public void consumeEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 			// if this is emit event
 			Object type = event.getHeaders().get(Constants.FIELD_EVENT_TYPE);
-			if (type!=null && type.equals(Constants.EVENT_TYPE_EMISSION)) {
+			if (type != null && type.equals(Constants.EVENT_TYPE_EMISSION)) {
 				List<Event> events = new ArrayList<>();
 				stateTrackingEngine.emit((Integer) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW),
 						event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString(), events);
 				for (Event out : events) {
-					out.getHeaders().put(Constants.FIELD_RULE_GROUP, event.getHeaders().get(Constants.FIELD_RULE_GROUP));
+					out.getHeaders().put(Constants.FIELD_RULE_GROUP,
+							event.getHeaders().get(Constants.FIELD_RULE_GROUP));
 					out.setBody(gson.toJson(out.getHeaders()).getBytes());
 					outputProcessor.processEventWaled(out);
-					logger.info("State tracking event forwarded:"+out);
+					logger.info("State tracking event forwarded:" + out);
 				}
+				ackEventBatch();
 			} else {
 				if ((Boolean) event.getHeaders().get(Constants.FIELD_STATE_TRACK)) {
 					// if this is track
-					stateTrackingEngine.track((Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
-							(Integer) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW),
+					stateTrackingEngine.track(((Number) event.getHeaders().get(Constants.FIELD_TIMESTAMP)).longValue(),
+							((Number) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW)).intValue(),
 							event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString(),
 							event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString());
-					logger.info("Received tracking event"+event);
+					logger.info("Received tracking event" + event);
 				} else {
 					// if this is untrack
-					stateTrackingEngine.untrack((Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
-							(Integer) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW),
+					stateTrackingEngine.untrack(
+							((Number) event.getHeaders().get(Constants.FIELD_TIMESTAMP)).longValue(),
+							((Number) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW)).intValue(),
 							event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString(),
 							event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString());
-					logger.info("Received untracking event"+event);
+					logger.info("Received untracking event" + event);
 				}
 				batchEventIds.add(event.getEventId());
 				if (batchEventIds.size() >= batchSize) {
-					for (String id : batchEventIds) {
-						caller.ackEvent(id);
-					}
+					stateTrackingEngine.flush();
+					ackEventBatch();
 				}
 			}
 		}
 
+		private void ackEventBatch() throws IOException {
+			for (String id : batchEventIds) {
+				caller.ackEvent(id);
+			}
+			if (batchEventIds.size() > 0) {
+				logger.info("Acked batch:" + batchEventIds.size());
+			}
+			batchEventIds.clear();
+		}
+
 	}
-	
+
 	@Override
 	public Logger getLogger() {
 		return logger;

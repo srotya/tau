@@ -40,7 +40,7 @@ public class NucleusConfig extends Configuration {
 	@NotNull
 	private String ruleEngineConfiguration;
 	@JsonProperty
-	private int ruleEngineParallelism = 1;
+	private int ruleEngineParallelism = 2;
 	private int alertEngineParallelism = 1;
 	
 	public NucleusConfig() {

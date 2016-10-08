@@ -36,6 +36,7 @@ public class Normalizer {
 
 	public static void main(String[] args) throws GrokException, IOException, NoSuchAlgorithmException {
 		File[] files = new File(args[0]).listFiles();
+		new File("target/data").mkdirs();
 		GrokEventTranslator translator = new GrokEventTranslator(new UnifiedFactory());
 		Kryo kryo = new Kryo();
 		BufferedReader reader = null;

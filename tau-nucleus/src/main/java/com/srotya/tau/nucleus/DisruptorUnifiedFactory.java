@@ -15,8 +15,10 @@
  */
 package com.srotya.tau.nucleus;
 
+import javax.validation.constraints.NotNull;
+
 import com.lmax.disruptor.EventFactory;
-import com.srotya.tau.nucleus.wal.RocksDBWALService;
+import com.srotya.tau.nucleus.processor.AbstractProcessor;
 import com.srotya.tau.nucleus.wal.WAL;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.UnifiedFactory;
@@ -32,10 +34,25 @@ public class DisruptorUnifiedFactory extends UnifiedFactory implements EventFact
 	public Event newInstance() {
 		return buildEvent();
 	}
-	
-	public WAL newWalInstance(String walDirectory, String walMapDirectory) {
-//		return new DiskMemoryWAL(walDirectory, walMapDirectory);
-		return new RocksDBWALService(walDirectory, walMapDirectory);
+
+	/**
+	 * @param walType
+	 * @param persistentDirectory
+	 * @param transientDirectory
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 */
+	public WAL newWalInstance(@NotNull Class<? extends WAL> walType,
+			@NotNull com.srotya.tau.wraith.EventFactory factory, @NotNull AbstractProcessor caller,
+			@NotNull String persistentDirectory, @NotNull String transientDirectory)
+			throws InstantiationException, IllegalAccessException {
+		WAL wal = walType.newInstance();
+		wal.setPersistentDirectory(persistentDirectory);
+		wal.setTransientDirectory(transientDirectory);
+		wal.setEventFactory(factory);
+		wal.setCallingProcessor(caller);
+		return wal;
 	}
 
 }

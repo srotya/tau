@@ -65,7 +65,7 @@ public class RuleProcessor extends AbstractProcessor {
 		private AbstractProcessor caller;
 		private AbstractProcessor alertProcessor;
 		private AbstractProcessor stateProcessor;
-		private AbstractProcessor fineCountingProcessor;
+//		private AbstractProcessor fineCountingProcessor;
 		private Gson gson;
 
 		/**
@@ -95,7 +95,7 @@ public class RuleProcessor extends AbstractProcessor {
 				stateProcessor = outputProcessors[1];
 			}
 			if (outputProcessors.length >= 3) {
-				fineCountingProcessor = outputProcessors[2];
+//				fineCountingProcessor = outputProcessors[2];
 			}
 		}
 
