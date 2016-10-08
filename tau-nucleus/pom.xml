@@ -10,7 +10,7 @@
   <artifactId>tau-nucleus</artifactId>
   <name>tau-nucleus</name>
   <properties>
-    <disruptor.version>3.3.5</disruptor.version>
+    <disruptor.version>3.3.2</disruptor.version>
     <dropwizard.version>1.0.2</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <rocksdb.version>4.9.0</rocksdb.version>

@@ -52,7 +52,7 @@ public class Nucleus extends Application<NucleusConfig> {
 		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor);
 		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor, stateProcessor);
 		stateProcessor.setOutputProcessors(ruleProcessor);
-		// initializeIngressManager(configuration, environment);
+		initializeIngressManager(configuration, environment, ruleProcessor);
 		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor);
 		logger.info("Initialization complete");
 	}

@@ -34,6 +34,7 @@ public class DisruptorUnifiedFactory extends UnifiedFactory implements EventFact
 	}
 	
 	public WAL newWalInstance(String walDirectory, String walMapDirectory) {
+//		return new DiskMemoryWAL(walDirectory, walMapDirectory);
 		return new RocksDBWALService(walDirectory, walMapDirectory);
 	}
 

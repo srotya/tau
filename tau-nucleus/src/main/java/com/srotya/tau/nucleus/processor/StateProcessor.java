@@ -89,7 +89,6 @@ public class StateProcessor extends AbstractProcessor {
 			Object type = event.getHeaders().get(Constants.FIELD_EVENT_TYPE);
 			if (type!=null && type.equals(Constants.EVENT_TYPE_EMISSION)) {
 				List<Event> events = new ArrayList<>();
-				logger.info("Received tick info");
 				stateTrackingEngine.emit((Integer) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW),
 						event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString(), events);
 				for (Event out : events) {

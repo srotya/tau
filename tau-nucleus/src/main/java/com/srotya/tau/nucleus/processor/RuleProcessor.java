@@ -153,7 +153,7 @@ public class RuleProcessor extends AbstractProcessor {
 
 		@Override
 		public void handleRuleNoMatch(Object eventCollector, Object eventContainer, Event inputEvent, Rule rule) {
-			logger.info("Rule no match:"+inputEvent.getEventId()+"\t"+rule.getRuleId());
+//			logger.info("Rule no match:"+inputEvent.getEventId()+"\t"+rule.getRuleId());
 		}
 
 		@Override

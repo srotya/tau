@@ -25,7 +25,10 @@ import java.util.logging.Logger;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.EventProcessor;
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.Sequence;
+import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
@@ -35,6 +38,7 @@ import com.srotya.tau.nucleus.ingress.IngressManager.PullIngresser;
 import com.srotya.tau.nucleus.wal.WAL;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
+import com.srotya.tau.wraith.TauEvent;
 
 /**
  * An abstract processor is responsible for internalizing the concept of
@@ -86,19 +90,33 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 		this.copyTranslator = new CopyTranslator();
 	}
 
-	@SuppressWarnings({ "unchecked", "deprecation" })
+	@SuppressWarnings({ "unchecked" })
 	@Override
 	public final void start() throws Exception {
 		if (getConfigPrefix() != null) {
 			selfWal = factory.newWalInstance(conf.get(getConfigPrefix() + ".wal.wdir"),
 					conf.get(getConfigPrefix() + ".wal.mdir"));
 			selfWal.start();
-		}else {
+		} else {
 			getLogger().warning("WAL is disabled");
 		}
+
+		class Test implements EventHandler<Event> {
+
+			@Override
+			public void onEvent(Event event, long arg1, boolean arg2) throws Exception {
+				if (event.getEventId() != null)
+					selfWal.writeEvent(event.getEventId(), event.getBody());
+			}
+
+		}
+
+//		pool = Executors.newFixedThreadPool(parallelism.getVal() + 1);
 		pool = Executors.newFixedThreadPool(parallelism.getVal());
 		disruptor = new Disruptor<>(factory, bufferSize, pool, ProducerType.MULTI, new BlockingWaitStrategy());
 		List<EventHandler<Event>> handlers = getInitializedHandlers(parallelism, conf, factory);
+		// disruptor.handleEventsWith(new Test()).then(handlers.toArray(new
+		// EventHandler[1]));
 		disruptor.handleEventsWith(handlers.toArray(new EventHandler[1]));
 		buffer = disruptor.start();
 		started = true;
@@ -176,6 +194,6 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	}
 
 	public abstract String getConfigPrefix();
-	
+
 	public abstract Logger getLogger();
 }
