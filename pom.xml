@@ -24,6 +24,7 @@
     <module>tau-interceptors</module>
     <module>tau-ui</module>
     <module>tau-nucleus</module>
+    <module>tau-omega</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

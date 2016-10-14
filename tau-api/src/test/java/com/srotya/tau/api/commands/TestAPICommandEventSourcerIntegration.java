@@ -28,7 +28,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.srotya.tau.api.ApplicationManager;
-import com.srotya.tau.nucleus.Nucleus;
+import com.srotya.tau.nucleus.NucleusServer;
 import com.srotya.tau.nucleus.NucleusConfig;
 import com.srotya.tau.wraith.actions.Action;
 import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplate;
@@ -50,7 +50,7 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
 public class TestAPICommandEventSourcerIntegration {
 
 	@ClassRule
-	public static DropwizardAppRule<NucleusConfig> nucleus = new DropwizardAppRule<>(Nucleus.class,
+	public static DropwizardAppRule<NucleusConfig> nucleus = new DropwizardAppRule<>(NucleusServer.class,
 			"src/test/resources/nucleus.yml");
 	private APICommandEventSourcer sourcer;
 

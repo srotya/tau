@@ -38,11 +38,11 @@ import io.dropwizard.setup.Environment;
 /**
  * @author ambudsharma
  */
-public class Nucleus extends Application<NucleusConfig> {
+public class NucleusServer extends Application<NucleusConfig> {
 
-	private static final Logger logger = Logger.getLogger(Nucleus.class.getName());
+	private static final Logger logger = Logger.getLogger(NucleusServer.class.getName());
 
-	public Nucleus() {
+	public NucleusServer() {
 	}
 
 	@Override
@@ -140,7 +140,7 @@ public class Nucleus extends Application<NucleusConfig> {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		new Nucleus().run(args);
+		new NucleusServer().run(args);
 	}
 
 }
