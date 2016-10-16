@@ -60,13 +60,10 @@ public class TestOmegaScriptExecutor {
 		assertEquals(0, executor.getScriptLookup().size());
 
 		conf.put(TestFactory.RULES_CONTENT,
-				RuleSerializer
-						.serializeRulesToJSONString(
-								Arrays.asList(
-										new SimpleRule((short) 1122, "test1", true,
-												new EqualsCondition("host", "val"), new ScriptAction((short) 0,
-														LANGUAGE.Javascript, "logger.log('hello');"))),
-								false));
+				RuleSerializer.serializeRulesToJSONString(
+						Arrays.asList(new SimpleRule((short) 1122, "test1", true, new EqualsCondition("host", "val"),
+								new ScriptAction((short) 0, LANGUAGE.Javascript, "logger.log('hello');"))),
+						false));
 		executor.initialize(conf);
 		assertEquals(1, factory.getRulesStore(null, conf).listGroupedRules().size());
 		assertEquals(1, executor.getScriptLookup().size());
@@ -78,13 +75,11 @@ public class TestOmegaScriptExecutor {
 	@Test
 	public void testJavascriptExecution() throws Exception {
 		String script = "function f()\n{ \n\tlogger.log('hello');\n\treturn true;\n}\nf();";
-		System.err.println("Javascript test script:\n"+script);
+		System.err.println("Javascript test script:\n" + script);
 		Map<String, String> conf = new HashMap<>();
 		conf.put(TestFactory.RULES_CONTENT,
-				RuleSerializer.serializeRulesToJSONString(
-						Arrays.asList(new SimpleRule((short) 1122, "test1",
-								true, new EqualsCondition("host", "val"), new ScriptAction((short) 0,
-										LANGUAGE.Javascript, script))),
+				RuleSerializer.serializeRulesToJSONString(Arrays.asList(new SimpleRule((short) 1122, "test1", true,
+						new EqualsCondition("host", "val"), new ScriptAction((short) 0, LANGUAGE.Javascript, script))),
 						false));
 		TestFactory factory = new TestFactory();
 		OmegaScriptExecutor executor = new OmegaScriptExecutor(factory);
@@ -95,18 +90,23 @@ public class TestOmegaScriptExecutor {
 		boolean result = executor.executeScript("all", (short) 1122, (short) 0, event);
 		assertTrue(result);
 		verify(logger, times(1)).log("hello");
+		script = "function f()\n{ \n\tlogger.log('bello');\n\treturn true;\n}\nf();";
+		executor.updateRule("all",
+				RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 1122, "test1", true,
+						new EqualsCondition("host", "val"), new ScriptAction((short) 0, LANGUAGE.Javascript, script)),
+						false));
+		result = executor.executeScript("all", (short) 1122, (short) 0, event);
+		verify(logger, times(1)).log("bello");
 	}
-	
+
 	@Test
 	public void testJrubyExecution() throws Exception {
 		String script = "def f(logger)\n\tlogger.log('hello')\n\treturn true\nend\nf(logger)";
-		System.err.println("JRuby test script:\n"+script);
+		System.err.println("JRuby test script:\n" + script);
 		Map<String, String> conf = new HashMap<>();
 		conf.put(TestFactory.RULES_CONTENT,
-				RuleSerializer.serializeRulesToJSONString(
-						Arrays.asList(new SimpleRule((short) 1122, "test1",
-								true, new EqualsCondition("host", "val"), new ScriptAction((short) 0,
-										LANGUAGE.JRuby, script))),
+				RuleSerializer.serializeRulesToJSONString(Arrays.asList(new SimpleRule((short) 1122, "test1", true,
+						new EqualsCondition("host", "val"), new ScriptAction((short) 0, LANGUAGE.JRuby, script))),
 						false));
 		TestFactory factory = new TestFactory();
 		OmegaScriptExecutor executor = new OmegaScriptExecutor(factory);
