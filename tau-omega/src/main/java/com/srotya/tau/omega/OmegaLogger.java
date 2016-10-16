@@ -26,5 +26,8 @@ public class OmegaLogger {
 	public OmegaLogger(String ruleGroup) {
 		this.ruleGroup = ruleGroup;
 	}
+	
+	public void log(String message) {
+	}
 
 }

@@ -1,7 +1,6 @@
-<?xml version="1.0"?>
-<project
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.srotya.tau</groupId>
@@ -12,17 +11,40 @@
 	<name>tau-omega</name>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<jruby.version>9.1.4.0</jruby.version>
+		<jython.version>2.7.0</jython.version>
 	</properties>
 	<dependencies>
+		<dependency>
+			<groupId>com.srotya.tau</groupId>
+			<artifactId>wraith-engine</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.srotya.tau</groupId>
+			<artifactId>wraith-engine</artifactId>
+			<version>${project.version}</version>
+			<classifier>tests</classifier>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.srotya.tau</groupId>
-			<artifactId>wraith-engine</artifactId>
-			<version>${project.version}</version>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.jruby</groupId>
+			<artifactId>jruby-complete</artifactId>
+			<version>${jruby.version}</version>
+		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.python</groupId> -->
+<!-- 			<artifactId>jython</artifactId> -->
+<!-- 			<version>${jython.version}</version> -->
+<!-- 		</dependency> -->
 	</dependencies>
 </project>

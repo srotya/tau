@@ -33,7 +33,6 @@ import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.Utils;
 import com.srotya.tau.wraith.actions.Action;
-import com.srotya.tau.wraith.actions.omega.OmegaAction;
 import com.srotya.tau.wraith.rules.Rule;
 import com.srotya.tau.wraith.rules.RuleSerializer;
 import com.srotya.tau.wraith.rules.SimpleRule;
@@ -51,11 +50,11 @@ public class OmegaScriptExecutor {
 	private Map<String, OmegaLogger> loggerLookup;
 	private StoreFactory storeFactory;
 	private ScriptEngine jrubyEngine;
-	private ScriptEngine jythonEngine;
 
 	public OmegaScriptExecutor(StoreFactory storeFactory) {
 		this.storeFactory = storeFactory;
 		this.loggerLookup = new HashMap<>();
+		this.scriptLookup = new HashMap<>();
 	}
 
 	/**
@@ -63,9 +62,7 @@ public class OmegaScriptExecutor {
 	 * @throws Exception
 	 */
 	public void initialize(Map<String, String> conf) throws Exception {
-		nashornEngine = new ScriptEngineManager().getEngineByName("nashorn");
-		jrubyEngine = new ScriptEngineManager().getEngineByName("jruby");
-		jythonEngine = new ScriptEngineManager().getEngineByName("jruby");
+		initializeScriptingEngines();
 		RulesStore store;
 		try {
 			store = storeFactory.getRulesStore(conf.get(Constants.RSTORE_TYPE), conf);
@@ -87,33 +84,56 @@ public class OmegaScriptExecutor {
 		}
 	}
 
+	private void initializeScriptingEngines() throws ScriptException {
+		// javascript engine
+		nashornEngine = new ScriptEngineManager().getEngineByName("nashorn");
+		nashornEngine.eval("var t=10");
+
+		// jruby engine
+		System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+		jrubyEngine = new ScriptEngineManager().getEngineByName("jruby");
+		jrubyEngine.eval("def fact()\n\tn=10\nend");
+	}
+
 	/**
 	 * @param ruleGroup
 	 * @param ruleId
 	 * @param actionId
-	 * @param inputEvent
+	 * @param event
 	 * @return
 	 * @throws ScriptException
 	 */
-	public boolean executeScript(String ruleGroup, short ruleId, short actionId, Event inputEvent)
-			throws ScriptException {
+	public boolean executeScript(String ruleGroup, short ruleId, short actionId, Event event) throws ScriptException {
 		ScriptAction action = scriptLookup.get(Utils.combineRuleActionId(ruleId, actionId));
 		if (action != null) {
-			Bindings bindings = nashornEngine.getBindings(ScriptContext.ENGINE_SCOPE);
-			bindings.put("event", inputEvent);
-			bindings.put("logger", loggerLookup.get(ruleGroup));
+			Bindings bindings = null;
+			OmegaLogger logger = loggerLookup.get(ruleGroup);
+			ScriptEngine engine = null;
 			boolean result = false;
 			switch (action.getLanguage()) {
 			case Javascript:
-				result = (boolean) nashornEngine.eval(action.getScript());
+				engine = nashornEngine;
 				break;
 			case JRuby:
-				result = (boolean) jrubyEngine.eval(action.getScript());
+				engine = jrubyEngine;
 				break;
-			case Jython:
-				result = (boolean) jythonEngine.eval(action.getScript());
+			default: // language currently not supported
 				break;
-			default:
+			/*
+			 * case Jython: jythonEngine.set("event", event);
+			 * jythonEngine.set("logger", loggerLookup.get(ruleGroup)); PyObject
+			 * eval = jythonEngine.eval(action.getScript()); if (eval.asInt() ==
+			 * 0) { result = true; } else { result = false; } break; default:
+			 */
+			}
+			try {
+				bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+				bindings.put("event", event);
+				bindings.put("logger", logger);
+				result = (boolean) engine.eval(action.getScript(), bindings);
+			} catch (Exception e) {
+				logger.log("ERROR:" + e.getMessage());
+				result = false;
 			}
 			return result;
 		}
@@ -135,10 +155,12 @@ public class OmegaScriptExecutor {
 	 */
 	private void filterAndUpdateRule(String ruleGroup, Rule rule) {
 		for (Action action : rule.getActions()) {
-			if (action instanceof OmegaAction) {
+			if (action instanceof ScriptAction) {
 				if (!loggerLookup.containsKey(ruleGroup)) {
 					loggerLookup.put(ruleGroup, new OmegaLogger(ruleGroup));
 				}
+				scriptLookup.put(Utils.combineRuleActionId(rule.getRuleId(), action.getActionId()),
+						(ScriptAction) action);
 			}
 		}
 	}
@@ -162,6 +184,20 @@ public class OmegaScriptExecutor {
 	 */
 	public StoreFactory getStoreFactory() {
 		return storeFactory;
+	}
+
+	/**
+	 * @return the nashornEngine
+	 */
+	protected ScriptEngine getNashornEngine() {
+		return nashornEngine;
+	}
+
+	/**
+	 * @return the jrubyEngine
+	 */
+	protected ScriptEngine getJrubyEngine() {
+		return jrubyEngine;
 	}
 
 }
