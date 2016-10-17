@@ -1,0 +1,18 @@
+language: java
+jdk:
+- oraclejdk8
+install: true
+addons:
+  apt:
+    packages:
+    - rpm
+script: mvn -T2 -DSTORM_TEST_TIMEOUT_MS=60000 clean verify
+after_success:
+- curl -L -o /tmp/conditionalbuild.sh https://gist.github.com/ambud/3480192ce43fd35a4640201ba10794f5/raw/
+- chmod a+x /tmp/conditionalbuild.sh
+env:
+  global:
+  - REPO=git@github.com:srotya/tau.git
+cache:
+  directories:
+  - $HOME/.m2
