@@ -28,8 +28,9 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.srotya.tau.api.ApplicationManager;
-import com.srotya.tau.nucleus.NucleusServer;
+import com.srotya.tau.api.dao.alertreceiver.DatabaseResource;
 import com.srotya.tau.nucleus.NucleusConfig;
+import com.srotya.tau.nucleus.NucleusServer;
 import com.srotya.tau.wraith.actions.Action;
 import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplate;
 import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplateSerializer;
@@ -48,7 +49,9 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class TestAPICommandEventSourcerIntegration {
-
+	
+	@ClassRule
+	public static DatabaseResource resource = new DatabaseResource();
 	@ClassRule
 	public static DropwizardAppRule<NucleusConfig> nucleus = new DropwizardAppRule<>(NucleusServer.class,
 			"src/test/resources/nucleus.yml");
@@ -56,6 +59,7 @@ public class TestAPICommandEventSourcerIntegration {
 
 	@Mock
 	private ApplicationManager am;
+	
 
 	@Before
 	public void setup() throws Exception {
