@@ -33,6 +33,16 @@
     </dependency>
     <dependency>
       <groupId>com.srotya.tau</groupId>
+      <artifactId>interceptor-base</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.srotya.tau</groupId>
+      <artifactId>tau-omega</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.srotya.tau</groupId>
       <artifactId>wraith-engine</artifactId>
       <version>${project.version}</version>
       <exclusions>
@@ -49,11 +59,6 @@
     <dependency>
       <groupId>com.srotya.tau</groupId>
       <artifactId>wraith-silo</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.srotya.tau</groupId>
-      <artifactId>tau-omega</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -102,18 +107,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.rocksdb</groupId>
       <artifactId>rocksdbjni</artifactId>
       <version>${rocksdb.version}</version>
-    </dependency>
-    <dependency>
-    	<groupId>com.srotya.tau</groupId>
-    	<artifactId>interceptor-base</artifactId>
-    	<version>${project.version}</version>
-    </dependency>
-    <dependency>
-    	<groupId>org.mockito</groupId>
-    	<artifactId>mockito-all</artifactId>
     </dependency>
   </dependencies>
   <build>
