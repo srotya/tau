@@ -57,4 +57,9 @@ public class VelocityValidator implements Validator<Action> {
 		}
 	}
 
+	@Override
+	public Class<Action> getType() {
+		return Action.class;
+	}
+
 }

@@ -148,47 +148,47 @@
           <target>1.8</target>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>rpm-maven-plugin</artifactId>
-        <version>2.1.4</version>
-        <configuration>
-          <name>${project.artifactId}</name>
-          <version>${project.version}</version>
-          <targetOS>linux</targetOS>
-          <license>Apache 2.0</license>
-          <distribution>${distributor.name}</distribution>
-          <group>Application/Collectors</group>
-          <packager>${distributor.name}</packager>
-          <defaultUsername>root</defaultUsername>
-          <defaultGroupname>root</defaultGroupname>
-          <defineStatements>
-            <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
-          </defineStatements>
-          <mappings>
-            <mapping>
-              <directory>/var/lib/tomcat/webapps/</directory>
-              <filemode>755</filemode>
-              <sources>
-                <source>
-                  <location>target/ROOT.war</location>
-                </source>
-              </sources>
-            </mapping>
-          </mappings>
-          <requires>
-            <require>tomcat</require>
-          </requires>
-        </configuration>
-        <executions>
-          <execution>
-            <id>build-rpm</id>
-            <goals>
-              <goal>attached-rpm</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+      <!--       <plugin> -->
+      <!--         <groupId>org.codehaus.mojo</groupId> -->
+      <!--         <artifactId>rpm-maven-plugin</artifactId> -->
+      <!--         <version>2.1.4</version> -->
+      <!--         <configuration> -->
+      <!--           <name>${project.artifactId}</name> -->
+      <!--           <version>${project.version}</version> -->
+      <!--           <targetOS>linux</targetOS> -->
+      <!--           <license>Apache 2.0</license> -->
+      <!--           <distribution>${distributor.name}</distribution> -->
+      <!--           <group>Application/Collectors</group> -->
+      <!--           <packager>${distributor.name}</packager> -->
+      <!--           <defaultUsername>root</defaultUsername> -->
+      <!--           <defaultGroupname>root</defaultGroupname> -->
+      <!--           <defineStatements> -->
+      <!--             <defineStatement>_unpackaged_files_terminate_build 0</defineStatement> -->
+      <!--           </defineStatements> -->
+      <!--           <mappings> -->
+      <!--             <mapping> -->
+      <!--               <directory>/var/lib/tomcat/webapps/</directory> -->
+      <!--               <filemode>755</filemode> -->
+      <!--               <sources> -->
+      <!--                 <source> -->
+      <!--                   <location>target/ROOT.war</location> -->
+      <!--                 </source> -->
+      <!--               </sources> -->
+      <!--             </mapping> -->
+      <!--           </mappings> -->
+      <!--           <requires> -->
+      <!--             <require>tomcat</require> -->
+      <!--           </requires> -->
+      <!--         </configuration> -->
+      <!--         <executions> -->
+      <!--           <execution> -->
+      <!--             <id>build-rpm</id> -->
+      <!--             <goals> -->
+      <!--               <goal>attached-rpm</goal> -->
+      <!--             </goals> -->
+      <!--           </execution> -->
+      <!--         </executions> -->
+      <!--       </plugin> -->
     </plugins>
   </build>
   <repositories>

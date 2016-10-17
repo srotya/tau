@@ -107,8 +107,9 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 		if (getConfigPrefix() != null) {
 			selfWal = factory.newWalInstance(
 					(Class<? extends WAL>) Class.forName(conf.getOrDefault(getConfigPrefix() + ".wal.class",
-							"com.srotya.tau.nucleus.wal.RocksDBWALService")), factory, this,
-					conf.get(getConfigPrefix() + ".wal.wdir"), conf.get(getConfigPrefix() + ".wal.mdir"));
+							"com.srotya.tau.nucleus.wal.RocksDBWALService")),
+					factory, this, conf.get(getConfigPrefix() + ".wal.wdir"),
+					conf.get(getConfigPrefix() + ".wal.mdir"));
 			selfWal.start();
 		} else {
 			getLogger().warning("WAL is disabled");
@@ -119,7 +120,9 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	public final void stop() throws Exception {
 		pool.shutdownNow();
 		pool.awaitTermination(1, TimeUnit.SECONDS);
-		selfWal.stop();
+		if (selfWal != null) {
+			selfWal.stop();
+		}
 		started = false;
 	}
 
@@ -185,14 +188,14 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	public WAL getProcessorWal() {
 		return selfWal;
 	}
-	
+
 	/**
 	 * @return translator
 	 */
 	public CopyTranslator getCopyTranslator() {
 		return copyTranslator;
 	}
-	
+
 	public abstract String getConfigPrefix();
 
 	public abstract Logger getLogger();
