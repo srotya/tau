@@ -28,6 +28,7 @@ public class OmegaLogger {
 	}
 	
 	public void log(String message) {
+		System.err.println("Omega execution:"+ruleGroup+":"+message);
 	}
 
 }

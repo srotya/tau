@@ -130,7 +130,7 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 	 * @param ruleJson
 	 */
 	public void updateRule(String ruleGroup, String ruleJson, boolean delete) throws Exception {
-		if(ruleGroup==null) {
+		if (ruleGroup == null) {
 			throw new PerformantException("Supplied rule group is null");
 		}
 		Map<Short, Rule> ruleMap = ruleGroupMap.get(ruleGroup);
@@ -229,11 +229,12 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 	 * @param eventCollector
 	 * @param eventContainer
 	 * @param event
-	 * @param ruleGroup 
+	 * @param ruleGroup
 	 * @param rule
 	 * @param action
 	 */
-	protected void applyRuleAction(C eventCollector, K eventContainer, Event event, String ruleGroup, Rule rule, Action action) {
+	protected void applyRuleAction(C eventCollector, K eventContainer, Event event, String ruleGroup, Rule rule,
+			Action action) {
 		short ruleId = rule.getRuleId();
 		Event outputEvent = action.actOnEvent(event);
 		if (outputEvent == null) {
@@ -248,6 +249,8 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 			return;
 		}
 
+		long timestamp = (long) outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP);
+
 		switch (action.getActionType()) {
 		case RAW_ALERT:
 			caller.emitRawAlert(eventCollector, eventContainer, outputEvent, ruleId, action.getActionId(),
@@ -255,15 +258,14 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 					outputEvent.getHeaders().get(Constants.FIELD_ALERT_MEDIA).toString());
 			break;
 		case TEMPLATED_ALERT:
-			caller.emitTemplatedAlert(eventCollector, eventContainer, outputEvent, ruleGroup, ruleId, action.getActionId(),
-					rule.getName(), (short) outputEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID),
-					(long) outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP));
+			caller.emitTemplatedAlert(eventCollector, eventContainer, outputEvent, ruleGroup, ruleId,
+					action.getActionId(), rule.getName(),
+					(short) outputEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID), timestamp);
 			break;
 		case AGGREGATION:
 			// find the correct stream id based on the aggregation action class
 			String ruleActionId = Utils.combineRuleActionId(ruleId, action.getActionId());
-			caller.emitAggregationEvent(action.getClass(), eventCollector, eventContainer, event,
-					(Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
+			caller.emitAggregationEvent(action.getClass(), eventCollector, eventContainer, event, timestamp,
 					((AggregationAction) action).getAggregationWindow(), ruleActionId,
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString(),
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
@@ -274,8 +276,7 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 			// find the correct stream id based on the aggregation action class
 			String stateRuleActionId = Utils.combineRuleActionId(ruleId, action.getActionId());
 			caller.emitStateTrackingEvent(eventCollector, eventContainer,
-					(Boolean) event.getHeaders().get(Constants.FIELD_STATE_TRACK), event,
-					(Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
+					(Boolean) event.getHeaders().get(Constants.FIELD_STATE_TRACK), event, timestamp,
 					((AggregationAction) action).getAggregationWindow(), stateRuleActionId,
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString());
 			event.getHeaders().remove(Constants.FIELD_AGGREGATION_KEY);
@@ -289,11 +290,14 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 			caller.emitTaggedEvent(eventCollector, eventContainer, outputEvent);
 			break;
 		case OMEGA:
-			caller.emitOmegaActions(eventCollector, eventContainer, outputEvent);
+			caller.emitOmegaActions(eventCollector, eventContainer, ruleGroup, timestamp, ruleId, action.getActionId(),
+					outputEvent);
+			break;
 		case ANOMD:
 			caller.emitAnomalyAction(eventCollector, eventContainer,
 					outputEvent.getHeaders().get(Constants.FIELD_ANOMALY_SERIES).toString(),
 					(Number) outputEvent.getHeaders().get(Constants.FIELD_ANOMALY_VALUE));
+			break;
 		default:
 			break;
 		}

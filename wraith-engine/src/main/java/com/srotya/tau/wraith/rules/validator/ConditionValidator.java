@@ -41,8 +41,12 @@ public class ConditionValidator implements Validator<Condition> {
 	public void configure(List<Validator<?>> validators) {
 		for (Validator<?> validator : validators) {
 			try {
-				conditionValidators.add((Validator<Condition>) validator);
+				if (validator.getType() == getType()) {
+					conditionValidators.add((Validator<Condition>) validator);
+					System.err.println("Adding validation to chain:" + validator.getClass());
+				}
 			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -72,12 +76,13 @@ public class ConditionValidator implements Validator<Condition> {
 						throw new ValidationException("Equals condition value can't be empty");
 					}
 				} else if (castedConditon instanceof JavaRegexCondition) {
-					String regex = ((JavaRegexCondition)castedConditon).getValue();
-					if(regex.isEmpty()) {
+					String regex = ((JavaRegexCondition) castedConditon).getValue();
+					if (regex.isEmpty()) {
 						throw new ValidationException("Regex value can't be empty");
 					}
-					if(regex.length()>MAX_LENGTH_REGEX) {
-						throw new ValidationException("Regex value must be smaller than "+MAX_LENGTH_REGEX+" characters");
+					if (regex.length() > MAX_LENGTH_REGEX) {
+						throw new ValidationException(
+								"Regex value must be smaller than " + MAX_LENGTH_REGEX + " characters");
 					}
 				}
 			} else {
@@ -88,6 +93,11 @@ public class ConditionValidator implements Validator<Condition> {
 		for (Validator<Condition> validator : conditionValidators) {
 			validator.validate(condition);
 		}
+	}
+
+	@Override
+	public Class<Condition> getType() {
+		return Condition.class;
 	}
 
 }

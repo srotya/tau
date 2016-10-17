@@ -36,7 +36,7 @@ Following variables are available into the execution context:
 ```javascript
 function f()
 { 
-	logger.log('hello');
+	logger.log('hello the event is:'+event);
 	return true;
 }
 
@@ -46,11 +46,11 @@ f();
 
 ### JRuby:
 ```ruby
-def f(logger)
-	logger.log('hello')
+def f(logger, event)
+	logger.log('hello the event is:'+event)
 	return true
 end
 
 # NOTE: function f returns a boolean value
-f(logger)
+f(logger, event)
 ```

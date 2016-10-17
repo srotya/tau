@@ -31,4 +31,9 @@ public class AlertValidator implements Validator<Alert> {
 		}
 	}
 
+	@Override
+	public Class<Alert> getType() {
+		return Alert.class;
+	}
+
 }

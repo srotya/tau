@@ -57,6 +57,7 @@ import com.srotya.tau.api.rest.TemplateEndpoint;
 import com.srotya.tau.api.security.BapiAuthorizationFilter;
 import com.srotya.tau.api.storage.RuleGroup;
 import com.srotya.tau.api.validations.VelocityValidator;
+import com.srotya.tau.omega.ScriptValidator;
 import com.srotya.tau.wraith.rules.StatelessRulesEngine;
 import com.srotya.tau.wraith.rules.validator.RuleValidator;
 import com.srotya.tau.wraith.rules.validator.Validator;
@@ -169,7 +170,7 @@ public class ApplicationManager extends Application<AppConfig>implements Daemon 
 	 * @param config
 	 */
 	public void addRuleValidators(Properties config) {
-		List<Validator<?>> validators = Arrays.asList(new VelocityValidator());
+		List<Validator<?>> validators = Arrays.asList(new VelocityValidator(), new ScriptValidator());
 		RuleValidator.getInstance().configure(validators);
 	}
 

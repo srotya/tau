@@ -11,3 +11,4 @@ com.srotya.tau.wraith.conditions.logical.XorCondition=XOR
 com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertAction=ALERT
 com.srotya.tau.wraith.actions.TagEvent=TAG
 com.srotya.tau.wraith.actions.aggregations.StateAggregationAction=STATE
+com.srotya.tau.omega.ScriptAction=SCRIPT

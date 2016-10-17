@@ -209,11 +209,6 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	}
 
 	@Override
-	public void emitOmegaActions(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public void emitAnomalyAction(OutputCollector eventCollector, Tuple eventContainer, String seriesName,
 			Number value) {
 		throw new UnsupportedOperationException();
@@ -224,6 +219,12 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 			String ruleGroup, Short ruleId, Short actionId, String ruleName, Short templateId, Long timestamp) {
 		eventCollector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId,
 				ruleName, templateId, outputEvent.getHeaders().get(Constants.FIELD_RULE_GROUP), timestamp));
+	}
+
+	@Override
+	public void emitOmegaActions(OutputCollector eventCollector, Tuple eventContainer, String ruleGroup, long timestamp, short ruleId,
+			short s, Event outputEvent) {
+		throw new UnsupportedOperationException();
 	}
 
 }

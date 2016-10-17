@@ -102,4 +102,9 @@ public class AlertTemplateValidator implements Validator<AlertTemplate> {
 		}
 	}
 
+	@Override
+	public Class<AlertTemplate> getType() {
+		return AlertTemplate.class;
+	}
+
 }

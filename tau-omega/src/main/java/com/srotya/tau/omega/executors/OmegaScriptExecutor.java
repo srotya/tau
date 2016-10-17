@@ -74,7 +74,7 @@ public class OmegaScriptExecutor {
 			Map<String, Map<Short, Rule>> rules = store.listGroupedRules();
 			for (Entry<String, Map<Short, Rule>> entry : rules.entrySet()) {
 				for (Entry<Short, Rule> entry2 : entry.getValue().entrySet()) {
-					filterAndUpdateRule(entry.getKey(), entry2.getValue());
+					filterAndUpdateRule(entry.getKey(), entry2.getValue(), false);
 				}
 			}
 			store.disconnect();
@@ -143,24 +143,30 @@ public class OmegaScriptExecutor {
 	/**
 	 * @param ruleGroup
 	 * @param ruleJson
+	 * @param boolean1
 	 */
-	public void updateRule(String ruleGroup, String ruleJson) {
+	public void updateRule(String ruleGroup, String ruleJson, boolean delete) {
 		SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(ruleJson);
-		filterAndUpdateRule(ruleGroup, rule);
+		filterAndUpdateRule(ruleGroup, rule, delete);
 	}
 
 	/**
 	 * @param ruleGroup
 	 * @param rule
+	 * @param delete
 	 */
-	private void filterAndUpdateRule(String ruleGroup, Rule rule) {
+	private void filterAndUpdateRule(String ruleGroup, Rule rule, boolean delete) {
 		for (Action action : rule.getActions()) {
 			if (action instanceof ScriptAction) {
 				if (!loggerLookup.containsKey(ruleGroup)) {
 					loggerLookup.put(ruleGroup, new OmegaLogger(ruleGroup));
 				}
-				scriptLookup.put(Utils.combineRuleActionId(rule.getRuleId(), action.getActionId()),
-						(ScriptAction) action);
+				String ruleActionId = Utils.combineRuleActionId(rule.getRuleId(), action.getActionId());
+				if (delete) {
+					scriptLookup.remove(ruleActionId);
+				} else {
+					scriptLookup.put(ruleActionId, (ScriptAction) action);
+				}
 			}
 		}
 	}

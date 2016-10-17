@@ -65,6 +65,7 @@ public class RuleProcessor extends AbstractProcessor {
 		private AbstractProcessor caller;
 		private AbstractProcessor alertProcessor;
 		private AbstractProcessor stateProcessor;
+		private AbstractProcessor omegaProcessor;
 //		private AbstractProcessor fineCountingProcessor;
 		private Gson gson;
 
@@ -95,6 +96,7 @@ public class RuleProcessor extends AbstractProcessor {
 				stateProcessor = outputProcessors[1];
 			}
 			if (outputProcessors.length >= 3) {
+				omegaProcessor = outputProcessors[2];
 //				fineCountingProcessor = outputProcessors[2];
 			}
 		}
@@ -213,15 +215,27 @@ public class RuleProcessor extends AbstractProcessor {
 		}
 
 		@Override
-		public void emitOmegaActions(Object eventCollector, Object eventContainer, Event outputEvent) {
+		public void emitAnomalyAction(Object eventCollector, Object eventContainer, String seriesName, Number value) {
 			// TODO Auto-generated method stub
 
 		}
 
 		@Override
-		public void emitAnomalyAction(Object eventCollector, Object eventContainer, String seriesName, Number value) {
-			// TODO Auto-generated method stub
-
+		public void emitOmegaActions(Object eventCollector, Object eventContainer, String ruleGroup, long timestamp, short ruleId,
+				short actionId, Event outputEvent) {
+			Event event = factory.buildEvent();
+			event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
+			event.getHeaders().put(Constants.FIELD_ACTION_ID, actionId);
+			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
+			event.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
+			event.getHeaders().put(Constants.FIELD_EVENT, outputEvent);
+			event.setEventId(outputEvent.getEventId());
+			event.setBody(gson.toJson(event.getHeaders()).getBytes());
+			try {
+				omegaProcessor.processEventWaled(event);
+			} catch (IOException e) {
+				emitActionErrorEvent(eventCollector, eventContainer, outputEvent);
+			}
 		}
 
 	}

@@ -156,9 +156,13 @@ public interface RulesEngineCaller<K, C> {
 	 * 
 	 * @param eventCollector
 	 * @param eventContainer
+	 * @param ruleGroup
+	 * @param timetamp 
+	 * @param ruleId 
+	 * @param actionId 
 	 * @param outputEvent
 	 */
-	public void emitOmegaActions(C eventCollector, K eventContainer, Event outputEvent);
+	public void emitOmegaActions(C eventCollector, K eventContainer, String ruleGroup, long timetamp, short ruleId, short actionId, Event outputEvent);
 
 	/**
 	 * BETA Code

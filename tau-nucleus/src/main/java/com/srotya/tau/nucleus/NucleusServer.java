@@ -18,6 +18,7 @@ package com.srotya.tau.nucleus;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -29,8 +30,11 @@ import com.srotya.tau.nucleus.ingress.IngressManager;
 import com.srotya.tau.nucleus.ingress.IngressManager.IngresserFactory;
 import com.srotya.tau.nucleus.processor.AlertingProcessor;
 import com.srotya.tau.nucleus.processor.EmissionProcessor;
+import com.srotya.tau.nucleus.processor.OmegaProcessor;
 import com.srotya.tau.nucleus.processor.RuleProcessor;
 import com.srotya.tau.nucleus.processor.StateProcessor;
+import com.srotya.tau.omega.ScriptValidator;
+import com.srotya.tau.wraith.rules.validator.RuleValidator;
 
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
@@ -47,14 +51,31 @@ public class NucleusServer extends Application<NucleusConfig> {
 
 	@Override
 	public void run(NucleusConfig configuration, Environment environment) throws Exception {
+		RuleValidator.getInstance().configure(Arrays.asList(new ScriptValidator()));
+		
 		AlertingProcessor alertingProcessor = initializeAlertProcessor(configuration, environment);
 		StateProcessor stateProcessor = initializeStateProcessor(configuration, environment);
 		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor);
-		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor, stateProcessor);
+		OmegaProcessor omegaProcessor = initializeOmegaController(configuration, environment, stateProcessor);
+		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor, stateProcessor, omegaProcessor);
 		stateProcessor.setOutputProcessors(ruleProcessor);
-		initializeIngressManager(configuration, environment, ruleProcessor);
-		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor);
+//		initializeIngressManager(configuration, environment, ruleProcessor);
+		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor);
 		logger.info("Initialization complete");
+	}
+
+	private OmegaProcessor initializeOmegaController(NucleusConfig configuration, Environment environment,
+			StateProcessor stateProcessor) throws IOException {
+		Properties reConfig = new Properties();
+		if (configuration.isIntegrationTest()) {
+			reConfig.load(ClassLoader.getSystemResourceAsStream(configuration.getRuleEngineConfiguration()));
+		} else {
+			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
+		}
+		Map<String, String> conf = Utils.hashTableTohashMap(reConfig);
+		OmegaProcessor omegaProcessor = new OmegaProcessor(new DisruptorUnifiedFactory(), 1, 1024*2, conf, null);
+		environment.lifecycle().manage(omegaProcessor);
+		return omegaProcessor;
 	}
 
 	private EmissionProcessor initializeEmissionController(NucleusConfig configuration, Environment environment, StateProcessor stateProcessor) throws IOException {
@@ -100,14 +121,14 @@ public class NucleusServer extends Application<NucleusConfig> {
 		return stateProcessor;
 	}
 
-	private void registerAPIs(Environment environment, RuleProcessor ruleProcessor, AlertingProcessor alertingProcessor, EmissionProcessor emissionProcessor) {
+	private void registerAPIs(Environment environment, RuleProcessor ruleProcessor, AlertingProcessor alertingProcessor, EmissionProcessor emissionProcessor, OmegaProcessor omegaProcessor) {
 		environment.jersey().register(new QueryPerfStats());
 		environment.jersey().register(new EventReceiver(new DisruptorUnifiedFactory(), ruleProcessor));
 		environment.jersey()
-				.register(new CommandReceiver(new DisruptorUnifiedFactory(), ruleProcessor, alertingProcessor, emissionProcessor));
+				.register(new CommandReceiver(new DisruptorUnifiedFactory(), ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor));
 	}
 
-	private RuleProcessor initializeRuleProcessor(NucleusConfig configuration, Environment environment, AlertingProcessor alertingProcessor, StateProcessor stateProcessor)
+	private RuleProcessor initializeRuleProcessor(NucleusConfig configuration, Environment environment, AlertingProcessor alertingProcessor, StateProcessor stateProcessor, OmegaProcessor omegaProcessor)
 			throws IOException, FileNotFoundException {
 		Properties reConfig = new Properties();
 		if (configuration.isIntegrationTest()) {
@@ -116,7 +137,7 @@ public class NucleusServer extends Application<NucleusConfig> {
 			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
 		}
 		RuleProcessor ruleProcessor = new RuleProcessor(new DisruptorUnifiedFactory(), configuration.getRuleEngineParallelism(),
-				1024 * 2, Utils.hashTableTohashMap(reConfig), alertingProcessor, stateProcessor);
+				1024 * 2, Utils.hashTableTohashMap(reConfig), alertingProcessor, stateProcessor, omegaProcessor);
 		environment.lifecycle().manage(ruleProcessor);
 		return ruleProcessor;
 	}

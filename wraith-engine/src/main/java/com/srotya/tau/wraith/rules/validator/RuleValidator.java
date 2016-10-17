@@ -67,4 +67,9 @@ public class RuleValidator implements Validator<Rule> {
 		}
 	}
 
+	@Override
+	public Class<Rule> getType() {
+		return Rule.class;
+	}
+
 }

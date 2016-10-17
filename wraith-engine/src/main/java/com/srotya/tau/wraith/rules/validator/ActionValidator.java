@@ -23,6 +23,7 @@ import com.srotya.tau.wraith.actions.aggregations.AggregationAction;
 import com.srotya.tau.wraith.actions.aggregations.StateAggregationAction;
 import com.srotya.tau.wraith.actions.aggregations.ValueAggregationAction;
 import com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertAction;
+import com.srotya.tau.wraith.actions.omega.OmegaAction;
 import com.srotya.tau.wraith.rules.Rule;
 
 /**
@@ -32,7 +33,7 @@ import com.srotya.tau.wraith.rules.Rule;
  */
 public class ActionValidator implements Validator<Action> {
 
-	private List<Validator<Action>> conditionValidators = new ArrayList<>();
+	private List<Validator<Action>> actionValidators = new ArrayList<>();
 	private List<Validator<?>> globalValidators;
 
 	@SuppressWarnings("unchecked")
@@ -41,7 +42,9 @@ public class ActionValidator implements Validator<Action> {
 		this.globalValidators = validators;
 		for (Validator<?> validator : validators) {
 			try {
-				conditionValidators.add((Validator<Action>) validator);
+				if (validator.getType() == getType()) {
+					actionValidators.add((Validator<Action>) validator);
+				}
 			} catch (Exception e) { // ignore incompatible validators
 			}
 		}
@@ -59,8 +62,7 @@ public class ActionValidator implements Validator<Action> {
 			if (!(aggregationAction instanceof StateAggregationAction)) {
 				throw new ValidationException("Unsupported aggregation action type");
 			}
-			if (aggregationAction.getAggregationKey() == null
-					|| aggregationAction.getAggregationKey().isEmpty()) {
+			if (aggregationAction.getAggregationKey() == null || aggregationAction.getAggregationKey().isEmpty()) {
 				throw new ValidationException("Aggregation key can't be empty");
 			}
 			if (aggregationAction.getAggregationWindow() < 10) {
@@ -76,19 +78,27 @@ public class ActionValidator implements Validator<Action> {
 					validator.configure(globalValidators);
 				}
 				validator.validate(stateAggregation.getStateCondition());
-			}else if (aggregationAction instanceof ValueAggregationAction) {
+			} else if (aggregationAction instanceof ValueAggregationAction) {
 				ValueAggregationAction valueAggregation = (ValueAggregationAction) action;
-				if (valueAggregation.getAggregationValue() == null || valueAggregation.getAggregationValue().isEmpty()) {
+				if (valueAggregation.getAggregationValue() == null
+						|| valueAggregation.getAggregationValue().isEmpty()) {
 					throw new ValidationException("Aggregation value can't be empty");
 				}
 			}
+		} else if (action instanceof OmegaAction) {
+			// generic validation of omega action
 		} else {
 			// unsupported action
 			throw new ValidationException("Unsupported action type");
 		}
-		for (Validator<Action> validator : conditionValidators) {
+		for (Validator<Action> validator : actionValidators) {
 			validator.validate(action);
 		}
+	}
+
+	@Override
+	public Class<Action> getType() {
+		return Action.class;
 	}
 
 }

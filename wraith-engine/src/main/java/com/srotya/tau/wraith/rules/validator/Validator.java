@@ -38,5 +38,11 @@ public interface Validator<T> {
 	 * @throws ValidationException
 	 */
 	public void validate(T value) throws ValidationException;
+	
+	/**
+	 * Get type of validator's generic class
+	 * @return
+	 */
+	public Class<T> getType();
 
 }
