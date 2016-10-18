@@ -33,8 +33,9 @@ import com.srotya.tau.wraith.aggregators.AggregationRejectException;
 import com.srotya.tau.wraith.aggregators.FineCountingAggregator;
 
 /**
+ * Fine counting processors integrates the {@link MarkovianAggregationEngineImpl} with {@link FineCountingAggregator} to Nucleus
+ * 
  * @author ambudsharma
- *
  */
 public class FineCountingProcessor extends AbstractProcessor {
 
