@@ -30,6 +30,7 @@ import com.srotya.tau.nucleus.ingress.IngressManager;
 import com.srotya.tau.nucleus.ingress.IngressManager.IngresserFactory;
 import com.srotya.tau.nucleus.processor.AlertingProcessor;
 import com.srotya.tau.nucleus.processor.EmissionProcessor;
+import com.srotya.tau.nucleus.processor.FineCountingProcessor;
 import com.srotya.tau.nucleus.processor.OmegaProcessor;
 import com.srotya.tau.nucleus.processor.RuleProcessor;
 import com.srotya.tau.nucleus.processor.StateProcessor;
@@ -55,13 +56,29 @@ public class NucleusServer extends Application<NucleusConfig> {
 		
 		AlertingProcessor alertingProcessor = initializeAlertProcessor(configuration, environment);
 		StateProcessor stateProcessor = initializeStateProcessor(configuration, environment);
-		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor);
 		OmegaProcessor omegaProcessor = initializeOmegaController(configuration, environment, stateProcessor);
-		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor, stateProcessor, omegaProcessor);
+		FineCountingProcessor fineCountingProcessor = initializeFineCountingProcessor(configuration, environment);
+		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor, stateProcessor, omegaProcessor, fineCountingProcessor);
 		stateProcessor.setOutputProcessors(ruleProcessor);
+		fineCountingProcessor.setOutputProcessors(ruleProcessor);
 //		initializeIngressManager(configuration, environment, ruleProcessor);
+		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor, fineCountingProcessor);
 		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor);
 		logger.info("Initialization complete");
+	}
+
+	private FineCountingProcessor initializeFineCountingProcessor(NucleusConfig configuration,
+			Environment environment) throws IOException {
+		Properties reConfig = new Properties();
+		if (configuration.isIntegrationTest()) {
+			reConfig.load(ClassLoader.getSystemResourceAsStream(configuration.getRuleEngineConfiguration()));
+		} else {
+			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
+		}
+		Map<String, String> conf = Utils.hashTableTohashMap(reConfig);
+		FineCountingProcessor fineCountingProcessor = new FineCountingProcessor(new DisruptorUnifiedFactory(), 1, 1024*2, conf, null);
+		environment.lifecycle().manage(fineCountingProcessor);
+		return fineCountingProcessor;
 	}
 
 	private OmegaProcessor initializeOmegaController(NucleusConfig configuration, Environment environment,
@@ -78,7 +95,7 @@ public class NucleusServer extends Application<NucleusConfig> {
 		return omegaProcessor;
 	}
 
-	private EmissionProcessor initializeEmissionController(NucleusConfig configuration, Environment environment, StateProcessor stateProcessor) throws IOException {
+	private EmissionProcessor initializeEmissionController(NucleusConfig configuration, Environment environment, StateProcessor stateProcessor, FineCountingProcessor fineCountingProcessor) throws IOException {
 		Properties reConfig = new Properties();
 		if (configuration.isIntegrationTest()) {
 			reConfig.load(ClassLoader.getSystemResourceAsStream(configuration.getRuleEngineConfiguration()));
@@ -86,7 +103,7 @@ public class NucleusServer extends Application<NucleusConfig> {
 			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
 		}
 		Map<String, String> conf = Utils.hashTableTohashMap(reConfig);
-		EmissionProcessor emissionProcessor = new EmissionProcessor(new DisruptorUnifiedFactory(), conf, stateProcessor);
+		EmissionProcessor emissionProcessor = new EmissionProcessor(new DisruptorUnifiedFactory(), conf, stateProcessor, fineCountingProcessor);
 		environment.lifecycle().manage(emissionProcessor);
 		return emissionProcessor;
 	}
@@ -128,7 +145,7 @@ public class NucleusServer extends Application<NucleusConfig> {
 				.register(new CommandReceiver(new DisruptorUnifiedFactory(), ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor));
 	}
 
-	private RuleProcessor initializeRuleProcessor(NucleusConfig configuration, Environment environment, AlertingProcessor alertingProcessor, StateProcessor stateProcessor, OmegaProcessor omegaProcessor)
+	private RuleProcessor initializeRuleProcessor(NucleusConfig configuration, Environment environment, AlertingProcessor alertingProcessor, StateProcessor stateProcessor, OmegaProcessor omegaProcessor, FineCountingProcessor fineCountingProcessor)
 			throws IOException, FileNotFoundException {
 		Properties reConfig = new Properties();
 		if (configuration.isIntegrationTest()) {
@@ -137,7 +154,7 @@ public class NucleusServer extends Application<NucleusConfig> {
 			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
 		}
 		RuleProcessor ruleProcessor = new RuleProcessor(new DisruptorUnifiedFactory(), configuration.getRuleEngineParallelism(),
-				1024 * 2, Utils.hashTableTohashMap(reConfig), alertingProcessor, stateProcessor, omegaProcessor);
+				1024 * 2, Utils.hashTableTohashMap(reConfig), alertingProcessor, stateProcessor, omegaProcessor, fineCountingProcessor);
 		environment.lifecycle().manage(ruleProcessor);
 		return ruleProcessor;
 	}

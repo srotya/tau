@@ -29,6 +29,7 @@ import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
 import com.srotya.tau.wraith.actions.Action;
+import com.srotya.tau.wraith.actions.aggregations.FineCountingAggregationAction;
 import com.srotya.tau.wraith.rules.Rule;
 import com.srotya.tau.wraith.rules.RulesEngineCaller;
 import com.srotya.tau.wraith.rules.StatelessRulesEngine;
@@ -66,7 +67,7 @@ public class RuleProcessor extends AbstractProcessor {
 		private AbstractProcessor alertProcessor;
 		private AbstractProcessor stateProcessor;
 		private AbstractProcessor omegaProcessor;
-//		private AbstractProcessor fineCountingProcessor;
+		private AbstractProcessor fineCountingProcessor;
 		private Gson gson;
 
 		/**
@@ -97,7 +98,9 @@ public class RuleProcessor extends AbstractProcessor {
 			}
 			if (outputProcessors.length >= 3) {
 				omegaProcessor = outputProcessors[2];
-//				fineCountingProcessor = outputProcessors[2];
+			}
+			if (outputProcessors.length >= 4) {
+				fineCountingProcessor = outputProcessors[3];
 			}
 		}
 
@@ -180,8 +183,23 @@ public class RuleProcessor extends AbstractProcessor {
 		public void emitAggregationEvent(Class<? extends Action> action, Object eventCollector, Object eventContainer,
 				Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey,
 				Object aggregationValue) {
+			if(action==FineCountingAggregationAction.class) {
+				logger.info("Emitting couning");
+				Event event = factory.buildEvent();
+				event.setEventId(originalEvent.getEventId());
+				event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
+				event.getHeaders().put(Constants.FIELD_RULE_ACTION_ID, ruleActionId);
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, aggregationKey);
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, aggregationValue);
+				event.setBody(gson.toJson(event.getHeaders()).getBytes());
+				try {
+					fineCountingProcessor.processEventWaled(event);
+				} catch (IOException e) {
+					emitActionErrorEvent(eventCollector, eventContainer, originalEvent);
+				}
+			}
 			// TODO Auto-generated method stub
-
 		}
 
 		@Override

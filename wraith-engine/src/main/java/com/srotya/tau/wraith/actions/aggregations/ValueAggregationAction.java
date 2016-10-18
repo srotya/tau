@@ -29,17 +29,17 @@ import com.srotya.tau.wraith.PerformantException;
 public abstract class ValueAggregationAction extends AggregationAction {
 
 	private static final long serialVersionUID = 1L;
-	private String aggregationValue;
+	private String aggregate;
 	
-	public ValueAggregationAction(short actionId, String aggregationKey, String aggregationValue, int aggregationWindow) {
-		super(actionId, aggregationKey, aggregationWindow);
-		this.aggregationValue = aggregationValue;
+	public ValueAggregationAction(short actionId, String groupBy, String aggregate, int aggregationWindow) {
+		super(actionId, groupBy, aggregationWindow);
+		this.aggregate = aggregate;
 	}
 	
 	@Override
 	public Event actOnEvent(Event inputEvent) {
 		Map<String, Object> headers = inputEvent.getHeaders();
-		Object aggregationKey = headers.get(getAggregationKey());
+		Object aggregationKey = headers.get(getGroupBy());
 		Object aggregationValue = headers.get(getAggregationValue());
 		if(aggregationKey==null || aggregationValue==null) {
 			return null;
@@ -58,14 +58,14 @@ public abstract class ValueAggregationAction extends AggregationAction {
 	 * @return the aggregationValue
 	 */
 	public String getAggregationValue() {
-		return aggregationValue;
+		return aggregate;
 	}
 
 	/**
 	 * @param aggregationValue the aggregationValue to set
 	 */
 	public void setAggregationValue(String aggregationValue) {
-		this.aggregationValue = aggregationValue;
+		this.aggregate = aggregationValue;
 	}
 
 }

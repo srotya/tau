@@ -201,7 +201,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 	 */
 	public void emitAndResetAggregates(int aggregationWindow, String ruleActionId,
 			List<Event> aggregateHeaders) throws IOException {
-		if (stateTrackingEngine.containsRuleActionId(ruleActionId)) {
+		if (Utils.containsRuleActionId(stateTrackingEngine.getAggregationMap(), ruleActionId)) {
 			stateTrackingEngine.emit(aggregationWindow, ruleActionId, aggregateHeaders);
 		}
 	}

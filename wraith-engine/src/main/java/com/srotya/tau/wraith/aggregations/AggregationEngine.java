@@ -24,13 +24,35 @@ import java.util.Map;
  * @author ambud_sharma
  */
 public interface AggregationEngine {
-	
+
+	/**
+	 * Initialize the aggregation engine
+	 * 
+	 * @param conf
+	 * @param taskId
+	 * @throws Exception
+	 */
 	public void initialize(Map<String, String> conf, int taskId) throws Exception;
-	
+
+	/**
+	 * Flush results to the external state store
+	 * 
+	 * @throws IOException
+	 */
 	public void flush() throws IOException;
-	
+
+	/**
+	 * Gracefully shutdown the engine
+	 * 
+	 * @throws IOException
+	 */
 	public void cleanup() throws IOException;
 
+	/**
+	 * Restore state from the data store
+	 * 
+	 * @throws IOException
+	 */
 	public void restore() throws IOException;
-	
+
 }

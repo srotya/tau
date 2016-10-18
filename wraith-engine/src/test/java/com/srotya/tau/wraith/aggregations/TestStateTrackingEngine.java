@@ -87,10 +87,10 @@ public class TestStateTrackingEngine {
 		engine.untrack(146127209100L, 10, Utils.combineRuleActionId((short) 2, (short) 2), "series1");
 		assertEquals(2, engine.getAggregationMap().size());
 		assertEquals(true, engine.getAggregationMap().values().iterator().next().isVal());
-		assertTrue(engine.containsRuleActionId(Utils.combineRuleActionId((short) 2, (short) 2)));
-		assertFalse(engine.containsRuleActionId(Utils.combineRuleActionId((short) 3, (short) 2)));
-		assertFalse(engine.containsRuleActionId(Utils.combineRuleActionId((short) 2, (short) 1)));
-		assertFalse(engine.containsRuleActionId(Utils.combineRuleActionId((short) 2, (short) 4)));
+		assertTrue(Utils.containsRuleActionId(engine.getAggregationMap(), Utils.combineRuleActionId((short) 2, (short) 2)));
+		assertFalse(Utils.containsRuleActionId(engine.getAggregationMap(), Utils.combineRuleActionId((short) 3, (short) 2)));
+		assertFalse(Utils.containsRuleActionId(engine.getAggregationMap(), Utils.combineRuleActionId((short) 2, (short) 1)));
+		assertFalse(Utils.containsRuleActionId(engine.getAggregationMap(), Utils.combineRuleActionId((short) 2, (short) 4)));
 		engine.untrack(1461272085000L, 10, Utils.combineRuleActionId((short) 2, (short) 2), "series1");
 		assertEquals(2, engine.getAggregationMap().size());
 		assertEquals(false, engine.getAggregationMap().values().iterator().next().isVal());

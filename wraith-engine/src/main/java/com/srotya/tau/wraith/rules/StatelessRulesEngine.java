@@ -118,10 +118,11 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 			throw e;
 		}
 		if (!delete) {
-			return ruleMap.put(rule.getRuleId(), rule);
+			ruleMap.put(rule.getRuleId(), rule);
 		} else {
-			return ruleMap.remove(rule.getRuleId());
+			ruleMap.remove(rule.getRuleId());
 		}
+		return rule;
 	}
 
 	/**
@@ -266,7 +267,7 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 			// find the correct stream id based on the aggregation action class
 			String ruleActionId = Utils.combineRuleActionId(ruleId, action.getActionId());
 			caller.emitAggregationEvent(action.getClass(), eventCollector, eventContainer, event, timestamp,
-					((AggregationAction) action).getAggregationWindow(), ruleActionId,
+					((AggregationAction) action).getTimeWindow(), ruleActionId,
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString(),
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
 			event.getHeaders().remove(Constants.FIELD_AGGREGATION_KEY);
@@ -277,7 +278,7 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 			String stateRuleActionId = Utils.combineRuleActionId(ruleId, action.getActionId());
 			caller.emitStateTrackingEvent(eventCollector, eventContainer,
 					(Boolean) event.getHeaders().get(Constants.FIELD_STATE_TRACK), event, timestamp,
-					((AggregationAction) action).getAggregationWindow(), stateRuleActionId,
+					((AggregationAction) action).getTimeWindow(), stateRuleActionId,
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString());
 			event.getHeaders().remove(Constants.FIELD_AGGREGATION_KEY);
 			event.getHeaders().remove(Constants.FIELD_STATE_TRACK);

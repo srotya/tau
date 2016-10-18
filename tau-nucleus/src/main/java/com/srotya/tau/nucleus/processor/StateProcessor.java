@@ -99,7 +99,9 @@ public class StateProcessor extends AbstractProcessor {
 					outputProcessor.processEventWaled(out);
 					logger.info("State tracking event forwarded:" + out);
 				}
-				ackEventBatch();
+				if (!events.isEmpty()) {
+					ackEventBatch();
+				}
 			} else {
 				if ((Boolean) event.getHeaders().get(Constants.FIELD_STATE_TRACK)) {
 					// if this is track

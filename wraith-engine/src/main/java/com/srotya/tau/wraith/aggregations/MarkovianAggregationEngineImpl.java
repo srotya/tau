@@ -177,11 +177,15 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 		SortedMap<String, Aggregator> map = getAggregationMap().subMap(
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR, String.valueOf(Character.MAX_VALUE)));
+		if(map.isEmpty()) {
+			// no emits
+			return;
+		}
 		int lastTs = 0;
 		if (getLastEmittedBucketMap().containsKey(ruleActionId)) {
 			lastTs = getLastEmittedBucketMap().get(ruleActionId) + aggregationWindow;
 		} else {
-			lastTs = MarkovianAggregationEngineImpl.extractTsFromAggregationKey(map.lastKey());
+			lastTs = Utils.extractTsFromAggregationKey(map.lastKey());
 			lastTs = lastTs - aggregationWindow - (int) (getJitterTolerance() / 1000);
 		}
 		String val = Utils.intToString(lastTs);
@@ -193,8 +197,7 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 		for (Iterator<Entry<String, Aggregator>> iterator = set.iterator(); iterator.hasNext();) {
 			Entry<String, Aggregator> entry = iterator.next();
 			if (template instanceof CountingAggregator) {
-				Event event = eventFactory.buildEvent();
-				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, entry.getKey());
+				Event event = Utils.buildAggregationEmitEvent(eventFactory, aggregationWindow, entry);
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE,
 						((CountingAggregator) entry.getValue()).getCardinality());
 				emits.add(event);
@@ -203,10 +206,6 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 			iterator.remove();
 		}
 		getLastEmittedBucketMap().put(ruleActionId, lastTs);
-	}
-
-	public static int extractTsFromAggregationKey(String key) {
-		return Utils.stringToInt(key.split(Constants.KEY_SEPARATOR)[1]);
 	}
 
 	/**

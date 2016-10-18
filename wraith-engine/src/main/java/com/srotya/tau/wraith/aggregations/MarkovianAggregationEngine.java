@@ -23,12 +23,22 @@ import com.srotya.tau.wraith.Event;
 /**
  * Markovian Aggregation Engine. An aggregation engine that adheres to the
  * 
- * Markov rule i.e. only end state matters vs quantized.
+ * Markov rule i.e. only end state matters vs quantized.<br><br>
+ * 
+ * Aggregates are only temporarily stored in the system.<br><br>
  * 
  * @author ambud_sharma
  */
 public interface MarkovianAggregationEngine extends AggregationEngine {
 
+	/**
+	 * 
+	 * 
+	 * @param aggregationWindow
+	 * @param ruleActionId
+	 * @param emits output the emits here
+	 * @throws IOException
+	 */
 	public void emit(int aggregationWindow, String ruleActionId, List<Event> emits) throws IOException;
 
 }

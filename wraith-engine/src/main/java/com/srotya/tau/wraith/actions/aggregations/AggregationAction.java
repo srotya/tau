@@ -31,19 +31,19 @@ public abstract class AggregationAction implements Action {
 	
 	private static final long serialVersionUID = 1L;
 	private short actionId;
-	private String aggregationKey;
-	private int aggregationWindow;
+	private String groupBy;
+	private int timeWindow;
 	
-	public AggregationAction(short actionId, String aggregationKey, int aggregationWindow) {
+	public AggregationAction(short actionId, String groupBy, int timeWindow) {
 		this.actionId = actionId;
-		this.aggregationKey = aggregationKey;
-		this.aggregationWindow = aggregationWindow;
+		this.groupBy = groupBy;
+		this.timeWindow = timeWindow;
 	}
 	
 	@Override
 	public Event actOnEvent(Event inputEvent) {
 		Map<String, Object> headers = inputEvent.getHeaders();
-		Object aggregationKey = headers.get(getAggregationKey());
+		Object aggregationKey = headers.get(getGroupBy());
 		if(aggregationKey==null) {
 			return null;
 		}
@@ -71,8 +71,8 @@ public abstract class AggregationAction implements Action {
 	/**
 	 * @return aggregationKey
 	 */
-	public String getAggregationKey() {
-		return aggregationKey;
+	public String getGroupBy() {
+		return groupBy;
 	}
 
 	@Override
@@ -83,8 +83,8 @@ public abstract class AggregationAction implements Action {
 	/**
 	 * @return the aggregationWindow
 	 */
-	public int getAggregationWindow() {
-		return aggregationWindow;
+	public int getTimeWindow() {
+		return timeWindow;
 	}
 
 	@Override
@@ -95,14 +95,14 @@ public abstract class AggregationAction implements Action {
 	/**
 	 * @param aggregationKey the aggregationKey to set
 	 */
-	public void setAggregationKey(String aggregationKey) {
-		this.aggregationKey = aggregationKey;
+	public void setGroupBy(String aggregationKey) {
+		this.groupBy = aggregationKey;
 	}
 
 	/**
 	 * @param aggregationWindow the aggregationWindow to set
 	 */
-	public void setAggregationWindow(int aggregationWindow) {
-		this.aggregationWindow = aggregationWindow;
+	public void setTimeWindow(int aggregationWindow) {
+		this.timeWindow = aggregationWindow;
 	}
 }

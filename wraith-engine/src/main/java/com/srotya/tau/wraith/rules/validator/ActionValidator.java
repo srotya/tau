@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.srotya.tau.wraith.actions.Action;
 import com.srotya.tau.wraith.actions.aggregations.AggregationAction;
+import com.srotya.tau.wraith.actions.aggregations.FineCountingAggregationAction;
 import com.srotya.tau.wraith.actions.aggregations.StateAggregationAction;
 import com.srotya.tau.wraith.actions.aggregations.ValueAggregationAction;
 import com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertAction;
@@ -59,13 +60,13 @@ public class ActionValidator implements Validator<Action> {
 			}
 		} else if (action instanceof AggregationAction) {
 			AggregationAction aggregationAction = (AggregationAction) action;
-			if (!(aggregationAction instanceof StateAggregationAction)) {
+			if (!(aggregationAction instanceof StateAggregationAction || aggregationAction instanceof FineCountingAggregationAction)) {
 				throw new ValidationException("Unsupported aggregation action type");
 			}
-			if (aggregationAction.getAggregationKey() == null || aggregationAction.getAggregationKey().isEmpty()) {
+			if (aggregationAction.getGroupBy() == null || aggregationAction.getGroupBy().isEmpty()) {
 				throw new ValidationException("Aggregation key can't be empty");
 			}
-			if (aggregationAction.getAggregationWindow() < 10) {
+			if (aggregationAction.getTimeWindow() < 10) {
 				throw new ValidationException("Aggregation window must be bigger than 10 seconds");
 			}
 			if (aggregationAction instanceof StateAggregationAction) {

@@ -12,3 +12,6 @@ com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertAction=ALERT
 com.srotya.tau.wraith.actions.TagEvent=TAG
 com.srotya.tau.wraith.actions.aggregations.StateAggregationAction=STATE
 com.srotya.tau.omega.ScriptAction=SCRIPT
+com.srotya.tau.wraith.actions.aggregations.FineCountingAggregationAction=FCOUNT
+com.srotya.tau.wraith.actions.aggregations.CoarseCountingAggregationAction=CCOUNT
+com.srotya.tau.wraith.actions.aggregations.SetAggregationAction=COLLECT

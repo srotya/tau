@@ -20,10 +20,19 @@ import java.io.IOException;
 /**
  * Non-markovian engine, means evolution of time series matters not just the current value
  * 
+ * This type of engine stores the time series in a persistent datastore to be used in future.
+ * 
  * @author ambud_sharma
  */
 public interface NonMarkovianAggregationEngine extends AggregationEngine {
 
+	/**
+	 * Commit the results to the external store
+	 * 
+	 * @param aggregationWindow
+	 * @param ruleActionId
+	 * @throws IOException
+	 */
 	public void commit(int aggregationWindow, String ruleActionId) throws IOException;
 	
 }

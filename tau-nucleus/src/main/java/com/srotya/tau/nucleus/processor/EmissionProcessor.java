@@ -95,11 +95,11 @@ public class EmissionProcessor extends AbstractProcessor {
 			List<AggregationAction> aggregationActions = filterAggregationActions(rule);
 			if (aggregationActions != null) {
 				for (AggregationAction action : aggregationActions) {
-					if (tickCounter % action.getAggregationWindow() == 0) {
+					if (tickCounter % action.getTimeWindow() == 0) {
 						String ruleActionId = Utils.combineRuleActionId(rule.getRuleId(), action.getActionId());
 						Event event = factory.buildEvent();
 						event.getHeaders().put(Constants.FIELD_EVENT_TYPE, Constants.EVENT_TYPE_EMISSION);
-						event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, action.getAggregationWindow());
+						event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, action.getTimeWindow());
 						event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
 						event.getHeaders().put(Constants.FIELD_RULE_ACTION_ID, ruleActionId);
 						switch (action.getClass().getSimpleName()) {

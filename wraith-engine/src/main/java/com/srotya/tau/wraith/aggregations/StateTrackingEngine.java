@@ -138,7 +138,7 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 		if (getLastEmittedBucketMap().containsKey(ruleActionId)) {
 			lastTs = getLastEmittedBucketMap().get(ruleActionId) + aggregationWindow;
 		} else {
-			lastTs = MarkovianAggregationEngineImpl.extractTsFromAggregationKey(map.lastKey());
+			lastTs = Utils.extractTsFromAggregationKey(map.lastKey());
 			lastTs = lastTs - aggregationWindow - (int) (getJitterTolerance() / 1000);
 		}
 		String val = Utils.intToString(lastTs);
@@ -150,14 +150,7 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 		for (Iterator<Entry<String, MutableBoolean>> iterator = set.iterator(); iterator.hasNext();) {
 			Entry<String, MutableBoolean> entry = iterator.next();
 			if (entry.getValue().isVal()) {
-				Event event = eventFactory.buildEvent();
-				String[] keyParts = Utils.splitMapKey(entry.getKey());
-				long ts = MarkovianAggregationEngineImpl.extractTsFromAggregationKey(entry.getKey());
-				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, keyParts[keyParts.length - 1]);
-				event.getHeaders().put(Constants.FIELD_TIMESTAMP, ts * 1000);
-				event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, aggregationWindow);
-				event.setEventId(new StringBuilder().append(keyParts[keyParts.length - 1]).append("_").append(ts * 1000)
-						.toString());
+				Event event = Utils.buildAggregationEmitEvent(eventFactory, aggregationWindow, entry);
 				events.add(event);
 			}
 			if (store != null) {
@@ -167,18 +160,6 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 			iterator.remove();
 		}
 		getLastEmittedBucketMap().put(ruleActionId, lastTs);
-	}
-
-	/**
-	 * Is this aggregator processing data for a supplied ruleActionId key
-	 * 
-	 * @param ruleActionId
-	 * @return true if it is
-	 */
-	public boolean containsRuleActionId(String ruleActionId) {
-		StringBuilder builder = new StringBuilder(ruleActionId.length() + 2);
-		builder.append(ruleActionId).append(Constants.KEY_SEPARATOR).append(Character.MAX_VALUE);
-		return getAggregationMap().subMap(ruleActionId, builder.toString()).size() > 0;
 	}
 
 	/**

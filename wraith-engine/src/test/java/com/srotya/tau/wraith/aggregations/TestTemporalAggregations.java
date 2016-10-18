@@ -81,7 +81,7 @@ public class TestTemporalAggregations {
 			List<Event> result = new ArrayList<>();
 			aggregationEngine.emit(aggregationWindow, ruleActionId, result);
 			System.out.println(k + "\t" + result.size() + "\t" + map.size() + "\n"
-					+ map.keySet().stream().map(key -> CountingEngine.extractTsFromAggregationKey(key))
+					+ map.keySet().stream().map(key -> Utils.extractTsFromAggregationKey(key))
 							.sorted((i1, i2) -> Integer.compare(i2, i1)).collect(Collectors.toList()));
 			assertEquals(29 - k, result.size());
 		}

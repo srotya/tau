@@ -127,10 +127,10 @@ public class AggregationControllerBolt extends BaseRichBolt {
 		List<AggregationAction> aggregationActions = filterAggregationActions(rule);
 		if (aggregationActions != null) {
 			for (AggregationAction action : aggregationActions) {
-				if (tickCounter % action.getAggregationWindow() == 0) {
+				if (tickCounter % action.getTimeWindow() == 0) {
 					collector.emit(Constants.TICK_STREAM_ID, tuple,
 							new Values(Utils.combineRuleActionId(rule.getRuleId(), action.getActionId()),
-									action.getAggregationWindow(), ruleGroup));
+									action.getTimeWindow(), ruleGroup));
 				}
 			}
 		}

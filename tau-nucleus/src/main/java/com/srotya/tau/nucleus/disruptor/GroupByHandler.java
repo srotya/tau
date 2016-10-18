@@ -62,4 +62,10 @@ public abstract class GroupByHandler implements EventHandler<Event> {
 	 */
 	public abstract void consumeEvent(Event event, long sequence, boolean endOfBatch) throws Exception;
 
+	/**
+	 * @return taskId
+	 */
+	public int getTaskId() {
+		return taskId;
+	}
 }

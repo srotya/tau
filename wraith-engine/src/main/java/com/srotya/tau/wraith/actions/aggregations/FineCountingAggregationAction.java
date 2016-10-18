@@ -23,8 +23,8 @@ public class FineCountingAggregationAction extends CountingAggregationAction {
 
 	private static final long serialVersionUID = 1L;
 	
-	public FineCountingAggregationAction(short actionId, String aggregationHeaderKey, String aggregationHeaderValueKey, int aggregationWindow) {
-		super(actionId, aggregationHeaderKey, aggregationHeaderValueKey, aggregationWindow);
+	public FineCountingAggregationAction(short actionId, String aggregationKey, String aggregationValue, int aggregationWindow) {
+		super(actionId, aggregationKey, aggregationValue, aggregationWindow);
 	}
 
 }

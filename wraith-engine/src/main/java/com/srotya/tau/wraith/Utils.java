@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.SortedMap;
 
 import com.srotya.tau.wraith.conditions.ConditionSerializer;
 
@@ -230,6 +231,39 @@ public class Utils {
 			builder.append(vx);
 		}
 		return builder.toString();
+	}
+
+	/**
+	 * Is this aggregator processing data for a supplied ruleActionId key
+	 * 
+	 * @param aggregationMap
+	 * @param ruleActionId
+	 * @return
+	 */
+	public static boolean containsRuleActionId(SortedMap<String, ?> aggregationMap, String ruleActionId) {
+		StringBuilder builder = new StringBuilder(ruleActionId.length() + 2);
+		builder.append(ruleActionId).append(Constants.KEY_SEPARATOR).append(Character.MAX_VALUE);
+		return aggregationMap.subMap(ruleActionId, builder.toString()).size() > 0;
+	}
+
+	/**
+	 * @param key
+	 * @return
+	 */
+	public static int extractTsFromAggregationKey(String key) {
+		return stringToInt(key.split(Constants.KEY_SEPARATOR)[1]);
+	}
+
+	public static Event buildAggregationEmitEvent(EventFactory eventFactory, int aggregationWindow, Entry<String, ?> entry) {
+		Event event = eventFactory.buildEvent();
+		String[] keyParts = splitMapKey(entry.getKey());
+		long ts = extractTsFromAggregationKey(entry.getKey());
+		event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, keyParts[keyParts.length - 1]);
+		event.getHeaders().put(Constants.FIELD_TIMESTAMP, ts * 1000);
+		event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, aggregationWindow);
+		event.setEventId(new StringBuilder().append(keyParts[keyParts.length - 1]).append("_").append(ts * 1000)
+				.toString());
+		return event;
 	}
 
 }
