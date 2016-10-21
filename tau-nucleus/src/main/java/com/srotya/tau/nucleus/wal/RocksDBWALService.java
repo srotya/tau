@@ -67,7 +67,7 @@ public class RocksDBWALService implements WAL {
 	private EventFactory factory;
 	private Gson gson;
 	private Type type;
-	private WriteOptions opts;
+	private WriteOptions writeOptions;
 
 	static {
 		RocksDB.loadLibrary();
@@ -95,7 +95,7 @@ public class RocksDBWALService implements WAL {
 				.setWalSizeLimitMB(512).setMaxTotalWalSize(1024 * SizeUnit.MB).setErrorIfExists(false)
 				.setAllowOsBuffer(true).setWalDir(walDirectory).setOptimizeFiltersForHits(false);
 		wal = RocksDB.open(options, mapDirectory);
-		opts = new WriteOptions().setDisableWAL(false).setSync(false);
+		writeOptions = new WriteOptions().setDisableWAL(false).setSync(false);
 		recoverAndReplayEvents();
 	}
 
@@ -124,7 +124,7 @@ public class RocksDBWALService implements WAL {
 	@Override
 	public void stop() throws Exception {
 		wal.close();
-		opts.close();
+		writeOptions.close();
 		options.close();
 	}
 
@@ -146,7 +146,7 @@ public class RocksDBWALService implements WAL {
 	@Override
 	public void ackEvent(String eventId) throws IOException {
 		try {
-			wal.remove(opts, eventId.getBytes(charset));
+			wal.remove(writeOptions, eventId.getBytes(charset));
 		} catch (RocksDBException e) {
 			throw new IOException(e);
 		}

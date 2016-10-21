@@ -1,0 +1,51 @@
+##############################################################################################################
+# Derived from https://github.com/wurstmeister/storm-docker and https://github.com/wurstmeister/kafka-docker
+# Apache 2.0 License
+# Purpose: To deploy a Storm-Kafka-Zookeeper in docker
+# 
+# Steps:
+# 1. Download and install Docker 1.12 or higher
+# 2. cd to the directory of this file
+# 3. docker-compose up -d
+##############################################################################################################
+version: '2'
+services:
+  nucleus:
+    image: "nucleus:${HVERSION}"
+    ports:
+      - "8080:8080"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+    depends_on:
+      - api
+      - mysqls
+  mysqls:
+    image: mysql:5.7.12
+    ports:
+      - "53306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+  api:
+    image: "tau-api:${HVERSION}"
+    ports:
+      - "9000:9000"
+    environment:
+      NUCLEUS_SERVER_URL: http://nucleus:8080
+      MYSQL_HOST: mysqls
+      MYSQL_PORT: 3306
+      MYSQL_ADDRESS: mysqls:3306
+      MYSQL_ROOT_USERNAME: root
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+    depends_on:
+      - mysqls
+    links:
+      - mysqls
+      - nucleus
+  ui:
+    image: "tau-ui:${HVERSION}"
+    ports:
+      - "8080:8080"
+    environment:
+      API_SERVER: api:9000
+    depends_on:
+      - api

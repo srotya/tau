@@ -47,7 +47,7 @@ public class ApplicationManager implements Serializable {
 	private static final String AUTH_URL = "auth.url";
 	private static final String API_URL = "api.url";
 	private static final long serialVersionUID = 1L;
-	private static final String PROP_CONFIG_FILE = "hendrixConfig";
+	private static final String PROP_CONFIG_FILE = "tauConfig";
 	private Properties config;
 	private String ruleTopicName;
 	private String baseUrl;

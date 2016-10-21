@@ -1,0 +1,5 @@
+ingresserFactoryConfiguration: /opt/tau/nucleus.conf
+ruleEngineConfiguration: /opt/tau/nucleus.conf
+server:
+ requestLog:
+    appenders: []

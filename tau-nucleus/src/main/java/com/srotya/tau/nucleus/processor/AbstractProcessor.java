@@ -106,11 +106,13 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	@SuppressWarnings({ "unchecked" })
 	private void startWAL() throws InstantiationException, IllegalAccessException, ClassNotFoundException, Exception {
 		if (getConfigPrefix() != null) {
+			String baseDir = conf.getOrDefault("base.data.dir", "target");
 			selfWal = factory.newWalInstance(
 					(Class<? extends WAL>) Class.forName(conf.getOrDefault(getConfigPrefix() + ".wal.class",
 							"com.srotya.tau.nucleus.wal.RocksDBWALService")),
-					factory, this, conf.getOrDefault(getConfigPrefix() + ".wal.wdir", "target/m"+getConfigPrefix()),
-					conf.getOrDefault(getConfigPrefix() + ".wal.mdir", "target/m"+getConfigPrefix()));
+					factory, this,
+					conf.getOrDefault(getConfigPrefix() + ".wal.wdir", baseDir + "/m" + getConfigPrefix()),
+					conf.getOrDefault(getConfigPrefix() + ".wal.mdir", baseDir + "/m" + getConfigPrefix()));
 			selfWal.start();
 		} else {
 			getLogger().warning("WAL is disabled");
@@ -132,16 +134,16 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 		List<EventHandler<Event>> handlers = new ArrayList<>();
 		for (int i = 0; i < parallelism.getVal(); i++) {
 			EventHandler<Event> handler = instantiateAndInitializeHandler(i, parallelism, conf, factory);
-			if(handler==null) {
+			if (handler == null) {
 				throw new NullPointerException("A processor can't return a NULL handler");
 			}
 			handlers.add(handler);
 		}
 		return handlers;
 	}
-	
-	public abstract EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism, Map<String, String> conf,
-			DisruptorUnifiedFactory factory) throws Exception;
+
+	public abstract EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism,
+			Map<String, String> conf, DisruptorUnifiedFactory factory) throws Exception;
 
 	/**
 	 * @param event

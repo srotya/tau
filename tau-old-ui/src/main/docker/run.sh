@@ -5,9 +5,9 @@
 # Purpose: Run script for U
 #
 
-envsubst < /opt/hendrix/template.properties > /opt/hendrix/config.properties
+envsubst < /opt/tau/template.properties > /opt/tau/config.properties
 
-export hendrixConfig=/opt/hendrix/config.properties
+export tauConfig=/opt/tau/config.properties
 
 /usr/local/tomcat/bin/startup.sh
 

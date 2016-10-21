@@ -106,8 +106,6 @@ public class TestPerformanceMonitor {
 		for (int i = 0; i < limit; i++) {
 			mon.processEvent(event);
 		}
-		System.err.println("Cache names:" + ignite.cacheNames());
-
 		for (Entry<Object, Object> entry : ignite.cache("mcmMetrics")) {
 			System.err.println("\tMCM metric:" + entry.getKey() + "\t" + entry.getValue());
 			Set<String> set = ((Set<String>) entry.getValue());
@@ -144,8 +142,6 @@ public class TestPerformanceMonitor {
 		for (int i = 0; i < limit; i++) {
 			mon.processEvent(event);
 		}
-		System.err.println("Cache names:" + ignite.cacheNames());
-
 		Map<String, List<Point>> result = mon.getSeriesForRuleGroup("mcm.rule.efficiency", "test", 100);
 		assertEquals(limit, result.get("11").size());
 	}
