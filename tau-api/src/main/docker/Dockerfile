@@ -1,18 +1,18 @@
 # Using centos 7 image
 FROM java:8-jre
-MAINTAINER asharma525xi@gmail.com
+MAINTAINER Ambud Sharma
 
 RUN apt-get -y update
 RUN apt-get -y --force-yes install gettext mysql-client telnet wget netcat
 
-RUN mkdir -p /usr/local/hendrix/
-RUN mkdir -p /opt/hendrix/
+RUN mkdir -p /usr/local/tau/
+RUN mkdir -p /opt/tau/
 
-ADD ./api.jar /usr/local/hendrix/api.jar
-ADD ./config.yaml /opt/hendrix/
-ADD ./template.properties /opt/hendrix/
-ADD ./run.sh /opt/hendrix/
+ADD ./api.jar /usr/local/tau/api.jar
+ADD ./config.yaml /opt/tau/
+ADD ./template.properties /opt/tau/
+ADD ./run.sh /opt/tau/
 
-RUN chmod +x /opt/hendrix/*.sh
+RUN chmod +x /opt/tau/*.sh
 
-CMD /opt/hendrix/run.sh
+CMD /opt/tau/run.sh

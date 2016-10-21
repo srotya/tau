@@ -124,9 +124,6 @@ public class ApplicationManager extends Application<AppConfig>implements Daemon 
 		factory = Persistence.createEntityManagerFactory("tau", config);
 		EntityManager em = factory.createEntityManager();
 		em.close();
-		if (!LOCAL) {
-			initKafkaConnection();
-		}
 		initializeEventSourcer();
 		checkAndCreateGlobalRuleGroup();
 	}
@@ -178,8 +175,6 @@ public class ApplicationManager extends Application<AppConfig>implements Daemon 
 	 * 
 	 */
 	public void initKafkaConnection() {
-		
-		
 		config.put("group.id", "tauAR_"+Utils.getHostName());
 		consumer = new KafkaConsumer<>(config);
 		consumer.subscribe(config.getProperty(EVENT_VIEWER_TOPIC, "eventViewerTopic"));

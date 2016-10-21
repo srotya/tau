@@ -1,7 +1,8 @@
-name: hendrix-api
+name: tau-api
 enableAuthorization: false
+tauConfig: /opt/tau/config.properties
 server:
- applicationContextPath: /api/*
+ applicationContextPath: /*
  applicationConnectors:
   - type: http 
     port: 9000

@@ -11,14 +11,17 @@
 version: '2'
 services:
   nucleus:
-    image: "nucleus:${HVERSION}"
+    image: "tau-nucleus:${HVERSION}"
     ports:
       - "8080:8080"
     environment:
+      MYSQL_ROOT_USERNAME: root
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_ADDRESS: mysqls:3306
+      API_PORT: 9000
+      API_HOST: api
     depends_on:
       - api
-      - mysqls
   mysqls:
     image: mysql:5.7.12
     ports:
@@ -40,12 +43,3 @@ services:
       - mysqls
     links:
       - mysqls
-      - nucleus
-  ui:
-    image: "tau-ui:${HVERSION}"
-    ports:
-      - "8080:8080"
-    environment:
-      API_SERVER: api:9000
-    depends_on:
-      - api

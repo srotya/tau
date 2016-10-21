@@ -9,11 +9,7 @@
 
 while ! nc -z $MYSQL_HOST $MYSQL_PORT;do echo "Checking mysql connectivity";sleep 1;done
 
-while ! nc -z $KAFKA_HOST $KAFKA_PORT;do echo "Checking kafka connectivity";sleep 1;done
+envsubst < /opt/tau/template.properties > /opt/tau/config.properties
 
-envsubst < /opt/hendrix/template.properties > /opt/hendrix/config.properties
-
-export hendrixConfig=/opt/hendrix/config.properties
-
-java -jar /usr/local/hendrix/api.jar server /opt/hendrix/config.yaml
+java -jar /usr/local/tau/api.jar server /opt/tau/config.yaml
 #tail -f /var/log/*
