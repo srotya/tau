@@ -16,8 +16,6 @@
 package com.srotya.tau.nucleus.processor;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -39,7 +37,7 @@ import com.srotya.tau.wraith.rules.StatelessRulesEngine;
  *
  */
 public class RuleProcessor extends AbstractProcessor {
-	
+
 	private static final Logger logger = Logger.getLogger(RuleProcessor.class.getName());
 
 	public RuleProcessor(DisruptorUnifiedFactory factory, int parallelism, int bufferSize, Map<String, String> conf,
@@ -48,15 +46,11 @@ public class RuleProcessor extends AbstractProcessor {
 	}
 
 	@Override
-	public List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
-			DisruptorUnifiedFactory factory) throws Exception {
-		List<EventHandler<Event>> handlers = new ArrayList<>();
-		for (int i = 0; i < parallelism.getVal(); i++) {
-			RulesEngineHandler handler = new RulesEngineHandler(this, i, parallelism, factory, getOutputProcessors());
-			handler.init(conf);
-			handlers.add(handler);
-		}
-		return handlers;
+	public EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism,
+			Map<String, String> conf, DisruptorUnifiedFactory factory) throws Exception {
+		RulesEngineHandler handler = new RulesEngineHandler(this, taskId, parallelism, factory, getOutputProcessors());
+		handler.init(conf);
+		return handler;
 	}
 
 	public static class RulesEngineHandler extends ShuffleHandler implements RulesEngineCaller<Object, Object> {
@@ -111,13 +105,13 @@ public class RuleProcessor extends AbstractProcessor {
 		@Override
 		public void consumeEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 			Object type = event.getHeaders().get(Constants.FIELD_EVENT_TYPE);
-			if (type!=null && type.equals(Constants.EVENT_TYPE_RULE_UPDATE)) {
+			if (type != null && type.equals(Constants.EVENT_TYPE_RULE_UPDATE)) {
 				rulesEngine.updateRule(event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString(),
 						event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString(),
 						((Boolean) event.getHeaders().get(Constants.FIELD_RULE_DELETE)));
 				logger.info("Processed rule update:" + event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString());
 			} else {
-//				logger.info("Saw event:"+event);
+				// logger.info("Saw event:"+event);
 				rulesEngine.evaluateEventAgainstGroupedRules(null, null, event);
 				caller.ackEvent(event.getEventId());
 			}
@@ -136,8 +130,8 @@ public class RuleProcessor extends AbstractProcessor {
 		}
 
 		@Override
-		public void emitTemplatedAlert(Object eventCollector, Object eventContainer, Event outputEvent, String ruleGroup, Short ruleId,
-				Short actionId, String ruleName, Short templateId, Long timestamp) {
+		public void emitTemplatedAlert(Object eventCollector, Object eventContainer, Event outputEvent,
+				String ruleGroup, Short ruleId, Short actionId, String ruleName, Short templateId, Long timestamp) {
 			// alert
 			Event event = factory.buildEvent();
 			event.getHeaders().put(Constants.FIELD_EVENT, outputEvent);
@@ -158,7 +152,8 @@ public class RuleProcessor extends AbstractProcessor {
 
 		@Override
 		public void handleRuleNoMatch(Object eventCollector, Object eventContainer, Event inputEvent, Rule rule) {
-//			logger.info("Rule no match:"+inputEvent.getEventId()+"\t"+rule.getRuleId());
+			// logger.info("Rule no
+			// match:"+inputEvent.getEventId()+"\t"+rule.getRuleId());
 		}
 
 		@Override
@@ -183,7 +178,7 @@ public class RuleProcessor extends AbstractProcessor {
 		public void emitAggregationEvent(Class<? extends Action> action, Object eventCollector, Object eventContainer,
 				Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey,
 				Object aggregationValue) {
-			if(action==FineCountingAggregationAction.class) {
+			if (action == FineCountingAggregationAction.class) {
 				logger.info("Emitting couning");
 				Event event = factory.buildEvent();
 				event.setEventId(originalEvent.getEventId());
@@ -239,8 +234,8 @@ public class RuleProcessor extends AbstractProcessor {
 		}
 
 		@Override
-		public void emitOmegaActions(Object eventCollector, Object eventContainer, String ruleGroup, long timestamp, short ruleId,
-				short actionId, Event outputEvent) {
+		public void emitOmegaActions(Object eventCollector, Object eventContainer, String ruleGroup, long timestamp,
+				short ruleId, short actionId, Event outputEvent) {
 			Event event = factory.buildEvent();
 			event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
 			event.getHeaders().put(Constants.FIELD_ACTION_ID, actionId);

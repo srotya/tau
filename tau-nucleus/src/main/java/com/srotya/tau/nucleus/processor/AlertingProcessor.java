@@ -15,8 +15,6 @@
  */
 package com.srotya.tau.nucleus.processor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -81,15 +79,11 @@ public class AlertingProcessor extends AbstractProcessor {
 	}
 
 	@Override
-	public List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
+	public EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism, Map<String, String> conf,
 			DisruptorUnifiedFactory factory) throws Exception {
-		List<EventHandler<Event>> handlers = new ArrayList<>();
-		for (int i = 0; i < parallelism.getVal(); i++) {
-			AlertActionHandler handler = new AlertActionHandler(i, parallelism, factory);
-			handler.init(conf);
-			handlers.add(handler);
-		}
-		return handlers;
+		AlertActionHandler handler = new AlertActionHandler(taskId, parallelism, factory);
+		handler.init(conf);
+		return handler;
 	}
 
 	@Override

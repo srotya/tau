@@ -47,16 +47,12 @@ public class FineCountingProcessor extends AbstractProcessor {
 	}
 
 	@Override
-	public List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
-			DisruptorUnifiedFactory factory) throws Exception {
-		List<EventHandler<Event>> handlers = new ArrayList<>();
-		for (int i = 0; i < parallelism.getVal(); i++) {
-			FineCountingHandler handler = new FineCountingHandler(this, i, parallelism, factory,
-					Integer.parseInt(conf.getOrDefault("aggregation.batch.size", "1000")), getOutputProcessors()[0]);
-			handler.init(conf);
-			handlers.add(handler);
-		}
-		return handlers;
+	public EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism,
+			Map<String, String> conf, DisruptorUnifiedFactory factory) throws Exception {
+		FineCountingHandler handler = new FineCountingHandler(this, taskId, parallelism, factory,
+				Integer.parseInt(conf.getOrDefault("aggregation.batch.size", "1000")), getOutputProcessors()[0]);
+		handler.init(conf);
+		return handler;
 	}
 
 	@Override

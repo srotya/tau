@@ -16,6 +16,7 @@
 package com.srotya.tau.nucleus.processor;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -108,8 +109,8 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 			selfWal = factory.newWalInstance(
 					(Class<? extends WAL>) Class.forName(conf.getOrDefault(getConfigPrefix() + ".wal.class",
 							"com.srotya.tau.nucleus.wal.RocksDBWALService")),
-					factory, this, conf.get(getConfigPrefix() + ".wal.wdir"),
-					conf.get(getConfigPrefix() + ".wal.mdir"));
+					factory, this, conf.getOrDefault(getConfigPrefix() + ".wal.wdir", "target/m"+getConfigPrefix()),
+					conf.getOrDefault(getConfigPrefix() + ".wal.mdir", "target/m"+getConfigPrefix()));
 			selfWal.start();
 		} else {
 			getLogger().warning("WAL is disabled");
@@ -118,15 +119,28 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 
 	@Override
 	public final void stop() throws Exception {
-		pool.shutdownNow();
-		pool.awaitTermination(1, TimeUnit.SECONDS);
+		pool.shutdown();
+		pool.awaitTermination(2, TimeUnit.SECONDS);
 		if (selfWal != null) {
 			selfWal.stop();
 		}
 		started = false;
 	}
 
-	public abstract List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
+	public final List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
+			DisruptorUnifiedFactory factory) throws Exception {
+		List<EventHandler<Event>> handlers = new ArrayList<>();
+		for (int i = 0; i < parallelism.getVal(); i++) {
+			EventHandler<Event> handler = instantiateAndInitializeHandler(i, parallelism, conf, factory);
+			if(handler==null) {
+				throw new NullPointerException("A processor can't return a NULL handler");
+			}
+			handlers.add(handler);
+		}
+		return handlers;
+	}
+	
+	public abstract EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism, Map<String, String> conf,
 			DisruptorUnifiedFactory factory) throws Exception;
 
 	/**

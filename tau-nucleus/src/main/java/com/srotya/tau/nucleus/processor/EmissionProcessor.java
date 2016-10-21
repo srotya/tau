@@ -2,7 +2,6 @@ package com.srotya.tau.nucleus.processor;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,24 +36,25 @@ public class EmissionProcessor extends AbstractProcessor {
 	 *            Aggregation
 	 */
 	public EmissionProcessor(DisruptorUnifiedFactory factory, Map<String, String> conf,
-			AbstractProcessor ...outputProcessors) {
+			AbstractProcessor... outputProcessors) {
 		super(factory, 1, 128, conf, outputProcessors);
 	}
-	
+
 	public static class EmissionHandler implements EventHandler<Event> {
-		
+
 		private Map<String, Map<Short, Rule>> ruleGroupMap;
 		private int tickCounter;
 		private DisruptorUnifiedFactory factory;
 		private AbstractProcessor[] processors;
-		
+
 		public EmissionHandler(DisruptorUnifiedFactory factory, AbstractProcessor[] processors) {
 			this.factory = factory;
 			this.processors = processors;
 		}
-		
+
 		public void initialize(Map<String, String> conf) throws Exception {
-			int hashSize = Integer.parseInt(conf.getOrDefault(Constants.RULE_HASH_INIT_SIZE, Constants.DEFAULT_RULE_HASH_SIZE));
+			int hashSize = Integer
+					.parseInt(conf.getOrDefault(Constants.RULE_HASH_INIT_SIZE, Constants.DEFAULT_RULE_HASH_SIZE));
 			this.ruleGroupMap = new HashMap<>(hashSize);
 			RulesStore store = null;
 			try {
@@ -75,7 +75,7 @@ public class EmissionProcessor extends AbstractProcessor {
 		@Override
 		public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 			Object type = event.getHeaders().get(Constants.FIELD_EVENT_TYPE);
-			if (type!=null && type.equals(Constants.EVENT_TYPE_RULE_UPDATE)) {
+			if (type != null && type.equals(Constants.EVENT_TYPE_RULE_UPDATE)) {
 				updateRule(event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString(),
 						event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString(),
 						((Boolean) event.getHeaders().get(Constants.FIELD_RULE_DELETE)));
@@ -90,7 +90,7 @@ public class EmissionProcessor extends AbstractProcessor {
 				}
 			}
 		}
-		
+
 		public void sendEmissionsForRule(String ruleGroup, Rule rule) {
 			List<AggregationAction> aggregationActions = filterAggregationActions(rule);
 			if (aggregationActions != null) {
@@ -124,11 +124,11 @@ public class EmissionProcessor extends AbstractProcessor {
 			}
 			return actions;
 		}
-		
+
 		/**
-		 * Update rule and trigger emissions for that rule so there are no orphan
-		 * entries in aggregation maps since rule update may change the rule
-		 * configuration.
+		 * Update rule and trigger emissions for that rule so there are no
+		 * orphan entries in aggregation maps since rule update may change the
+		 * rule configuration.
 		 * 
 		 * @param tuple
 		 * @param ruleGroup
@@ -151,10 +151,10 @@ public class EmissionProcessor extends AbstractProcessor {
 	}
 
 	@Override
-	public List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
-			DisruptorUnifiedFactory factory) throws Exception {
+	public EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism,
+			Map<String, String> conf, DisruptorUnifiedFactory factory) throws Exception {
 		es = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-			
+
 			@Override
 			public Thread newThread(Runnable r) {
 				Thread thread = new Thread(r);
@@ -162,24 +162,24 @@ public class EmissionProcessor extends AbstractProcessor {
 				return thread;
 			}
 		});
-		es.scheduleAtFixedRate(()->{
+		es.scheduleAtFixedRate(() -> {
 			Event event = factory.buildEvent();
 			event.getHeaders().put(Constants.FIELD_EVENT_TYPE, "-1");
 			processEventNonWaled(event);
 		}, 10, 1, TimeUnit.SECONDS);
 		EmissionHandler handler = new EmissionHandler(factory, getOutputProcessors());
 		handler.initialize(conf);
-		return Arrays.asList(handler);
+		return handler;
 	}
 
 	@Override
 	public String getConfigPrefix() {
 		return null;
 	}
-	
+
 	@Override
 	public Logger getLogger() {
 		return logger;
 	}
-	
+
 }

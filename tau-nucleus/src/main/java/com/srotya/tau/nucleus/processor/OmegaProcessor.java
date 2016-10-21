@@ -15,8 +15,6 @@
  */
 package com.srotya.tau.nucleus.processor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -41,15 +39,11 @@ public class OmegaProcessor extends AbstractProcessor {
 	}
 
 	@Override
-	public List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
-			DisruptorUnifiedFactory factory) throws Exception {
-		List<EventHandler<Event>> handlers = new ArrayList<>();
-		for (int i = 0; i < parallelism.getVal(); i++) {
-			OmegaHandler handler = new OmegaHandler(this, i, parallelism, factory);
-			handler.init(conf);
-			handlers.add(handler);
-		}
-		return handlers;
+	public EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism,
+			Map<String, String> conf, DisruptorUnifiedFactory factory) throws Exception {
+		OmegaHandler handler = new OmegaHandler(this, taskId, parallelism, factory);
+		handler.init(conf);
+		return handler;
 	}
 
 	@Override

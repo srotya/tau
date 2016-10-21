@@ -15,7 +15,9 @@
  */
 package com.srotya.tau.nucleus;
 
+import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -49,4 +51,13 @@ public class Utils {
 	    return buffer.getLong();
 	}
 
+	public static void wipeDirectory(String directory) {
+		File file = new File(directory);
+		if (file.isDirectory() && file.exists()) {
+			Arrays.asList(file.listFiles()).forEach((f) -> {
+				f.delete();
+			});
+			file.delete();
+		}
+	}
 }

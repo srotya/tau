@@ -30,6 +30,10 @@ import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
 import com.srotya.tau.wraith.aggregations.StateTrackingEngine;
 
+/**
+ * @author ambudsharma
+ *
+ */
 public class StateProcessor extends AbstractProcessor {
 
 	private static final Logger logger = Logger.getLogger(StateProcessor.class.getName());
@@ -40,16 +44,12 @@ public class StateProcessor extends AbstractProcessor {
 	}
 
 	@Override
-	public List<EventHandler<Event>> getInitializedHandlers(MutableInt parallelism, Map<String, String> conf,
-			DisruptorUnifiedFactory factory) throws Exception {
-		List<EventHandler<Event>> handlers = new ArrayList<>();
-		for (int i = 0; i < parallelism.getVal(); i++) {
-			StateTrackingEngineHandler handler = new StateTrackingEngineHandler(this, i, parallelism, factory,
-					Integer.parseInt(conf.getOrDefault("state.batch.size", "1000")), getOutputProcessors()[0]);
-			handler.init(conf);
-			handlers.add(handler);
-		}
-		return handlers;
+	public EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism,
+			Map<String, String> conf, DisruptorUnifiedFactory factory) throws Exception {
+		StateTrackingEngineHandler handler = new StateTrackingEngineHandler(this, taskId, parallelism, factory,
+				Integer.parseInt(conf.getOrDefault("state.batch.size", "1000")), getOutputProcessors()[0]);
+		handler.init(conf);
+		return handler;
 	}
 
 	@Override

@@ -1,4 +1,5 @@
 # Tau
+[![Build Status](https://travis-ci.org/srotya/tau.svg?branch=master)](https://travis-ci.org/srotya/tau)
 
 ## Project Description
 Tau is a Real-time event correlation system.

@@ -159,6 +159,7 @@ public class NucleusServer extends Application<NucleusConfig> {
 		return ruleProcessor;
 	}
 
+	@SuppressWarnings("unused")
 	private IngressManager initializeIngressManager(NucleusConfig configuration, Environment environment, RuleProcessor ruleProcessor)
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException,
 			FileNotFoundException {

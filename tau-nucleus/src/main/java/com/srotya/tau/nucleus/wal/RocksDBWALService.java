@@ -15,11 +15,9 @@
  */
 package com.srotya.tau.nucleus.wal;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,6 +33,7 @@ import org.rocksdb.util.SizeUnit;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.srotya.tau.nucleus.Utils;
 import com.srotya.tau.nucleus.processor.AbstractProcessor;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.EventFactory;
@@ -60,8 +59,8 @@ public class RocksDBWALService implements WAL {
 	private static final Logger logger = Logger.getLogger(RocksDBWALService.class.getName());
 	private static final Charset charset = Charset.forName("utf-8");
 	private RocksDB wal;
-	private String walDirectory;
 	private Options options;
+	private String walDirectory;
 	private boolean autoResetWal = false;
 	private String mapDirectory;
 	private AbstractProcessor processor;
@@ -84,8 +83,8 @@ public class RocksDBWALService implements WAL {
 	@Override
 	public void start() throws Exception {
 		if (autoResetWal) {
-			wipeDirectory(walDirectory);
-			wipeDirectory(mapDirectory);
+			Utils.wipeDirectory(walDirectory);
+			Utils.wipeDirectory(mapDirectory);
 			logger.info("Cleared WAL directory:" + walDirectory);
 		}
 		options = new Options().setCreateIfMissing(true).setAllowMmapReads(true).setAllowMmapWrites(true)
@@ -119,17 +118,6 @@ public class RocksDBWALService implements WAL {
 			logger.log(Level.SEVERE, "Unable to recover events", e);
 		} finally {
 			itr.close();
-		}
-	}
-
-	private void wipeDirectory(String directory) {
-		File file = new File(directory);
-		if (file.isDirectory() && file.exists()) {
-			Arrays.asList(file.listFiles()).forEach((f) -> {
-				f.delete();
-			});
-			file.delete();
-			file.mkdirs();
 		}
 	}
 
