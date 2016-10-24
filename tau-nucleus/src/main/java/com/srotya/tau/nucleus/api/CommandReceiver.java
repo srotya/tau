@@ -10,6 +10,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.processor.AbstractProcessor;
+import com.srotya.tau.nucleus.processor.AlertTransmissionProcessor;
 import com.srotya.tau.nucleus.processor.EmissionProcessor;
 import com.srotya.tau.nucleus.processor.OmegaProcessor;
 import com.srotya.tau.wraith.Constants;
@@ -26,14 +27,16 @@ public class CommandReceiver {
 	private AbstractProcessor alertProcessor;
 	private EmissionProcessor emissionProcessor;
 	private OmegaProcessor omegaProcessor;
+	private AlertTransmissionProcessor transmissionProcessor;
 
 	public CommandReceiver(DisruptorUnifiedFactory factory, AbstractProcessor ruleProcessor,
-			AbstractProcessor alertProcessor, EmissionProcessor emissionProcessor, OmegaProcessor omegaProcessor) {
+			AbstractProcessor alertProcessor, EmissionProcessor emissionProcessor, OmegaProcessor omegaProcessor, AlertTransmissionProcessor transmissionProcessor) {
 		this.factory = factory;
 		this.ruleProcessor = ruleProcessor;
 		this.alertProcessor = alertProcessor;
 		this.emissionProcessor = emissionProcessor;
 		this.omegaProcessor = omegaProcessor;
+		this.transmissionProcessor = transmissionProcessor;
 	}
 
 	@Path("/rules")
@@ -74,6 +77,7 @@ public class CommandReceiver {
 		event.getHeaders().put(Constants.FIELD_TEMPLATE_DELETE, command.isDelete());
 		logger.info("Template command received:" + event);
 		alertProcessor.processEventNonWaled(event);
+		transmissionProcessor.processEventNonWaled(event);
 	}
 
 }

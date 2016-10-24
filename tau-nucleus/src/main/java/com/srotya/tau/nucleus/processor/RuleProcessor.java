@@ -26,6 +26,7 @@ import com.srotya.tau.nucleus.disruptor.ShuffleHandler;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
+import com.srotya.tau.wraith.Utils;
 import com.srotya.tau.wraith.actions.Action;
 import com.srotya.tau.wraith.actions.aggregations.FineCountingAggregationAction;
 import com.srotya.tau.wraith.rules.Rule;
@@ -134,14 +135,14 @@ public class RuleProcessor extends AbstractProcessor {
 				String ruleGroup, Short ruleId, Short actionId, String ruleName, Short templateId, Long timestamp) {
 			// alert
 			Event event = factory.buildEvent();
-			event.getHeaders().put(Constants.FIELD_EVENT, outputEvent);
+			event.getHeaders().put(Constants.FIELD_EVENT, outputEvent.getHeaders());
 			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 			event.getHeaders().put(Constants.FIELD_ALERT_TEMPLATE_ID, templateId);
 			event.getHeaders().put(Constants.FIELD_ACTION_ID, actionId);
 			event.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
 			event.getHeaders().put(Constants.FIELD_RULE_NAME, ruleName);
 			event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
-			event.setEventId(outputEvent.getEventId());
+			event.setEventId(outputEvent.getEventId()+Utils.combineRuleActionId(ruleId, actionId));
 			event.setBody(gson.toJson(event.getHeaders()).getBytes());
 			try {
 				alertProcessor.processEventWaled(event);
@@ -181,7 +182,7 @@ public class RuleProcessor extends AbstractProcessor {
 			if (action == FineCountingAggregationAction.class) {
 				logger.info("Emitting couning");
 				Event event = factory.buildEvent();
-				event.setEventId(originalEvent.getEventId());
+				event.setEventId(originalEvent.getEventId()+ruleActionId);
 				event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
 				event.getHeaders().put(Constants.FIELD_RULE_ACTION_ID, ruleActionId);
@@ -201,7 +202,7 @@ public class RuleProcessor extends AbstractProcessor {
 		public void emitStateTrackingEvent(Object eventCollector, Object eventContainer, Boolean track,
 				Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey) {
 			Event event = factory.buildEvent();
-			event.setEventId(originalEvent.getEventId());
+			event.setEventId(originalEvent.getEventId()+ruleActionId);
 			event.getHeaders().put(Constants.FIELD_STATE_TRACK, track);
 			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 			event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
@@ -242,7 +243,7 @@ public class RuleProcessor extends AbstractProcessor {
 			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 			event.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
 			event.getHeaders().put(Constants.FIELD_EVENT, outputEvent);
-			event.setEventId(outputEvent.getEventId());
+			event.setEventId(outputEvent.getEventId()+Utils.combineRuleActionId(ruleId, actionId));
 			event.setBody(gson.toJson(event.getHeaders()).getBytes());
 			try {
 				omegaProcessor.processEventWaled(event);

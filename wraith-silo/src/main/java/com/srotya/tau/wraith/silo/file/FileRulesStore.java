@@ -21,9 +21,12 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import com.google.gson.Gson;
 import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplate;
+import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplateSerializer;
+import com.srotya.tau.wraith.actions.alerts.templated.TemplateCommand;
 import com.srotya.tau.wraith.rules.Rule;
 import com.srotya.tau.wraith.rules.RuleCommand;
 import com.srotya.tau.wraith.rules.RuleSerializer;
@@ -37,13 +40,19 @@ import com.srotya.tau.wraith.store.TemplateStore;
  */
 public class FileRulesStore implements RulesStore, TemplateStore {
 
-	public static final String CONF_RULES_DIR = "rules.dir";
+	private static final Logger logger = Logger.getLogger(FileRulesStore.class.getName());
+	public static final String CONF_RULES_DIR = "store.rules.dir";
+	public static final String CONF_TEMPLATES_DIR = "store.templates.dir";
 	private String rulesDirectory;
+	private String templatesDirectory;
 	private File[] ruleFiles;
+	private File[] templateFiles;
 
 	@Override
 	public void initialize(Map<String, String> conf) {
 		rulesDirectory = conf.get(CONF_RULES_DIR);
+		templatesDirectory = conf.get(CONF_TEMPLATES_DIR);
+		logger.info("Rule directory:"+rulesDirectory+"\tTemplate directory:"+templatesDirectory+"\t"+conf);
 	}
 
 	@Override
@@ -53,6 +62,12 @@ public class FileRulesStore implements RulesStore, TemplateStore {
 			throw new IOException("Rules directory doesn't exist");
 		}
 		ruleFiles = rd.listFiles();
+
+		rd = new File(templatesDirectory);
+		if (!rd.exists()) {
+			throw new IOException("Templates directory doesn't exist");
+		}
+		templateFiles = rd.listFiles();
 	}
 
 	@Override
@@ -76,7 +91,7 @@ public class FileRulesStore implements RulesStore, TemplateStore {
 			List<String> lines = Files.readAllLines(file.toPath());
 			addRulesGroupFromLines(rules, lines);
 		}
-		return null;
+		return rules;
 	}
 
 	protected void addRulesGroupFromLines(Map<String, Map<Short, Rule>> rules, List<String> lines) {
@@ -94,10 +109,27 @@ public class FileRulesStore implements RulesStore, TemplateStore {
 			grp.put(rule.getRuleId(), rule);
 		}
 	}
+	
+	protected void addTemplatesGroupFromLines(Map<Short, AlertTemplate> templates, List<String> lines) {
+		Gson gson = new Gson();
+		for (String line : lines) {
+			if (line == null || line.trim().isEmpty()) {
+				continue;
+			}
+			TemplateCommand cmd = gson.fromJson(line, TemplateCommand.class);
+			AlertTemplate template = AlertTemplateSerializer.deserialize(cmd.getTemplateContent());
+			templates.put(template.getTemplateId(), template);
+		}
+	}
 
 	@Override
 	public Map<Short, AlertTemplate> getAllTemplates() throws IOException {
-		return new HashMap<>();
+		Map<Short, AlertTemplate> templates = new HashMap<>();
+		for (File file : templateFiles) {
+			List<String> lines = Files.readAllLines(file.toPath());
+			addTemplatesGroupFromLines(templates, lines);
+		}
+		return templates;
 	}
 
 }

@@ -178,7 +178,7 @@ public class TemplateManager {
 			logger.info("Template " + templates.getTemplateId() + ":" + templates.getTemplateContent() + " saved");
 			// publish template to kafka
 			
-			am.getSourcer().sendTemplate(true, ruleGroup.getRuleGroupId(), templates.getTemplateContent());
+			am.getSourcer().sendTemplate(false, ruleGroup.getRuleGroupId(), templates.getTemplateContent());
 			em.getTransaction().commit();
 			logger.info("Completed Transaction for template " + templates.getTemplateId() + ":"
 					+ templates.getTemplateContent() + "");

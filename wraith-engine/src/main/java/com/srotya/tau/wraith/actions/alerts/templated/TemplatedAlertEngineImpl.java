@@ -35,7 +35,6 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.tools.generic.DateTool;
 
 import com.srotya.tau.wraith.Constants;
-import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.actions.alerts.Alert;
 import com.srotya.tau.wraith.store.StoreFactory;
 import com.srotya.tau.wraith.store.TemplateStore;
@@ -57,14 +56,14 @@ public class TemplatedAlertEngineImpl implements TemplatedAlertEngine {
 	}
 
 	@Override
-	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, String ruleName,
+	public Alert materialize(Map<String, Object> eventHeader, String ruleGroup, short ruleId, short actionId, String ruleName,
 			short templateId, long timestamp) {
 		Alert alert = new Alert();
 		VelocityAlertTemplate template = templateMap.get(templateId);
 		if (template != null) {
 			long time = System.nanoTime();
 			VelocityContext ctx = new VelocityContext();
-			for (Entry<String, Object> entry : event.getHeaders().entrySet()) {
+			for (Entry<String, Object> entry : eventHeader.entrySet()) {
 				ctx.put(entry.getKey(), entry.getValue());
 			}
 			ctx.put(VELOCITY_VAR_DATE, new DateTool());

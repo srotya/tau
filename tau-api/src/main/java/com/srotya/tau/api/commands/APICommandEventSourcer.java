@@ -56,6 +56,7 @@ public class APICommandEventSourcer implements CommandEventSourcer {
 			HttpPut put = new HttpPut(url + TEMPLATE_URL);
 			TemplateCommand cmd = new TemplateCommand(ruleGroupId, delete, templateJson);
 			String json = new Gson().toJson(cmd);
+			System.err.println("Sending template update command:"+json);
 			put.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
 			CloseableHttpResponse response = client.execute(put);
 			if (response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300) {

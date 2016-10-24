@@ -42,6 +42,7 @@ public abstract class Constants {
 	public static final String FIELD_ALERT_MEDIA = "media";
 	public static final String FIELD_ALERT_TEMPLATE_ID = "_tid";
 	public static final String FIELD_ALERT_BODY = "body";
+	public static final String FIELD_ALERT_SUBJECT = "subject";
 	public static final String FIELD_ALERT = "alert";
 	public static final String FIELD_ID = "_id";
 	public static final String FIELD_RULE_GROUP = "_rg";

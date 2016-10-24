@@ -15,8 +15,9 @@
  */
 package com.srotya.tau.wraith.actions.alerts.templated;
 
+import java.util.Map;
+
 import com.srotya.tau.wraith.Configurable;
-import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.actions.alerts.Alert;
 
 /**
@@ -27,14 +28,14 @@ public interface TemplatedAlertEngine extends Configurable {
 	/**
 	 * To support template based alerts
 	 * 
-	 * @param event
+	 * @param eventHeaders
 	 * @param ruleGroup
 	 * @param ruleId
 	 * @param actionId
 	 * @param templateId
 	 * @return
 	 */
-	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, String ruleName, short templateId,
+	public Alert materialize(Map<String, Object> eventHeaders, String ruleGroup, short ruleId, short actionId, String ruleName, short templateId,
 			long timestamp);
 
 	/**

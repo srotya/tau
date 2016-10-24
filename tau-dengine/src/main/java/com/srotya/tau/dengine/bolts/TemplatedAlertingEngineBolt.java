@@ -126,7 +126,7 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 			}
 		} else {
 			Alert alertResult = null;
-			alertResult = materialize((Event) tuple.getValueByField(Constants.FIELD_EVENT),
+			alertResult = materialize(((Event) tuple.getValueByField(Constants.FIELD_EVENT)).getHeaders(),
 					tuple.getStringByField(Constants.FIELD_RULE_GROUP),
 					tuple.getShortByField(Constants.FIELD_RULE_ID),
 					tuple.getShortByField(Constants.FIELD_ACTION_ID),
@@ -148,7 +148,7 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 	}
 
 	@Override
-	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, String ruleName,
+	public Alert materialize(Map<String, Object> eventHeaders, String ruleGroup, short ruleId, short actionId, String ruleName,
 			short templateId, long timestamp) {
 		Alert alert = new Alert();
 		templateHit.scope(String.valueOf(templateId)).incr();
@@ -156,7 +156,7 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 		if (template != null) {
 			long time = System.nanoTime();
 			VelocityContext ctx = new VelocityContext();
-			for (Entry<String, Object> entry : event.getHeaders().entrySet()) {
+			for (Entry<String, Object> entry : eventHeaders.entrySet()) {
 				ctx.put(entry.getKey(), entry.getValue());
 			}
 			ctx.put(VELOCITY_VAR_DATE, new DateTool());

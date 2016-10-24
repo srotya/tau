@@ -18,6 +18,7 @@ package com.srotya.tau.nucleus.processor;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import com.google.gson.Gson;
 import com.lmax.disruptor.EventHandler;
 import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.ShuffleHandler;
@@ -34,19 +35,26 @@ import com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertEngineImpl;
 public class AlertingProcessor extends AbstractProcessor {
 
 	private static final Logger logger = Logger.getLogger(AlertingProcessor.class.getName());
-	
+
 	public AlertingProcessor(DisruptorUnifiedFactory factory, int parallelism, int bufferSize, Map<String, String> conf,
-			AbstractProcessor[] outputProcessors) {
+			AbstractProcessor... outputProcessors) {
 		super(factory, parallelism, bufferSize, conf, outputProcessors);
 	}
 
 	public static class AlertActionHandler extends ShuffleHandler {
 
 		private TemplatedAlertEngine engine;
+		private AbstractProcessor outputProcessor;
+		private DisruptorUnifiedFactory factory;
+		private Gson gson;
 
-		public AlertActionHandler(int taskId, MutableInt taskCount, DisruptorUnifiedFactory factory) {
+		public AlertActionHandler(int taskId, MutableInt taskCount, DisruptorUnifiedFactory factory,
+				AbstractProcessor outputProcessor) {
 			super(taskId, taskCount);
+			this.factory = factory;
+			this.outputProcessor = outputProcessor;
 			this.engine = new TemplatedAlertEngineImpl(factory);
+			this.gson = new Gson();
 		}
 
 		public void init(Map<String, String> conf) throws Exception {
@@ -63,15 +71,21 @@ public class AlertingProcessor extends AbstractProcessor {
 				logger.info(
 						"Processed rule update:" + event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString());
 			} else {
-				Alert alert = engine.materialize((Event) event.getHeaders().get(Constants.FIELD_EVENT),
+				@SuppressWarnings("unchecked")
+				Alert alert = engine.materialize((Map<String, Object>) event.getHeaders().get(Constants.FIELD_EVENT),
 						event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString(),
-						(short) event.getHeaders().get(Constants.FIELD_RULE_ID),
-						(short) event.getHeaders().get(Constants.FIELD_ACTION_ID),
+						((Number) event.getHeaders().get(Constants.FIELD_RULE_ID)).shortValue(),
+						((Number) event.getHeaders().get(Constants.FIELD_ACTION_ID)).shortValue(),
 						event.getHeaders().get(Constants.FIELD_RULE_NAME).toString(),
-						(short) event.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID),
-						(long) event.getHeaders().get(Constants.FIELD_TIMESTAMP));
+						((Number) event.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID)).shortValue(),
+						((Number) event.getHeaders().get(Constants.FIELD_TIMESTAMP)).longValue());
 				if (alert != null) {
-					logger.info("Firing alert:" + alert);
+					Event outputEvent = factory.buildEvent();
+					outputEvent.setEventId(event.getEventId());
+					outputEvent.getHeaders().put(Constants.FIELD_ALERT, alert);
+					outputEvent.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, alert.getId());
+					outputEvent.setBody(gson.toJson(outputEvent.getHeaders()).getBytes());
+					outputProcessor.processEventWaled(outputEvent);
 				}
 			}
 		}
@@ -79,9 +93,9 @@ public class AlertingProcessor extends AbstractProcessor {
 	}
 
 	@Override
-	public EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism, Map<String, String> conf,
-			DisruptorUnifiedFactory factory) throws Exception {
-		AlertActionHandler handler = new AlertActionHandler(taskId, parallelism, factory);
+	public EventHandler<Event> instantiateAndInitializeHandler(int taskId, MutableInt parallelism,
+			Map<String, String> conf, DisruptorUnifiedFactory factory) throws Exception {
+		AlertActionHandler handler = new AlertActionHandler(taskId, parallelism, factory, getOutputProcessors()[0]);
 		handler.init(conf);
 		return handler;
 	}
@@ -90,7 +104,7 @@ public class AlertingProcessor extends AbstractProcessor {
 	public String getConfigPrefix() {
 		return "alerts";
 	}
-	
+
 	@Override
 	public Logger getLogger() {
 		return logger;

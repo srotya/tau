@@ -1,0 +1,6 @@
+ingresserFactoryConfiguration: nucleus.conf
+ruleEngineConfiguration: nucleus.conf
+integrationTest: true
+server:
+ requestLog:
+    appenders: []

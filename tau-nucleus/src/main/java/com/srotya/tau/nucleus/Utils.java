@@ -17,11 +17,19 @@ package com.srotya.tau.nucleus;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 
 /**
  * @author ambudsharma
@@ -58,6 +66,42 @@ public class Utils {
 				f.delete();
 			});
 			file.delete();
+		}
+	}
+	
+	/**
+	 * Build a {@link CloseableHttpClient}
+	 * 
+	 * @param baseURL
+	 * @param connectTimeout
+	 * @param requestTimeout
+	 * @return http client
+	 * @throws NoSuchAlgorithmException
+	 * @throws KeyStoreException
+	 * @throws KeyManagementException
+	 */
+	public static CloseableHttpClient buildClient(String baseURL, int connectTimeout, int requestTimeout)
+			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+		HttpClientBuilder clientBuilder = HttpClients.custom();
+		RequestConfig config = RequestConfig.custom().setConnectTimeout(connectTimeout)
+				.setConnectionRequestTimeout(requestTimeout).build();
+
+		return clientBuilder.setDefaultRequestConfig(config).build();
+	}
+
+	/**
+	 * Get client
+	 * 
+	 * @param baseURL
+	 * @param connectTimeout
+	 * @param requestTimeout
+	 * @return client
+	 */
+	public static CloseableHttpClient getClient(String baseURL, int connectTimeout, int requestTimeout) {
+		try {
+			return buildClient(baseURL, connectTimeout, requestTimeout);
+		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+			return null;
 		}
 	}
 }
