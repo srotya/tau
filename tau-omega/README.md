@@ -10,6 +10,8 @@ There are 2 types of executors in Omega:
 1. script based executors
 2. code based executors
 
+Simple commit
+
 # Supported Languages
 
 1. Javascript
