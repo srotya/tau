@@ -66,7 +66,7 @@ public class TestTemplateManager {
 
 	private static final String TEST_RULE_GROUP = "test-tenant";
 	private static final String RULE_GROUP_ID_1 = "z341mmd3ifaasdjm23midijjiro";
-	private static final String CONNECTION_STRING = "jdbc:derby:target/rules.db;create=true";
+	private static final String CONNECTION_STRING = "jdbc:hsqldb:mem:target/rules.db";
 	// private static final String CONNECTION_NC_STRING =
 	// "jdbc:derby:target/rules.db;";
 	private static final String TARGET_RULES_DB = "target/template.db";

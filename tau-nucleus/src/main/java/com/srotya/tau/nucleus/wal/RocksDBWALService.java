@@ -109,7 +109,7 @@ public class RocksDBWALService implements WAL {
 			while (itr.isValid() && itr.key() != null) {
 				String id = new String(itr.key(), charset);
 				String body = new String(itr.value(), charset);
-				logger.info("Recovered non-acked event, eventid:" + id + "\tbody:" + body);
+				logger.fine("Recovered non-acked event, eventid:" + id + "\tbody:" + body);
 				Event event = factory.buildEvent();
 				event.setEventId(id);
 				event.getHeaders().putAll(gson.fromJson(body, type));

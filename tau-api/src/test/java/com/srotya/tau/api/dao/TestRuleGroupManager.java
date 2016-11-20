@@ -57,7 +57,7 @@ import com.srotya.tau.api.storage.RuleGroup;
 public class TestRuleGroupManager {
 
 	private static final String TENANT_ID = "32342342342";
-	private static final String CONNECTION_STRING = "jdbc:derby:target/rules.db;create=true";
+	private static final String CONNECTION_STRING = "jdbc:hsqldb:mem:target/rules.db";
 	private static final String TARGET_RULES_DB = "target/rg.db";
 	private static EntityManagerFactory emf;
 	private EntityManager em;

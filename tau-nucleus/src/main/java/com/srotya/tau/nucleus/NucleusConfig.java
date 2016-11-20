@@ -35,7 +35,7 @@ public class NucleusConfig extends Configuration {
 	@NotNull
 	private String ingresserFactoryConfiguration;
 	@JsonProperty
-	private int ingresserParallelism = 2;
+	private int ingresserParallelism = 6;
 	@JsonProperty
 	@NotNull
 	private String ruleEngineConfiguration;

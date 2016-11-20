@@ -80,7 +80,7 @@ public class TestRulesManager {
 	private static final String RULE_GROUP_ID_3 = "d341mmd3ifaasdjm23midijjiro";
 	private static final String RULE_GROUP_ID_4 = "e341mmd3ifaasdjm23midijjiro";
 	private static final String RULE_GROUP_ID_5 = "f341mmd3ifaasdjm23midijjiro";
-	private static final String CONNECTION_STRING = "jdbc:derby:target/rules.db;create=true";
+	private static final String CONNECTION_STRING = "jdbc:hsqldb:mem:target/rules.db";
 	// private static final String CONNECTION_NC_STRING =
 	// "jdbc:derby:target/rules.db;";
 	private static final String TARGET_RULES_DB = "target/rules.db";

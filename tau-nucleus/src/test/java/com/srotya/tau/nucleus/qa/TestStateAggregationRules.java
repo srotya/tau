@@ -17,6 +17,9 @@ package com.srotya.tau.nucleus.qa;
 
 import org.junit.Test;
 
+/**
+ * @author Ambud
+ */
 public class TestStateAggregationRules {
 	
 	@Test
