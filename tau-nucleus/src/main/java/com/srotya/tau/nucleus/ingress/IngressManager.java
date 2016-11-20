@@ -151,7 +151,6 @@ public class IngressManager implements Managed {
 						}
 					}
 				} catch (Exception e) {
-					e.printStackTrace();
 					break;
 				}
 			}

@@ -91,9 +91,12 @@ public class RocksDBWALService implements WAL {
 				.setIncreaseParallelism(2).setFilterDeletes(true).setMaxBackgroundCompactions(10)
 				.setMaxBackgroundFlushes(10).setDisableDataSync(false).setUseFsync(false).setUseAdaptiveMutex(false)
 				.setWriteBufferSize(1 * SizeUnit.MB).setCompactionStyle(CompactionStyle.UNIVERSAL)
-				.setCompressionType(CompressionType.SNAPPY_COMPRESSION).setMaxWriteBufferNumber(6).setWalTtlSeconds(60)
-				.setWalSizeLimitMB(512).setMaxTotalWalSize(1024 * SizeUnit.MB).setErrorIfExists(false)
-				.setAllowOsBuffer(true).setWalDir(walDirectory).setOptimizeFiltersForHits(false);
+				.setMaxWriteBufferNumber(6).setWalTtlSeconds(60).setWalSizeLimitMB(512)
+				.setMaxTotalWalSize(1024 * SizeUnit.MB).setErrorIfExists(false).setAllowOsBuffer(true)
+				.setWalDir(walDirectory).setOptimizeFiltersForHits(false);
+		if(!System.getProperties().get("os.name").toString().toLowerCase().contains("windows")) {
+			options = options.setCompressionType(CompressionType.SNAPPY_COMPRESSION);
+		}
 		wal = RocksDB.open(options, mapDirectory);
 		writeOptions = new WriteOptions().setDisableWAL(false).setSync(false);
 		recoverAndReplayEvents();
@@ -106,7 +109,7 @@ public class RocksDBWALService implements WAL {
 			while (itr.isValid() && itr.key() != null) {
 				String id = new String(itr.key(), charset);
 				String body = new String(itr.value(), charset);
-				logger.fine("Recovered non-acked event, eventid:" + id + "\tbody:" + body);
+				logger.info("Recovered non-acked event, eventid:" + id + "\tbody:" + body);
 				Event event = factory.buildEvent();
 				event.setEventId(id);
 				event.getHeaders().putAll(gson.fromJson(body, type));
@@ -156,7 +159,7 @@ public class RocksDBWALService implements WAL {
 	public String getEarliestEventId() throws IOException {
 		RocksIterator itr = wal.newIterator();
 		itr.seekToFirst();
-		if(!itr.isValid()) {
+		if (!itr.isValid()) {
 			return null;
 		}
 		String val = new String(itr.key(), charset);
