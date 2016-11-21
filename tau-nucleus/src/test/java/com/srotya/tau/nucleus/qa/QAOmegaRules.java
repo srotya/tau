@@ -18,13 +18,13 @@ package com.srotya.tau.nucleus.qa;
 import org.junit.Test;
 
 /**
- * @author ambudsharma
+ * @author Ambud
  */
-public class TestAppStartShutdown {
+public class QAOmegaRules {
 
 	@Test
-	public void testAppStartShutdown() {
-		System.out.println("Testing startup and shutdown");
+	public void testOmega() {
+		System.out.println("Testing Omega");
 	}
-	
+
 }

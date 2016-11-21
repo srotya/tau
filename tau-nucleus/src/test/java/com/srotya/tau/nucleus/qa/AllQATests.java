@@ -28,9 +28,13 @@ import com.srotya.tau.nucleus.NucleusServer;
 
 import io.dropwizard.testing.junit.DropwizardAppRule;
 
+/**
+ * @author ambud
+ *
+ */
 @RunWith(Suite.class)
-@SuiteClasses({ TestAlertRules.class, TestCountingAggregationRules.class, TestOmegaRules.class,
-		TestStateAggregationRules.class, TestMultiStageAggregationRules.class })
+@SuiteClasses({ QAAlertRules.class, QACountingAggregationRules.class, QAOmegaRules.class,
+		QAStateAggregationRules.class, QAMultiStageAggregationRules.class })
 public class AllQATests {
 
 	@ClassRule

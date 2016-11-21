@@ -16,6 +16,7 @@
 package com.srotya.tau.nucleus.disruptor;
 
 import com.lmax.disruptor.EventHandler;
+import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
 
@@ -38,7 +39,9 @@ public abstract class ShuffleHandler implements EventHandler<Event> {
 
 	@Override
 	public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
-		if (sequence % taskCount.getVal() == taskId) {
+		if (event.getHeaders().get(Constants.FIELD_EVENT_TYPE) != null) {
+			consumeEvent(event, sequence, endOfBatch);
+		} else if (sequence % taskCount.getVal() == taskId) {
 			consumeEvent(event, sequence, endOfBatch);
 		}
 	}

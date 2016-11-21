@@ -20,7 +20,7 @@ import org.junit.Test;
 /**
  * @author Ambud
  */
-public class TestMultiStageAggregationRules {
+public class QAMultiStageAggregationRules {
 
 	@Test
 	public void testMultiStageAggregations() {

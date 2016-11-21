@@ -112,9 +112,9 @@ public class RuleProcessor extends AbstractProcessor {
 						((Boolean) event.getHeaders().get(Constants.FIELD_RULE_DELETE)));
 				logger.info("Processed rule update:" + event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString());
 			} else {
-				// logger.info("Saw event:"+event);
 				rulesEngine.evaluateEventAgainstGroupedRules(null, null, event);
 				caller.ackEvent(event.getEventId());
+				logger.info(rulesEngine.getRuleGroupMap()+"\t"+event.toString());
 			}
 		}
 
@@ -142,7 +142,7 @@ public class RuleProcessor extends AbstractProcessor {
 			event.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
 			event.getHeaders().put(Constants.FIELD_RULE_NAME, ruleName);
 			event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
-			event.setEventId(outputEvent.getEventId()+Utils.combineRuleActionId(ruleId, actionId));
+			event.setEventId(outputEvent.getEventId() + Utils.combineRuleActionId(ruleId, actionId));
 			event.setBody(gson.toJson(event.getHeaders()).getBytes());
 			try {
 				alertProcessor.processEventWaled(event);
@@ -182,7 +182,7 @@ public class RuleProcessor extends AbstractProcessor {
 			if (action == FineCountingAggregationAction.class) {
 				logger.info("Emitting couning");
 				Event event = factory.buildEvent();
-				event.setEventId(originalEvent.getEventId()+ruleActionId);
+				event.setEventId(originalEvent.getEventId() + ruleActionId);
 				event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
 				event.getHeaders().put(Constants.FIELD_RULE_ACTION_ID, ruleActionId);
@@ -202,7 +202,7 @@ public class RuleProcessor extends AbstractProcessor {
 		public void emitStateTrackingEvent(Object eventCollector, Object eventContainer, Boolean track,
 				Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey) {
 			Event event = factory.buildEvent();
-			event.setEventId(originalEvent.getEventId()+ruleActionId);
+			event.setEventId(originalEvent.getEventId() + ruleActionId);
 			event.getHeaders().put(Constants.FIELD_STATE_TRACK, track);
 			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 			event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
@@ -243,7 +243,7 @@ public class RuleProcessor extends AbstractProcessor {
 			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 			event.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
 			event.getHeaders().put(Constants.FIELD_EVENT, outputEvent);
-			event.setEventId(outputEvent.getEventId()+Utils.combineRuleActionId(ruleId, actionId));
+			event.setEventId(outputEvent.getEventId() + Utils.combineRuleActionId(ruleId, actionId));
 			event.setBody(gson.toJson(event.getHeaders()).getBytes());
 			try {
 				omegaProcessor.processEventWaled(event);

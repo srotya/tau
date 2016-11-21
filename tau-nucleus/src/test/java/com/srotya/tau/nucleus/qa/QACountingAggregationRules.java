@@ -20,7 +20,7 @@ import org.junit.Test;
 /**
  * @author Ambud
  */
-public class TestCountingAggregationRules {
+public class QACountingAggregationRules {
 
 	@Test
 	public void testCountingAggregations() {

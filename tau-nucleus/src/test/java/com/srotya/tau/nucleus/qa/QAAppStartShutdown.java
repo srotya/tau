@@ -18,13 +18,13 @@ package com.srotya.tau.nucleus.qa;
 import org.junit.Test;
 
 /**
- * @author Ambud
+ * @author ambudsharma
  */
-public class TestAggregationFaultTolerance {
+public class QAAppStartShutdown {
 
 	@Test
-	public void testSimpleAggregations() {
-		System.out.println("Running aggregation fault testing");
+	public void testAppStartShutdown() {
+		System.out.println("Testing startup and shutdown");
 	}
 	
 }

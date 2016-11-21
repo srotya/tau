@@ -6,7 +6,7 @@ addons:
   apt:
     packages:
     - rpm
-script: mvn -q -T2 -DSTORM_TEST_TIMEOUT_MS=60000 clean verify
+script: mvn -q -T2 -DSTORM_TEST_TIMEOUT_MS=60000 clean test -Dtest=*Test* -DfailIfNoTests=false
 after_success:
 - curl -L -o /tmp/conditionalbuild.sh https://gist.github.com/ambud/3480192ce43fd35a4640201ba10794f5/raw/
 - chmod a+x /tmp/conditionalbuild.sh

@@ -20,11 +20,11 @@ import org.junit.Test;
 /**
  * @author Ambud
  */
-public class TestOmegaRules {
+public class QAAggregationFaultTolerance {
 
 	@Test
-	public void testOmega() {
-		System.out.println("Testing Omega");
+	public void testSimpleAggregations() {
+		System.out.println("Running aggregation fault testing");
 	}
-
+	
 }

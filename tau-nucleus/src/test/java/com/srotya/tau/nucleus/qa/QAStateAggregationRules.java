@@ -20,7 +20,7 @@ import org.junit.Test;
 /**
  * @author Ambud
  */
-public class TestStateAggregationRules {
+public class QAStateAggregationRules {
 	
 	@Test
 	public void testStateAggregations() {
