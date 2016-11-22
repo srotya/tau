@@ -141,16 +141,16 @@ public class IngressManager implements Managed {
 			while (ctrl.get()) {
 				try {
 					Event event = ingresser.produce();
-					if (event != null && event.getEventId() != null && event.getBody() != null) {
+					if (event != null && event.getEventId() != null) {
 						try {
 							this.nextProcessor.processEventWaled(event);
 							eps++;
-							bps += event.getBody().length;
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
 					}
 				} catch (Exception e) {
+					e.printStackTrace();
 					break;
 				}
 			}

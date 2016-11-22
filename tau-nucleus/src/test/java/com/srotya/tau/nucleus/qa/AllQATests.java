@@ -15,8 +15,6 @@
  */
 package com.srotya.tau.nucleus.qa;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -43,16 +41,11 @@ public class AllQATests {
 	
 	public static SimpleSmtpServer smtpServer;
 	
-	@BeforeClass
-	public static void beforeClass() {
+	static{
 		smtpServer = SimpleSmtpServer.start();
+		System.err.println("Started SMTP Server");
 	}
 	
-	@AfterClass
-	public static void afterClass() {
-		smtpServer.stop();
-	}
-
 	public static DropwizardAppRule<NucleusConfig> getNucleus() {
 		return nucleus;
 	}

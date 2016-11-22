@@ -15,10 +15,11 @@
  */
 package com.srotya.tau.nucleus.wal;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,8 +32,9 @@ import org.rocksdb.RocksIterator;
 import org.rocksdb.WriteOptions;
 import org.rocksdb.util.SizeUnit;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.srotya.tau.nucleus.Utils;
 import com.srotya.tau.nucleus.processor.AbstractProcessor;
 import com.srotya.tau.wraith.Event;
@@ -65,18 +67,18 @@ public class RocksDBWALService implements WAL {
 	private String mapDirectory;
 	private AbstractProcessor processor;
 	private EventFactory factory;
-	private Gson gson;
-	private Type type;
 	private WriteOptions writeOptions;
+	private static final ThreadLocal<Kryo> kryoPool = new ThreadLocal<Kryo>() {
+		public Kryo get() {
+			return new Kryo();
+		}
+	};
 
 	static {
 		RocksDB.loadLibrary();
 	}
 
 	public RocksDBWALService() {
-		gson = new Gson();
-		type = new TypeToken<HashMap<String, Object>>() {
-		}.getType();
 	}
 
 	@SuppressWarnings("resource")
@@ -94,7 +96,7 @@ public class RocksDBWALService implements WAL {
 				.setMaxWriteBufferNumber(6).setWalTtlSeconds(60).setWalSizeLimitMB(512)
 				.setMaxTotalWalSize(1024 * SizeUnit.MB).setErrorIfExists(false).setAllowOsBuffer(true)
 				.setWalDir(walDirectory).setOptimizeFiltersForHits(false);
-		if(!System.getProperties().get("os.name").toString().toLowerCase().contains("windows")) {
+		if (!System.getProperties().get("os.name").toString().toLowerCase().contains("windows")) {
 			options = options.setCompressionType(CompressionType.SNAPPY_COMPRESSION);
 		}
 		wal = RocksDB.open(options, mapDirectory);
@@ -108,11 +110,14 @@ public class RocksDBWALService implements WAL {
 			itr.seekToFirst();
 			while (itr.isValid() && itr.key() != null) {
 				String id = new String(itr.key(), charset);
-				String body = new String(itr.value(), charset);
-				logger.fine("Recovered non-acked event, eventid:" + id + "\tbody:" + body);
+				Kryo kryo = kryoPool.get();
+				Input input = new Input(itr.value());
+				@SuppressWarnings("unchecked")
+				Map<String, Object> headers = kryo.readObject(input, HashMap.class);
+				logger.fine("Recovered non-acked event, eventid:" + id + "\theaders:" + headers);
 				Event event = factory.buildEvent();
 				event.setEventId(id);
-				event.getHeaders().putAll(gson.fromJson(body, type));
+				event.getHeaders().putAll(headers);
 				event.setBody(itr.value());
 				processor.processEventNonWaled(event);
 				itr.next();
@@ -131,9 +136,15 @@ public class RocksDBWALService implements WAL {
 		options.close();
 	}
 
-	public void writeEvent(String eventId, byte[] event) throws IOException {
+	public void writeEvent(Event event) throws IOException {
 		try {
-			wal.put(eventId.getBytes(charset), event);
+			Kryo kryo = kryoPool.get();
+			ByteArrayOutputStream bos = new ByteArrayOutputStream(256);
+			Output output = new Output(bos);
+			kryo.writeObject(output, event.getHeaders());
+			output.close();
+			wal.put(event.getEventId().getBytes(charset), bos.toByteArray());
+			bos.close();
 		} catch (RocksDBException e) {
 			throw new IOException(e);
 		}
@@ -198,6 +209,5 @@ public class RocksDBWALService implements WAL {
 		wal.setPersistentDirectory("target/wal");
 		wal.setTransientDirectory("target/mem");
 		wal.start();
-		wal.writeEvent("event1", "{ \"event\":\"header\"}".getBytes());
 	}
 }

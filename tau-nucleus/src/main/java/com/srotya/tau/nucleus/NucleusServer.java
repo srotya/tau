@@ -56,11 +56,7 @@ public class NucleusServer extends Application<NucleusConfig> {
 	public void run(NucleusConfig configuration, Environment environment) throws Exception {
 		RuleValidator.getInstance().configure(Arrays.asList(new ScriptValidator()));
 		Properties reConfig = new Properties();
-		if (configuration.isIntegrationTest()) {
-			reConfig.load(ClassLoader.getSystemResourceAsStream(configuration.getRuleEngineConfiguration()));
-		} else {
-			reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
-		}
+		reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
 		conf = Utils.hashTableTohashMap(reConfig);
 		AlertTransmissionProcessor transmissionProcessor = initializeAlertTransmissionProcessor(configuration, environment);
 		AlertingProcessor alertingProcessor = initializeAlertProcessor(configuration, environment, transmissionProcessor);
@@ -70,7 +66,9 @@ public class NucleusServer extends Application<NucleusConfig> {
 		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor, stateProcessor, omegaProcessor, fineCountingProcessor);
 		stateProcessor.setOutputProcessors(ruleProcessor);
 		fineCountingProcessor.setOutputProcessors(ruleProcessor);
+		if (!configuration.isIntegrationTest()) {
 //		initializeIngressManager(configuration, environment, ruleProcessor);
+		}
 		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor, fineCountingProcessor);
 		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor, transmissionProcessor);
 		logger.info("Initialization complete");

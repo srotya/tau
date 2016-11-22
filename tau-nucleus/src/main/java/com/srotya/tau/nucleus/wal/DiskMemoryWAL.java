@@ -24,6 +24,7 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.srotya.tau.nucleus.processor.AbstractProcessor;
+import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.EventFactory;
 
 /**
@@ -52,17 +53,17 @@ public class DiskMemoryWAL implements WAL {
 	}
 
 	@Override
-	public synchronized void writeEvent(String eventId, byte[] event) throws IOException {
-		offsetMap.put(eventId, (long)wal.position());
-		byte[] id = eventId.getBytes();
+	public synchronized void writeEvent(Event event) throws IOException {
+		offsetMap.put(event.getEventId(), (long)wal.position());
+		byte[] id = event.getEventId().getBytes();
 //		wal.writeInt(id.length);
 //		wal.write(id);
 //		wal.writeInt(event.length);
 //		wal.write(event);
 		wal.putInt(id.length);
 		wal.put(id);
-		wal.putInt(event.length);
-		wal.put(event);
+		wal.putInt(event.getBody().length);
+		wal.put(event.getBody());
 	}
 
 	@Override

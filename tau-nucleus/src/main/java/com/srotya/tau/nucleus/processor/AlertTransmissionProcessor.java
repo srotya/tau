@@ -29,6 +29,8 @@ import java.util.logging.Logger;
 import com.lmax.disruptor.EventHandler;
 import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.GroupByHandler;
+import com.srotya.tau.nucleus.processor.alerts.HttpService;
+import com.srotya.tau.nucleus.processor.alerts.MailService;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableBoolean;
@@ -91,6 +93,8 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 		private transient Map<Short, MutableBoolean> stateMap;
 		private transient long globalCounter = 1;
 		private DisruptorUnifiedFactory storeFactory;
+		private MailService mailService;
+		private HttpService httpService;
 
 		public TransmissionHandler(AbstractProcessor caller, int taskId, MutableInt taskCount, DisruptorUnifiedFactory factory) {
 			super(taskId, taskCount);
@@ -99,6 +103,8 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 			this.counter = new HashMap<>();
 			this.stateMap = new HashMap<>();
 			this.storeFactory = factory;
+			this.mailService = new MailService();
+			this.httpService = new HttpService();
 		}
 
 		public void init(Map<String, String> conf) throws Exception {
@@ -119,6 +125,7 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 			} catch (IOException e) {
 				throw e;
 			}
+			mailService.init(conf);
 		}
 		
 		@Override
@@ -131,6 +138,7 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 				logger.info(
 						"Processed rule update:" + event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString());
 			} else if (event.getHeaders().containsKey(Constants.FIELD_ALERT)) {
+				logger.info("Sending email out:"+event);
 				Alert alert = (Alert) event.getHeaders().get(Constants.FIELD_ALERT);
 				AlertTemplate template = templateMap.get(alert.getId());
 				if (template != null) {
@@ -144,8 +152,10 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 						switch (alert.getMedia()) {
 						case "mail":// send email
 							logger.info("Sending email out:"+alert);
+							mailService.sendMail(alert);
 							break;
 						case "http":// make http request"
+							httpService.sendHttpCallback(alert);
 							logger.info("Sending http request out:"+alert);
 							break;
 						default:// do nothing

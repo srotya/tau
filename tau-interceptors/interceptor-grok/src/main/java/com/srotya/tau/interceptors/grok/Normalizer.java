@@ -21,6 +21,10 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
@@ -34,34 +38,44 @@ import oi.thekraken.grok.api.exception.GrokException;
  */
 public class Normalizer {
 
-	public static void main(String[] args) throws GrokException, IOException, NoSuchAlgorithmException {
+	public static void main(String[] args) throws GrokException, IOException, NoSuchAlgorithmException, InterruptedException {
 		File[] files = new File(args[0]).listFiles();
 		new File("target/data").mkdirs();
-		GrokEventTranslator translator = new GrokEventTranslator(new UnifiedFactory());
-		Kryo kryo = new Kryo();
-		BufferedReader reader = null;
-		int i = 0 ;
-		int c = 0;
-		Output fio = new Output(new FileOutputStream("target/data/f1.kryo"));
-		for(File file:files) {
-			 reader = new BufferedReader(new FileReader(file));
-			 String temp = null;
-			 while((temp=reader.readLine())!=null) {
-				 Event event = translator.translateTo(temp);
-				 kryo.writeObject(fio, event);
-				 c++;
-				 if(c%400000==0) {
-					 fio.close();
-					 i++;
-					 fio = new Output(new FileOutputStream("target/data/f"+i+".kryo"));
-				 }
-			 }
-			 reader.close();
+
+		final AtomicInteger fileNumber = new AtomicInteger(0);
+
+		ExecutorService es = Executors.newCachedThreadPool();
+
+		for (File file : files) {
+			es.submit(() -> {
+				try {
+					GrokEventTranslator translator = new GrokEventTranslator(new UnifiedFactory());
+					Kryo kryo = new Kryo();
+					int c = 0;
+					Output fio = new Output(
+							new FileOutputStream("target/data/f" + fileNumber.incrementAndGet() + ".kryo"));
+					BufferedReader reader = new BufferedReader(new FileReader(file));
+					String temp = null;
+					while ((temp = reader.readLine()) != null) {
+						Event event = translator.translateTo(temp);
+						kryo.writeObject(fio, event);
+						c++;
+						if (c % 400000 == 0) {
+							fio.close();
+							System.out.println("Emitted:400K Events");
+							fio = new Output(
+									new FileOutputStream("target/data/f" + fileNumber.incrementAndGet() + ".kryo"));
+						}
+					}
+					reader.close();
+					fio.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			});
 		}
-		if(reader!=null) {
-			reader.close();
-			fio.close();
-		}
+		es.shutdown();
+		es.awaitTermination(1000, TimeUnit.SECONDS);
 	}
 
 }

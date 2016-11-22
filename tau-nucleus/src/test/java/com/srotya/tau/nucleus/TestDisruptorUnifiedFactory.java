@@ -53,7 +53,10 @@ public class TestDisruptorUnifiedFactory {
 			assertNotNull(caller);
 			assertNotNull(instance);
 			instance.start();
-			instance.writeEvent("event1", "{\"event1\":\"event\"}".getBytes());
+			Event event = factory.buildEvent();
+			event.setEventId("event1");
+			event.setBody("event1".getBytes());
+			instance.writeEvent(event);
 			instance.stop();
 			instance.start();
 		} catch (Exception e) {

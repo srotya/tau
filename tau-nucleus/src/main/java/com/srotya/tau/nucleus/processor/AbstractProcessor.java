@@ -150,7 +150,7 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	 * @throws IOException
 	 */
 	public final void processEventWaled(Event event) throws IOException {
-		getProcessorWal().writeEvent(event.getEventId(), event.getBody());
+		getProcessorWal().writeEvent(event);
 		getDisruptorBuffer().publishEvent(getCopyTranslator(), event);
 	}
 

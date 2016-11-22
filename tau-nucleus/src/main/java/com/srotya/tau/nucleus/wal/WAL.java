@@ -51,7 +51,7 @@ public interface WAL extends Managed {
 	 * @param event
 	 * @throws IOException
 	 */
-	public void writeEvent(String eventId, byte[] event) throws IOException;
+	public void writeEvent(Event event) throws IOException;
 
 	/**
 	 * Acknowledge an {@link Event} in the WAL and mark it processed so in case the system

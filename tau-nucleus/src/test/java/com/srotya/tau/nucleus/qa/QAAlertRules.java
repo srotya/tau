@@ -15,14 +15,23 @@
  */
 package com.srotya.tau.nucleus.qa;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+
+import javax.mail.Message.RecipientType;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -34,8 +43,10 @@ import org.junit.Test;
 
 import com.google.gson.Gson;
 import com.srotya.tau.nucleus.Utils;
+import com.srotya.tau.nucleus.processor.alerts.MailService;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.actions.Action;
+import com.srotya.tau.wraith.actions.alerts.Alert;
 import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplate;
 import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplateSerializer;
 import com.srotya.tau.wraith.actions.alerts.templated.TemplateCommand;
@@ -52,13 +63,34 @@ import com.srotya.tau.wraith.rules.StatelessRulesEngine;
 public class QAAlertRules {
 
 	@Test
+	public void testSMTPServerAvailability() throws UnknownHostException, IOException, MessagingException {
+		MimeMessage msg = new MimeMessage(Session.getDefaultInstance(new Properties()));
+		msg.setFrom(new InternetAddress("alert@srotya.com"));
+		msg.setRecipient(RecipientType.TO, new InternetAddress("alert@srotya.com"));
+		msg.setSubject("test mail");
+		msg.setContent("Hello", "text/html");
+		Transport.send(msg);
+		System.err.println("Mail sent");
+		MailService ms = new MailService();
+		ms.init(new HashMap<>());
+		Alert alert = new Alert();
+		alert.setBody("test");
+		alert.setId((short) 0);
+		alert.setMedia("test");
+		alert.setSubject("test");
+		alert.setTarget("alert@srotya.com");
+		ms.sendMail(alert);
+		assertEquals(2, AllQATests.getSmtpServer().getReceivedEmailSize());
+	}
+
+	@Test
 	public void testAlertRules() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
 			ClientProtocolException, IOException, InterruptedException {
 		CloseableHttpClient client = null;
 		client = Utils.buildClient("http://localhost:8080/commands/templates", 2000, 2000);
 		HttpPut templateUpload = new HttpPut("http://localhost:8080/commands/templates");
 		String template = AlertTemplateSerializer.serialize(
-				new AlertTemplate((short) 1, "test_template", "test@localhost.com", "mail", "test", "test", 30, 1),
+				new AlertTemplate((short) 1, "test_template", "alert@srotya.com", "mail", "test", "test", 30, 1),
 				false);
 		templateUpload.addHeader("content-type", "application/json");
 		templateUpload.setEntity(new StringEntity(new Gson().toJson(new TemplateCommand("all", false, template))));
@@ -72,7 +104,8 @@ public class QAAlertRules {
 				new EqualsCondition("value", 1.0), new Action[] { new TemplatedAlertAction((short) 0, (short) 1) }),
 				false);
 		ruleUpload.addHeader("content-type", "application/json");
-		ruleUpload.setEntity(new StringEntity(new Gson().toJson(new RuleCommand(StatelessRulesEngine.ALL_RULEGROUP, false, rule))));
+		ruleUpload.setEntity(
+				new StringEntity(new Gson().toJson(new RuleCommand(StatelessRulesEngine.ALL_RULEGROUP, false, rule))));
 		response = client.execute(ruleUpload);
 		response.close();
 		assertTrue(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
@@ -88,7 +121,13 @@ public class QAAlertRules {
 		eventUpload.setEntity(new StringEntity(new Gson().toJson(eventHeaders)));
 		response = client.execute(eventUpload);
 		response.close();
-		assertTrue(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+		assertTrue(response.getStatusLine().getReasonPhrase(),
+				response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+		int size = 0;
+		while((size = AllQATests.getSmtpServer().getReceivedEmailSize())<=2) {
+			Thread.sleep(100);
+		}
+		assertEquals(3, size);
 	}
 
 }

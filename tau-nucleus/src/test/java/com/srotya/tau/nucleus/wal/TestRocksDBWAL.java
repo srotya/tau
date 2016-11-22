@@ -15,10 +15,11 @@
  */
 package com.srotya.tau.nucleus.wal;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
-
-import java.nio.charset.Charset;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,8 +52,10 @@ public class TestRocksDBWAL {
 			assertNotNull(caller);
 			assertNotNull(instance);
 			instance.start();
-			String body = "{\"event\":\"event1\"}";
-			instance.writeEvent("event1", body.getBytes());
+			Event eventW = factory.buildEvent();
+			eventW.setEventId("event1");
+			eventW.getHeaders().put("event", "event1");
+			instance.writeEvent(eventW);
 			instance.stop();
 			// attempt recovery
 			instance.start();
@@ -61,7 +64,6 @@ public class TestRocksDBWAL {
 			assertNotNull(event);
 			assertEquals("event1", event.getEventId());
 			assertEquals("event1", event.getHeaders().get("event"));
-			assertEquals(body, new String(event.getBody(), Charset.forName("utf-8")));
 			
 			// ack event to remove it from the WAL
 			instance.ackEvent("event1");

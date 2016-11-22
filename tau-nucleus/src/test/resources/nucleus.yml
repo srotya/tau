@@ -1,5 +1,5 @@
-ingresserFactoryConfiguration: nucleus.conf
-ruleEngineConfiguration: nucleus.conf
+ingresserFactoryConfiguration: src/test/resources/nucleus.conf
+ruleEngineConfiguration: src/test/resources/nucleus.conf
 integrationTest: true
 server:
  requestLog:

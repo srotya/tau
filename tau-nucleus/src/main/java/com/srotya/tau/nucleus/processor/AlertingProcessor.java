@@ -18,7 +18,6 @@ package com.srotya.tau.nucleus.processor;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import com.google.gson.Gson;
 import com.lmax.disruptor.EventHandler;
 import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.ShuffleHandler;
@@ -46,7 +45,6 @@ public class AlertingProcessor extends AbstractProcessor {
 		private TemplatedAlertEngine engine;
 		private AbstractProcessor outputProcessor;
 		private DisruptorUnifiedFactory factory;
-		private Gson gson;
 
 		public AlertActionHandler(int taskId, MutableInt taskCount, DisruptorUnifiedFactory factory,
 				AbstractProcessor outputProcessor) {
@@ -54,7 +52,6 @@ public class AlertingProcessor extends AbstractProcessor {
 			this.factory = factory;
 			this.outputProcessor = outputProcessor;
 			this.engine = new TemplatedAlertEngineImpl(factory);
-			this.gson = new Gson();
 		}
 
 		public void init(Map<String, String> conf) throws Exception {
@@ -84,7 +81,6 @@ public class AlertingProcessor extends AbstractProcessor {
 					outputEvent.setEventId(event.getEventId());
 					outputEvent.getHeaders().put(Constants.FIELD_ALERT, alert);
 					outputEvent.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, alert.getId());
-					outputEvent.setBody(gson.toJson(outputEvent.getHeaders()).getBytes());
 					outputProcessor.processEventWaled(outputEvent);
 				}
 			}

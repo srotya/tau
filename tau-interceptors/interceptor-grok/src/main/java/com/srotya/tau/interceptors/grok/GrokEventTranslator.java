@@ -21,7 +21,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map.Entry;
 
-import com.google.gson.Gson;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.EventFactory;
 
@@ -39,7 +38,6 @@ public class GrokEventTranslator {
 	private Grok grok;
 	private EventFactory factory;
 	private MessageDigest md5;
-	private Gson gson;
 
 	public GrokEventTranslator(EventFactory factory) throws GrokException, NoSuchAlgorithmException {
 		this.factory = factory;
@@ -47,7 +45,6 @@ public class GrokEventTranslator {
 		this.grok.addPatternFromReader(
 				new InputStreamReader(ClassLoader.getSystemResourceAsStream("grok"), Charset.forName("utf-8")));
 		this.md5 = MessageDigest.getInstance("md5");
-		this.gson = new Gson();
 		grok.compile("%{COMMONAPACHELOG}");
 	}
 
@@ -60,7 +57,6 @@ public class GrokEventTranslator {
 				event.getHeaders().put(entry.getKey(), entry.getValue());
 			}
 		}
-		event.setBody(gson.toJson(event.getHeaders()).getBytes());
 		event.setEventId(Base64.encodeBytes(md5.digest(data.getBytes())));
 		return event;
 	}

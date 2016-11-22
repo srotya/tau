@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import com.google.gson.Gson;
 import com.lmax.disruptor.EventHandler;
 import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.GroupByHandler;
@@ -64,7 +63,6 @@ public class StateProcessor extends AbstractProcessor {
 		private int taskId;
 		private StateProcessor caller;
 		private AbstractProcessor outputProcessor;
-		private Gson gson;
 		private List<String> batchEventIds;
 		private int batchSize;
 
@@ -76,7 +74,6 @@ public class StateProcessor extends AbstractProcessor {
 			this.batchSize = batchSize;
 			this.outputProcessor = outputProcessor;
 			this.stateTrackingEngine = new StateTrackingEngine(factory, factory);
-			this.gson = new Gson();
 			this.batchEventIds = new ArrayList<>();
 		}
 
@@ -95,7 +92,6 @@ public class StateProcessor extends AbstractProcessor {
 				for (Event out : events) {
 					out.getHeaders().put(Constants.FIELD_RULE_GROUP,
 							event.getHeaders().get(Constants.FIELD_RULE_GROUP));
-					out.setBody(gson.toJson(out.getHeaders()).getBytes());
 					outputProcessor.processEventWaled(out);
 					logger.info("State tracking event forwarded:" + out);
 				}

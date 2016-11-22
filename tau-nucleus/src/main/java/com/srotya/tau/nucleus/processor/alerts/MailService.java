@@ -45,7 +45,8 @@ public class MailService {
 	private static final String MAIL_SMTP_FROM = "mail.smtp.from";
 	private static final String MAIL_SMTP_STARTTLS_ENABLE = "mail.smtp.starttls.enable";
 	private Session session;
-	private String from;
+	private String from = "alert@srotya.com";
+	private boolean disabled;
 
 	/**
 	 * Creates service according provided storm topology config.
@@ -57,9 +58,13 @@ public class MailService {
 	 * @param conf
 	 * @throws MessagingException
 	 */
-	public void init(Map<String, Object> conf) throws MessagingException {
+	public void init(Map<String, String> conf) throws MessagingException {
+		disabled = Boolean.parseBoolean(conf.getOrDefault("mail.disable", "false"));
+		if (disabled) {
+			return;
+		}
 		session = createSession(conf);
-		from = conf.get(MAIL_SMTP_FROM).toString();
+		from = conf.getOrDefault(MAIL_SMTP_FROM, "alert@srotya.com").toString();
 		boolean useSsl = false;
 		if (conf.containsKey(MAIL_SMTP_STARTTLS_ENABLE)) {
 			useSsl = Boolean.parseBoolean(conf.get(MAIL_SMTP_STARTTLS_ENABLE).toString());
@@ -103,6 +108,10 @@ public class MailService {
 	 * @return true if message sends correctly
 	 */
 	public boolean sendMail(Alert alert) {
+		if(disabled) {
+			logger.fine("Disabled email alerts, alert not sent:"+alert);
+			return true;
+		}
 		final MimeMessage msg = new MimeMessage(session);
 		try {
 			setMessage(msg, alert);
@@ -113,7 +122,7 @@ public class MailService {
 			Transport.send(msg);
 			return true;
 		} catch (Exception e) {
-			logger.log(Level.INFO, "Error when trying to send e-mail via, tenant ID: " + alert.getRuleGroup(), e);
+			logger.log(Level.INFO, "Error when trying to send e-mail via, tenant ID: " + alert, e);
 			return false;
 		}
 	}
@@ -123,9 +132,9 @@ public class MailService {
 	 * @return
 	 */
 	@SuppressWarnings("restriction")
-	private Session createSession(Map<String, Object> conf) {
+	private Session createSession(Map<String, String> conf) {
 		Properties properties = new Properties();
-		for (Entry<String, Object> entry : conf.entrySet()) {
+		for (Entry<String, String> entry : conf.entrySet()) {
 			if (entry.getKey().startsWith("mail.")) {
 				properties.setProperty(entry.getKey(), entry.getValue().toString());
 			}
@@ -141,4 +150,10 @@ public class MailService {
 		return session;
 	}
 
+	/**
+	 * @return
+	 */
+	public Session getSession() {
+		return session;
+	}
 }

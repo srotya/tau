@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import com.google.gson.Gson;
 import com.lmax.disruptor.EventHandler;
 import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.ShuffleHandler;
@@ -63,7 +62,6 @@ public class RuleProcessor extends AbstractProcessor {
 		private AbstractProcessor stateProcessor;
 		private AbstractProcessor omegaProcessor;
 		private AbstractProcessor fineCountingProcessor;
-		private Gson gson;
 
 		/**
 		 * 
@@ -80,7 +78,6 @@ public class RuleProcessor extends AbstractProcessor {
 			this.caller = caller;
 			this.factory = factory;
 			this.rulesEngine = new StatelessRulesEngine<>(this, factory, factory);
-			this.gson = new Gson();
 			initProcessors(outputProcessors);
 		}
 
@@ -114,7 +111,6 @@ public class RuleProcessor extends AbstractProcessor {
 			} else {
 				rulesEngine.evaluateEventAgainstGroupedRules(null, null, event);
 				caller.ackEvent(event.getEventId());
-				logger.info(rulesEngine.getRuleGroupMap()+"\t"+event.toString());
 			}
 		}
 
@@ -143,7 +139,6 @@ public class RuleProcessor extends AbstractProcessor {
 			event.getHeaders().put(Constants.FIELD_RULE_NAME, ruleName);
 			event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
 			event.setEventId(outputEvent.getEventId() + Utils.combineRuleActionId(ruleId, actionId));
-			event.setBody(gson.toJson(event.getHeaders()).getBytes());
 			try {
 				alertProcessor.processEventWaled(event);
 			} catch (IOException e) {
@@ -188,7 +183,6 @@ public class RuleProcessor extends AbstractProcessor {
 				event.getHeaders().put(Constants.FIELD_RULE_ACTION_ID, ruleActionId);
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, aggregationKey);
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, aggregationValue);
-				event.setBody(gson.toJson(event.getHeaders()).getBytes());
 				try {
 					fineCountingProcessor.processEventWaled(event);
 				} catch (IOException e) {
@@ -208,7 +202,6 @@ public class RuleProcessor extends AbstractProcessor {
 			event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
 			event.getHeaders().put(Constants.FIELD_RULE_ACTION_ID, ruleActionId);
 			event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, aggregationKey);
-			event.setBody(gson.toJson(event.getHeaders()).getBytes());
 			try {
 				stateProcessor.processEventWaled(event);
 			} catch (IOException e) {
@@ -244,7 +237,6 @@ public class RuleProcessor extends AbstractProcessor {
 			event.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
 			event.getHeaders().put(Constants.FIELD_EVENT, outputEvent);
 			event.setEventId(outputEvent.getEventId() + Utils.combineRuleActionId(ruleId, actionId));
-			event.setBody(gson.toJson(event.getHeaders()).getBytes());
 			try {
 				omegaProcessor.processEventWaled(event);
 			} catch (IOException e) {

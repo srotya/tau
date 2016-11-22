@@ -194,6 +194,7 @@
   <build>
     <finalName>api</finalName>
     <sourceDirectory>src/main/java</sourceDirectory>
+    <testSourceDirectory>src/test/java</testSourceDirectory>
     <resources>
       <resource>
         <filtering>false</filtering>
