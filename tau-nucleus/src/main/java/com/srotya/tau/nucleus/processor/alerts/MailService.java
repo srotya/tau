@@ -115,10 +115,6 @@ public class MailService {
 		final MimeMessage msg = new MimeMessage(session);
 		try {
 			setMessage(msg, alert);
-			// if (!transport.isConnected()) {
-			// transport.connect();
-			// }
-			// transport.sendMessage(msg, msg.getAllRecipients());
 			Transport.send(msg);
 			return true;
 		} catch (Exception e) {

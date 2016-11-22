@@ -18,7 +18,7 @@ package com.srotya.tau.nucleus.qa;
 import org.junit.Test;
 
 /**
- * @author Ambud
+ * @author ambudsharma
  */
 public class QACountingAggregationRules {
 

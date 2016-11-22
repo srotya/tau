@@ -51,6 +51,7 @@ public class HttpService {
 			HttpResponse response = client.execute(request);
 			EntityUtils.consume(response.getEntity());
 			int statusCode = response.getStatusLine().getStatusCode();
+			System.out.println("\n\nmaking HTTP callback:"+alert+"\t"+statusCode+"\n\n");
 			if (statusCode < 200 && statusCode >= 300) {
 				throw exception;
 			}

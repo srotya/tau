@@ -27,7 +27,7 @@ import com.srotya.tau.nucleus.NucleusServer;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 
 /**
- * @author ambud
+ * @author ambudsharma
  *
  */
 @RunWith(Suite.class)

@@ -15,7 +15,14 @@
  */
 package com.srotya.tau.nucleus.qa;
 
-import static org.junit.Assert.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -39,8 +46,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.gson.Gson;
 import com.srotya.tau.nucleus.Utils;
 import com.srotya.tau.nucleus.processor.alerts.MailService;
@@ -60,10 +71,14 @@ import com.srotya.tau.wraith.rules.StatelessRulesEngine;
 /**
  * @author ambud
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class QAAlertRules {
 
+	@Rule
+	public WireMockRule wireMockRule = new WireMockRule(54322);
+	
 	@Test
-	public void testSMTPServerAvailability() throws UnknownHostException, IOException, MessagingException {
+	public void testASMTPServerAvailability() throws UnknownHostException, IOException, MessagingException {
 		MimeMessage msg = new MimeMessage(Session.getDefaultInstance(new Properties()));
 		msg.setFrom(new InternetAddress("alert@srotya.com"));
 		msg.setRecipient(RecipientType.TO, new InternetAddress("alert@srotya.com"));
@@ -84,7 +99,7 @@ public class QAAlertRules {
 	}
 
 	@Test
-	public void testAlertRules() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
+	public void testEmailAlertRule() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
 			ClientProtocolException, IOException, InterruptedException {
 		CloseableHttpClient client = null;
 		client = Utils.buildClient("http://localhost:8080/commands/templates", 2000, 2000);
@@ -128,6 +143,55 @@ public class QAAlertRules {
 			Thread.sleep(100);
 		}
 		assertEquals(3, size);
+	}
+	
+	@Test
+	public void testHTTPAlertRules() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
+			ClientProtocolException, IOException, InterruptedException {
+		wireMockRule.addStubMapping(stubFor(post(urlEqualTo("/alert")).willReturn(
+				aResponse()
+				.withStatus(200)
+				.withHeader("Content-Type", "application/json")
+				.withBody("na"))));
+		CloseableHttpClient client = null;
+		client = Utils.buildClient("http://localhost:8080/commands/templates", 2000, 2000);
+		HttpPut templateUpload = new HttpPut("http://localhost:8080/commands/templates");
+		String template = AlertTemplateSerializer.serialize(
+				new AlertTemplate((short) 3, "test_template", "http://localhost:54322/alert", "http", "test", "test", 30, 1),
+				false);
+		templateUpload.addHeader("content-type", "application/json");
+		templateUpload.setEntity(new StringEntity(new Gson().toJson(new TemplateCommand("all", false, template))));
+		CloseableHttpResponse response = client.execute(templateUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+
+		client = Utils.buildClient("http://localhost:8080/commands/rules", 2000, 2000);
+		HttpPut ruleUpload = new HttpPut("http://localhost:8080/commands/rules");
+		String rule = RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 4, "SimpleRule", true,
+				new EqualsCondition("value", 3.0), new Action[] { new TemplatedAlertAction((short) 0, (short) 3) }),
+				false);
+		ruleUpload.addHeader("content-type", "application/json");
+		ruleUpload.setEntity(
+				new StringEntity(new Gson().toJson(new RuleCommand(StatelessRulesEngine.ALL_RULEGROUP, false, rule))));
+		response = client.execute(ruleUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+
+		client = Utils.buildClient("http://localhost:8080/events", 2000, 2000);
+		Map<String, Object> eventHeaders = new HashMap<>();
+		eventHeaders.put("value", 3);
+		eventHeaders.put("@timestamp", "2014-04-23T13:40:29.000Z");
+		eventHeaders.put(Constants.FIELD_EVENT_ID, "1122");
+
+		HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
+		eventUpload.addHeader("content-type", "application/json");
+		eventUpload.setEntity(new StringEntity(new Gson().toJson(eventHeaders)));
+		response = client.execute(eventUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getReasonPhrase(),
+				response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+		Thread.sleep(1000);
+		verify(1, postRequestedFor(urlEqualTo("/alert")));
 	}
 
 }
