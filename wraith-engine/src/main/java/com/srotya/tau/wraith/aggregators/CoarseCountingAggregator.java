@@ -81,7 +81,7 @@ public class CoarseCountingAggregator implements CountingAggregator {
 	}
 
 	@Override
-	public long getCardinality() {
+	public double getCardinality() {
 		return size();
 	}
 

@@ -49,7 +49,7 @@ public class AndCondition extends ComplexCondition {
 	 */
 	@Override
 	public String toString() {
-		return "&& (AND)";
+		return "&& (AND) ["+getConditions()+"]";
 	}
 
 }

@@ -104,7 +104,7 @@ public class FineCountingAggregator implements CountingAggregator {
 	}
 
 	@Override
-	public long getCardinality() {
+	public double getCardinality() {
 		return size();
 	}
 

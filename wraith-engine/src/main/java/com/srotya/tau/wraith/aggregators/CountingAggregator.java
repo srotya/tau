@@ -25,7 +25,7 @@ public interface CountingAggregator extends Aggregator {
 	/**
 	 * @return cardinality
 	 */
-	public long getCardinality();
+	public double getCardinality();
 
 	/**
 	 * Self factory, to create a brand new {@link CountingAggregator} instance
