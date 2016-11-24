@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import com.lmax.disruptor.EventHandler;
@@ -27,6 +28,7 @@ import com.srotya.tau.nucleus.disruptor.GroupByHandler;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
+import com.srotya.tau.wraith.Utils;
 import com.srotya.tau.wraith.aggregations.MarkovianAggregationEngineImpl;
 import com.srotya.tau.wraith.aggregators.AggregationRejectException;
 import com.srotya.tau.wraith.aggregators.FineCountingAggregator;
@@ -101,11 +103,14 @@ public class FineCountingProcessor extends AbstractProcessor {
 				List<Event> events = new ArrayList<>();
 				engine.emit((Integer) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW),
 						event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString(), events);
+				Entry<Short, Short> separateRuleActionId = Utils.separateRuleActionId(event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString());
 				for (Event out : events) {
+					out.getHeaders().put(Constants.FIELD_RULE_ID, (double)separateRuleActionId.getKey());
+					out.getHeaders().put(Constants.FIELD_ACTION_ID, (double)separateRuleActionId.getValue());
 					out.getHeaders().put(Constants.FIELD_RULE_GROUP,
 							event.getHeaders().get(Constants.FIELD_RULE_GROUP));
+					logger.fine("Emitting fine counting aggregation:"+out);
 					outputProcessor.processEventWaled(out);
-					logger.info("Fine counting event forwarded:" + out);
 				}
 				if (!events.isEmpty()) {
 					ackEventBatch();
@@ -133,7 +138,7 @@ public class FineCountingProcessor extends AbstractProcessor {
 				caller.ackEvent(id);
 			}
 			if (batchEventIds.size() > 0) {
-				logger.info("Acked batch:" + batchEventIds.size());
+				logger.fine("Acked batch:" + batchEventIds.size());
 			}
 			batchEventIds.clear();
 		}

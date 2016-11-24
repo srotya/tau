@@ -31,6 +31,7 @@ import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.GroupByHandler;
 import com.srotya.tau.nucleus.processor.alerts.HttpService;
 import com.srotya.tau.nucleus.processor.alerts.MailService;
+import com.srotya.tau.nucleus.processor.alerts.SlackService;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableBoolean;
@@ -95,6 +96,7 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 		private DisruptorUnifiedFactory storeFactory;
 		private MailService mailService;
 		private HttpService httpService;
+		private SlackService slackService;
 
 		public TransmissionHandler(AbstractProcessor caller, int taskId, MutableInt taskCount, DisruptorUnifiedFactory factory) {
 			super(taskId, taskCount);
@@ -105,6 +107,7 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 			this.storeFactory = factory;
 			this.mailService = new MailService();
 			this.httpService = new HttpService();
+			this.slackService = new SlackService();
 		}
 
 		public void init(Map<String, String> conf) throws Exception {
@@ -136,9 +139,8 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 						event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString(),
 						((Boolean) event.getHeaders().get(Constants.FIELD_TEMPLATE_DELETE)));
 				logger.info(
-						"Processed rule update:" + event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString());
+						"Processed template update:" + event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString());
 			} else if (event.getHeaders().containsKey(Constants.FIELD_ALERT)) {
-				logger.info("Sending email out:"+event);
 				Alert alert = (Alert) event.getHeaders().get(Constants.FIELD_ALERT);
 				AlertTemplate template = templateMap.get(alert.getId());
 				if (template != null) {
@@ -155,8 +157,12 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 							mailService.sendMail(alert);
 							break;
 						case "http":// make http request"
-							httpService.sendHttpCallback(alert);
 							logger.info("Sending http request out:"+alert);
+							httpService.sendHttpCallback(alert);
+							break;
+						case "slack":
+							logger.info("Sending slack request out:"+alert);
+							slackService.sendHttpCallback(alert);
 							break;
 						default:// do nothing
 							break;
@@ -166,7 +172,7 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 						// monitor
 						MutableBoolean state = stateMap.get(alert.getId());
 						if (!state.isVal()) {
-							logger.fine("Entering suppression state for template:" + alert.getId());
+							logger.info("Entering suppression state for template:" + alert.getId());
 							state.setVal(true);
 						}
 						logger.fine("Suppression alert for:" + alert.getId() + ":\t" + alert);

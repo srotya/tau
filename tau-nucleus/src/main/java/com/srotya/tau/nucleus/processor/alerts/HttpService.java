@@ -43,20 +43,8 @@ public class HttpService {
 	 */
 	public void sendHttpCallback(Alert alert) throws AlertDeliveryException {
 		try {
-			CloseableHttpClient client = Utils.buildClient(alert.getTarget(), 3000, 3000);
-			HttpPost request = new HttpPost(alert.getTarget());
-			StringEntity body = new StringEntity(alert.getBody(), ContentType.APPLICATION_JSON);
-			request.addHeader("content-type", "application/json");
-			request.setEntity(body);
-			HttpResponse response = client.execute(request);
-			EntityUtils.consume(response.getEntity());
-			int statusCode = response.getStatusLine().getStatusCode();
-			System.out.println("\n\nmaking HTTP callback:"+alert+"\t"+statusCode+"\n\n");
-			if (statusCode < 200 && statusCode >= 300) {
-				throw exception;
-			}
-			client.close();
-		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException |AlertDeliveryException e) {
+			sendHttpCallback(alert.getTarget(), alert.getBody());
+		} catch (AlertDeliveryException e) {
 			throw exception;
 		}
 	}

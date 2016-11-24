@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import com.lmax.disruptor.EventHandler;
@@ -27,11 +28,13 @@ import com.srotya.tau.nucleus.disruptor.GroupByHandler;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MutableInt;
+import com.srotya.tau.wraith.Utils;
 import com.srotya.tau.wraith.aggregations.StateTrackingEngine;
 
 /**
+ * Tau Processor for State Tracking
+ * 
  * @author ambudsharma
- *
  */
 public class StateProcessor extends AbstractProcessor {
 
@@ -89,11 +92,14 @@ public class StateProcessor extends AbstractProcessor {
 				List<Event> events = new ArrayList<>();
 				stateTrackingEngine.emit((Integer) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW),
 						event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString(), events);
+				Entry<Short, Short> separateRuleActionId = Utils.separateRuleActionId(event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString());
 				for (Event out : events) {
+					out.getHeaders().put(Constants.FIELD_RULE_ID, (double)separateRuleActionId.getKey());
+					out.getHeaders().put(Constants.FIELD_ACTION_ID, (double)separateRuleActionId.getValue());
 					out.getHeaders().put(Constants.FIELD_RULE_GROUP,
 							event.getHeaders().get(Constants.FIELD_RULE_GROUP));
 					outputProcessor.processEventWaled(out);
-					logger.info("State tracking event forwarded:" + out);
+					logger.fine("State tracking event forwarded:" + out);
 				}
 				if (!events.isEmpty()) {
 					ackEventBatch();
@@ -105,7 +111,7 @@ public class StateProcessor extends AbstractProcessor {
 							((Number) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW)).intValue(),
 							event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString(),
 							event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString());
-					logger.info("Received tracking event" + event);
+					logger.fine("Received tracking event" + event);
 				} else {
 					// if this is untrack
 					stateTrackingEngine.untrack(
@@ -113,7 +119,7 @@ public class StateProcessor extends AbstractProcessor {
 							((Number) event.getHeaders().get(Constants.FIELD_AGGREGATION_WINDOW)).intValue(),
 							event.getHeaders().get(Constants.FIELD_RULE_ACTION_ID).toString(),
 							event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString());
-					logger.info("Received untracking event" + event);
+					logger.fine("Received untracking event" + event);
 				}
 				batchEventIds.add(event.getEventId());
 				if (batchEventIds.size() >= batchSize) {

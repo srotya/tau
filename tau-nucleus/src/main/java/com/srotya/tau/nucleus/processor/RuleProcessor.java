@@ -175,7 +175,6 @@ public class RuleProcessor extends AbstractProcessor {
 				Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey,
 				Object aggregationValue) {
 			if (action == FineCountingAggregationAction.class) {
-				logger.info("Emitting couning");
 				Event event = factory.buildEvent();
 				event.setEventId(originalEvent.getEventId() + ruleActionId);
 				event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);

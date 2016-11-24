@@ -15,16 +15,123 @@
  */
 package com.srotya.tau.nucleus.qa;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
+
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.gson.Gson;
+import com.srotya.tau.nucleus.Utils;
+import com.srotya.tau.wraith.Constants;
+import com.srotya.tau.wraith.actions.Action;
+import com.srotya.tau.wraith.actions.aggregations.FineCountingAggregationAction;
+import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplate;
+import com.srotya.tau.wraith.actions.alerts.templated.AlertTemplateSerializer;
+import com.srotya.tau.wraith.actions.alerts.templated.TemplateCommand;
+import com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertAction;
+import com.srotya.tau.wraith.conditions.logical.AndCondition;
+import com.srotya.tau.wraith.conditions.relational.EqualsCondition;
+import com.srotya.tau.wraith.rules.RuleCommand;
+import com.srotya.tau.wraith.rules.RuleSerializer;
+import com.srotya.tau.wraith.rules.SimpleRule;
+import com.srotya.tau.wraith.rules.StatelessRulesEngine;
 
 /**
  * @author ambudsharma
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class QACountingAggregationRules {
 
+	@Rule
+	public WireMockRule wireMockRule = new WireMockRule(54321);
+
 	@Test
-	public void testCountingAggregations() {
-		System.out.println("Testing counting aggregations");
+	public void testACountingAggregations() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
+			IOException, InterruptedException {
+		CloseableHttpClient client = null;
+		// Create a template for alerting and upload it
+		client = Utils.buildClient("http://localhost:8080/commands/templates", 2000, 2000);
+		HttpPut templateUpload = new HttpPut("http://localhost:8080/commands/templates");
+		String template = AlertTemplateSerializer.serialize(new AlertTemplate((short) 12, "test_template",
+				"alertAggregation@srotya.com", "mail", "aggregation", "aggregation", 30, 1), false);
+		templateUpload.addHeader("content-type", "application/json");
+		templateUpload.setEntity(new StringEntity(new Gson().toJson(new TemplateCommand("all", false, template))));
+		CloseableHttpResponse response = client.execute(templateUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+
+		// Create aggregation rule and upload it
+		HttpPut ruleUpload = null;
+		String rule = null;
+		client = Utils.buildClient("http://localhost:8080/commands/rules", 2000, 2000);
+		ruleUpload = new HttpPut("http://localhost:8080/commands/rules");
+		ruleUpload.addHeader("content-type", "application/json");
+		rule = RuleSerializer
+				.serializeRuleToJSONString(
+						new SimpleRule((short) 13, "SimpleAggregationRule", true, new EqualsCondition("value", 8.0),
+								new Action[] { new FineCountingAggregationAction((short) 0, "host", "clientip", 10) }),
+						false);
+		ruleUpload.setEntity(
+				new StringEntity(new Gson().toJson(new RuleCommand(StatelessRulesEngine.ALL_RULEGROUP, false, rule))));
+		response = client.execute(ruleUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getReasonPhrase(),
+				response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+
+		// Create alert rule for aggregation rule's output and upload it
+		client = Utils.buildClient("http://localhost:8080/commands/rules", 2000, 2000);
+		ruleUpload = new HttpPut("http://localhost:8080/commands/rules");
+		rule = RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 15, "SimpleAlertRule", true,
+				new AndCondition(Arrays.asList(new EqualsCondition(Constants.FIELD_RULE_ID, 13),
+						new EqualsCondition(Constants.FIELD_ACTION_ID, 0))),
+				new Action[] { new TemplatedAlertAction((short) 0, (short) 12) }), false);
+		ruleUpload.addHeader("content-type", "application/json");
+		ruleUpload.setEntity(
+				new StringEntity(new Gson().toJson(new RuleCommand(StatelessRulesEngine.ALL_RULEGROUP, false, rule))));
+		response = client.execute(ruleUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+
+		for (int i = 0; i < 5; i++) {
+			client = Utils.buildClient("http://localhost:8080/events", 2000, 2000);
+			Map<String, Object> eventHeaders = new HashMap<>();
+			eventHeaders.put("clientip", i);
+			eventHeaders.put("host", "host1");
+			eventHeaders.put("value", 8.0);
+			eventHeaders.put("@timestamp", "2014-04-23T13:40:2" + i + ".000Z");
+			eventHeaders.put(Constants.FIELD_EVENT_ID, 1200 + String.valueOf(i));
+
+			HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
+			eventUpload.addHeader("content-type", "application/json");
+			eventUpload.setEntity(new StringEntity(new Gson().toJson(eventHeaders)));
+			response = client.execute(eventUpload);
+			response.close();
+			assertTrue(response.getStatusLine().getReasonPhrase(),
+					response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+		}
+		int size = 0;
+		while ((size = AllQATests.getSmtpServer().getReceivedEmailSize()) <= 3) {
+			System.out.println("Waiting on aggregation window to close; email count:" + size);
+			Thread.sleep(10000);
+		}
+		assertEquals(4, size);
 	}
-	
+
 }

@@ -66,7 +66,7 @@ public class AlertingProcessor extends AbstractProcessor {
 						event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString(),
 						((Boolean) event.getHeaders().get(Constants.FIELD_TEMPLATE_DELETE)));
 				logger.info(
-						"Processed rule update:" + event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString());
+						"Processed template update:" + event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString());
 			} else {
 				@SuppressWarnings("unchecked")
 				Alert alert = engine.materialize((Map<String, Object>) event.getHeaders().get(Constants.FIELD_EVENT),
@@ -82,6 +82,7 @@ public class AlertingProcessor extends AbstractProcessor {
 					outputEvent.getHeaders().put(Constants.FIELD_ALERT, alert);
 					outputEvent.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, alert.getId());
 					outputProcessor.processEventWaled(outputEvent);
+					logger.info("Emitting alert to transmitter:"+outputEvent);
 				}
 			}
 		}

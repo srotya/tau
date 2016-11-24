@@ -58,85 +58,96 @@ public class NucleusServer extends Application<NucleusConfig> {
 		Properties reConfig = new Properties();
 		reConfig.load(new FileInputStream(configuration.getRuleEngineConfiguration()));
 		conf = Utils.hashTableTohashMap(reConfig);
-		AlertTransmissionProcessor transmissionProcessor = initializeAlertTransmissionProcessor(configuration, environment);
-		AlertingProcessor alertingProcessor = initializeAlertProcessor(configuration, environment, transmissionProcessor);
+		AlertTransmissionProcessor transmissionProcessor = initializeAlertTransmissionProcessor(configuration,
+				environment);
+		AlertingProcessor alertingProcessor = initializeAlertProcessor(configuration, environment,
+				transmissionProcessor);
 		StateProcessor stateProcessor = initializeStateProcessor(configuration, environment);
 		OmegaProcessor omegaProcessor = initializeOmegaController(configuration, environment, stateProcessor);
 		FineCountingProcessor fineCountingProcessor = initializeFineCountingProcessor(configuration, environment);
-		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor, stateProcessor, omegaProcessor, fineCountingProcessor);
+		RuleProcessor ruleProcessor = initializeRuleProcessor(configuration, environment, alertingProcessor,
+				stateProcessor, omegaProcessor, fineCountingProcessor);
 		stateProcessor.setOutputProcessors(ruleProcessor);
 		fineCountingProcessor.setOutputProcessors(ruleProcessor);
 		if (!configuration.isIntegrationTest()) {
-//		initializeIngressManager(configuration, environment, ruleProcessor);
+			initializeIngressManager(configuration, environment, ruleProcessor);
 		}
-		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor, fineCountingProcessor);
-		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor, transmissionProcessor);
+		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor,
+				fineCountingProcessor);
+		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor,
+				transmissionProcessor);
 		logger.info("Initialization complete");
 	}
 
 	private AlertTransmissionProcessor initializeAlertTransmissionProcessor(NucleusConfig configuration,
 			Environment environment) {
-		AlertTransmissionProcessor transmissionProcessor = new AlertTransmissionProcessor(new DisruptorUnifiedFactory(), configuration.getAlertEngineParallelism(),
-				1024 * 2, conf, null);
+		AlertTransmissionProcessor transmissionProcessor = new AlertTransmissionProcessor(new DisruptorUnifiedFactory(),
+				configuration.getAlertEngineParallelism(), 1024 * 2, conf, null);
 		environment.lifecycle().manage(transmissionProcessor);
 		return transmissionProcessor;
 	}
 
-	private FineCountingProcessor initializeFineCountingProcessor(NucleusConfig configuration,
-			Environment environment) throws IOException {
-		FineCountingProcessor fineCountingProcessor = new FineCountingProcessor(new DisruptorUnifiedFactory(), 1, 1024*2, conf, null);
+	private FineCountingProcessor initializeFineCountingProcessor(NucleusConfig configuration, Environment environment)
+			throws IOException {
+		FineCountingProcessor fineCountingProcessor = new FineCountingProcessor(new DisruptorUnifiedFactory(), 1,
+				1024 * 2, conf, null);
 		environment.lifecycle().manage(fineCountingProcessor);
 		return fineCountingProcessor;
 	}
 
 	private OmegaProcessor initializeOmegaController(NucleusConfig configuration, Environment environment,
 			StateProcessor stateProcessor) throws IOException {
-		OmegaProcessor omegaProcessor = new OmegaProcessor(new DisruptorUnifiedFactory(), 1, 1024*2, conf, null);
+		OmegaProcessor omegaProcessor = new OmegaProcessor(new DisruptorUnifiedFactory(), 1, 1024 * 2, conf, null);
 		environment.lifecycle().manage(omegaProcessor);
 		return omegaProcessor;
 	}
 
-	private EmissionProcessor initializeEmissionController(NucleusConfig configuration, Environment environment, StateProcessor stateProcessor, FineCountingProcessor fineCountingProcessor) throws IOException {
-		EmissionProcessor emissionProcessor = new EmissionProcessor(new DisruptorUnifiedFactory(), conf, stateProcessor, fineCountingProcessor);
+	private EmissionProcessor initializeEmissionController(NucleusConfig configuration, Environment environment,
+			StateProcessor stateProcessor, FineCountingProcessor fineCountingProcessor) throws IOException {
+		EmissionProcessor emissionProcessor = new EmissionProcessor(new DisruptorUnifiedFactory(), conf, stateProcessor,
+				fineCountingProcessor);
 		environment.lifecycle().manage(emissionProcessor);
 		return emissionProcessor;
 	}
 
-	private AlertingProcessor initializeAlertProcessor(NucleusConfig configuration, Environment environment, AlertTransmissionProcessor transmissionProcessor)
-			throws FileNotFoundException, IOException {
-		AlertingProcessor alertProcessor = new AlertingProcessor(new DisruptorUnifiedFactory(), configuration.getAlertEngineParallelism(),
-				1024 * 2, conf, transmissionProcessor);
+	private AlertingProcessor initializeAlertProcessor(NucleusConfig configuration, Environment environment,
+			AlertTransmissionProcessor transmissionProcessor) throws FileNotFoundException, IOException {
+		AlertingProcessor alertProcessor = new AlertingProcessor(new DisruptorUnifiedFactory(),
+				configuration.getAlertEngineParallelism(), 1024 * 2, conf, transmissionProcessor);
 		environment.lifecycle().manage(alertProcessor);
 		return alertProcessor;
 	}
 
 	private StateProcessor initializeStateProcessor(NucleusConfig configuration, Environment environment)
 			throws FileNotFoundException, IOException {
-		StateProcessor stateProcessor = new StateProcessor(new DisruptorUnifiedFactory(), configuration.getRuleEngineParallelism(),
-				1024 * 2, conf, null);
+		StateProcessor stateProcessor = new StateProcessor(new DisruptorUnifiedFactory(),
+				configuration.getRuleEngineParallelism(), 1024 * 2, conf, null);
 		environment.lifecycle().manage(stateProcessor);
 		return stateProcessor;
 	}
 
-	private void registerAPIs(Environment environment, RuleProcessor ruleProcessor, AlertingProcessor alertingProcessor, EmissionProcessor emissionProcessor, OmegaProcessor omegaProcessor, AlertTransmissionProcessor transmissionProcessor) {
+	private void registerAPIs(Environment environment, RuleProcessor ruleProcessor, AlertingProcessor alertingProcessor,
+			EmissionProcessor emissionProcessor, OmegaProcessor omegaProcessor,
+			AlertTransmissionProcessor transmissionProcessor) {
 		environment.jersey().register(new QueryPerfStats());
 		environment.jersey().register(new EventReceiver(new DisruptorUnifiedFactory(), ruleProcessor));
-		environment.jersey()
-				.register(new CommandReceiver(new DisruptorUnifiedFactory(), ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor, transmissionProcessor));
+		environment.jersey().register(new CommandReceiver(new DisruptorUnifiedFactory(), ruleProcessor,
+				alertingProcessor, emissionProcessor, omegaProcessor, transmissionProcessor));
 	}
 
-	private RuleProcessor initializeRuleProcessor(NucleusConfig configuration, Environment environment, AlertingProcessor alertingProcessor, StateProcessor stateProcessor, OmegaProcessor omegaProcessor, FineCountingProcessor fineCountingProcessor)
-			throws IOException, FileNotFoundException {
-		RuleProcessor ruleProcessor = new RuleProcessor(new DisruptorUnifiedFactory(), configuration.getRuleEngineParallelism(),
-				1024 * 2, conf, alertingProcessor, stateProcessor, omegaProcessor, fineCountingProcessor);
+	private RuleProcessor initializeRuleProcessor(NucleusConfig configuration, Environment environment,
+			AlertingProcessor alertingProcessor, StateProcessor stateProcessor, OmegaProcessor omegaProcessor,
+			FineCountingProcessor fineCountingProcessor) throws IOException, FileNotFoundException {
+		RuleProcessor ruleProcessor = new RuleProcessor(new DisruptorUnifiedFactory(),
+				configuration.getRuleEngineParallelism(), 1024 * 2, conf, alertingProcessor, stateProcessor,
+				omegaProcessor, fineCountingProcessor);
 		environment.lifecycle().manage(ruleProcessor);
 		return ruleProcessor;
 	}
 
-	@SuppressWarnings("unused")
-	private IngressManager initializeIngressManager(NucleusConfig configuration, Environment environment, RuleProcessor ruleProcessor)
-			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException,
-			FileNotFoundException {
+	private IngressManager initializeIngressManager(NucleusConfig configuration, Environment environment,
+			RuleProcessor ruleProcessor) throws ClassNotFoundException, InstantiationException, IllegalAccessException,
+			IOException, FileNotFoundException {
 		Class<?> ingresser = Class.forName(configuration.getIngresserFactoryClass());
 		IngresserFactory factory = (IngresserFactory) ingresser.newInstance();
 		factory.setIngresserParallelism(configuration.getIngresserParallelism());

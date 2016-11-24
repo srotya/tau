@@ -31,25 +31,25 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
  *
  */
 @RunWith(Suite.class)
-@SuiteClasses({ QAAlertRules.class, QACountingAggregationRules.class, QAOmegaRules.class,
-		QAStateAggregationRules.class, QAMultiStageAggregationRules.class })
+@SuiteClasses({ QAAlertRules.class, QACountingAggregationRules.class, QAStateAggregationRules.class, QAOmegaRules.class,
+		QAMultiStageAggregationRules.class })
 public class AllQATests {
 
 	@ClassRule
 	public static DropwizardAppRule<NucleusConfig> nucleus = new DropwizardAppRule<>(NucleusServer.class,
 			"src/test/resources/nucleus.yml");
-	
+
 	public static SimpleSmtpServer smtpServer;
-	
-	static{
+
+	static {
 		smtpServer = SimpleSmtpServer.start();
 		System.err.println("Started SMTP Server");
 	}
-	
+
 	public static DropwizardAppRule<NucleusConfig> getNucleus() {
 		return nucleus;
 	}
-	
+
 	public static SimpleSmtpServer getSmtpServer() {
 		return smtpServer;
 	}

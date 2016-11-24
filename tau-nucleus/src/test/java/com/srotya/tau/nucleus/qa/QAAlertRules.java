@@ -85,7 +85,6 @@ public class QAAlertRules {
 		msg.setSubject("test mail");
 		msg.setContent("Hello", "text/html");
 		Transport.send(msg);
-		System.err.println("Mail sent");
 		MailService ms = new MailService();
 		ms.init(new HashMap<>());
 		Alert alert = new Alert();
@@ -96,10 +95,11 @@ public class QAAlertRules {
 		alert.setTarget("alert@srotya.com");
 		ms.sendMail(alert);
 		assertEquals(2, AllQATests.getSmtpServer().getReceivedEmailSize());
+		System.err.println("Mail sent");
 	}
 
 	@Test
-	public void testEmailAlertRule() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
+	public void testBEmailAlertRule() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
 			ClientProtocolException, IOException, InterruptedException {
 		CloseableHttpClient client = null;
 		client = Utils.buildClient("http://localhost:8080/commands/templates", 2000, 2000);
@@ -129,7 +129,7 @@ public class QAAlertRules {
 		Map<String, Object> eventHeaders = new HashMap<>();
 		eventHeaders.put("value", 1);
 		eventHeaders.put("@timestamp", "2014-04-23T13:40:29.000Z");
-		eventHeaders.put(Constants.FIELD_EVENT_ID, "1122");
+		eventHeaders.put(Constants.FIELD_EVENT_ID, "1101");
 
 		HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
 		eventUpload.addHeader("content-type", "application/json");
@@ -140,13 +140,28 @@ public class QAAlertRules {
 				response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
 		int size = 0;
 		while((size = AllQATests.getSmtpServer().getReceivedEmailSize())<=2) {
-			Thread.sleep(100);
+			System.out.println("Waiting on emails to be received:"+size);
+			Thread.sleep(1000);
+		}
+		assertEquals(3, size);
+		
+		eventUpload = new HttpPost("http://localhost:8080/events");
+		eventUpload.addHeader("content-type", "application/json");
+		eventUpload.setEntity(new StringEntity(new Gson().toJson(eventHeaders)));
+		response = client.execute(eventUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getReasonPhrase(),
+				response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+		while((size = AllQATests.getSmtpServer().getReceivedEmailSize())<=2) {
+			System.out.println("Waiting on emails to be received:"+size);
+			Thread.sleep(1000);
 		}
 		assertEquals(3, size);
 	}
 	
+
 	@Test
-	public void testHTTPAlertRules() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
+	public void testCHTTPAlertRules() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
 			ClientProtocolException, IOException, InterruptedException {
 		wireMockRule.addStubMapping(stubFor(post(urlEqualTo("/alert")).willReturn(
 				aResponse()
@@ -181,7 +196,7 @@ public class QAAlertRules {
 		Map<String, Object> eventHeaders = new HashMap<>();
 		eventHeaders.put("value", 3);
 		eventHeaders.put("@timestamp", "2014-04-23T13:40:29.000Z");
-		eventHeaders.put(Constants.FIELD_EVENT_ID, "1122");
+		eventHeaders.put(Constants.FIELD_EVENT_ID, "1102");
 
 		HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
 		eventUpload.addHeader("content-type", "application/json");
@@ -194,4 +209,52 @@ public class QAAlertRules {
 		verify(1, postRequestedFor(urlEqualTo("/alert")));
 	}
 
+	@Test
+	public void testDSlackAlertRules() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException,
+			ClientProtocolException, IOException, InterruptedException {
+		CloseableHttpClient client = null;
+		wireMockRule.addStubMapping(stubFor(post(urlEqualTo("/services")).willReturn(
+				aResponse()
+				.withStatus(200)
+				.withHeader("Content-Type", "application/json")
+				.withBody("na"))));
+		client = Utils.buildClient("http://localhost:8080/commands/templates", 2000, 2000);
+		HttpPut templateUpload = new HttpPut("http://localhost:8080/commands/templates");
+		String template = AlertTemplateSerializer.serialize(
+				new AlertTemplate((short) 7, "test_template", "http://localhost:54322/services@#general", "slack", "test", "test", 30, 1),
+				false);
+		templateUpload.addHeader("content-type", "application/json");
+		templateUpload.setEntity(new StringEntity(new Gson().toJson(new TemplateCommand("all", false, template))));
+		CloseableHttpResponse response = client.execute(templateUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+
+		client = Utils.buildClient("http://localhost:8080/commands/rules", 2000, 2000);
+		HttpPut ruleUpload = new HttpPut("http://localhost:8080/commands/rules");
+		String rule = RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 9, "SimpleRule", true,
+				new EqualsCondition("value", 4.0), new Action[] { new TemplatedAlertAction((short) 0, (short) 7) }),
+				false);
+		ruleUpload.addHeader("content-type", "application/json");
+		ruleUpload.setEntity(
+				new StringEntity(new Gson().toJson(new RuleCommand(StatelessRulesEngine.ALL_RULEGROUP, false, rule))));
+		response = client.execute(ruleUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+
+		client = Utils.buildClient("http://localhost:8080/events", 2000, 2000);
+		Map<String, Object> eventHeaders = new HashMap<>();
+		eventHeaders.put("value", 4);
+		eventHeaders.put("@timestamp", "2014-04-23T13:40:29.000Z");
+		eventHeaders.put(Constants.FIELD_EVENT_ID, "1103");
+
+		HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
+		eventUpload.addHeader("content-type", "application/json");
+		eventUpload.setEntity(new StringEntity(new Gson().toJson(eventHeaders)));
+		response = client.execute(eventUpload);
+		response.close();
+		assertTrue(response.getStatusLine().getReasonPhrase(),
+				response.getStatusLine().getStatusCode() >= 200 && response.getStatusLine().getStatusCode() < 300);
+		Thread.sleep(1000);
+		verify(1, postRequestedFor(urlEqualTo("/services")));
+	}
 }
