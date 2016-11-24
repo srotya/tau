@@ -98,7 +98,8 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 		private HttpService httpService;
 		private SlackService slackService;
 
-		public TransmissionHandler(AbstractProcessor caller, int taskId, MutableInt taskCount, DisruptorUnifiedFactory factory) {
+		public TransmissionHandler(AbstractProcessor caller, int taskId, MutableInt taskCount,
+				DisruptorUnifiedFactory factory) {
 			super(taskId, taskCount);
 			this.caller = caller;
 			this.templateMap = new HashMap<>();
@@ -130,7 +131,7 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 			}
 			mailService.init(conf);
 		}
-		
+
 		@Override
 		public void consumeEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 			Object type = event.getHeaders().get(Constants.FIELD_EVENT_TYPE);
@@ -138,8 +139,6 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 				updateTemplate(event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString(),
 						event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString(),
 						((Boolean) event.getHeaders().get(Constants.FIELD_TEMPLATE_DELETE)));
-				logger.info(
-						"Processed template update:" + event.getHeaders().get(Constants.FIELD_TEMPLATE_CONTENT).toString());
 			} else if (event.getHeaders().containsKey(Constants.FIELD_ALERT)) {
 				Alert alert = (Alert) event.getHeaders().get(Constants.FIELD_ALERT);
 				AlertTemplate template = templateMap.get(alert.getId());
@@ -153,15 +152,15 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 					if (result.incrementAndGet() <= template.getThrottleLimit() || template.getThrottleLimit() == 0) {
 						switch (alert.getMedia()) {
 						case "mail":// send email
-							logger.info("Sending email out:"+alert);
+							logger.info("Sending email out:" + alert);
 							mailService.sendMail(alert);
 							break;
 						case "http":// make http request"
-							logger.info("Sending http request out:"+alert);
+							logger.info("Sending http request out:" + alert);
 							httpService.sendHttpCallback(alert);
 							break;
 						case "slack":
-							logger.info("Sending slack request out:"+alert);
+							logger.info("Sending slack request out:" + alert);
 							slackService.sendHttpCallback(alert);
 							break;
 						default:// do nothing
@@ -209,6 +208,7 @@ public class AlertTransmissionProcessor extends AbstractProcessor {
 		public void updateTemplate(String ruleGroup, String templateJson, boolean delete) {
 			try {
 				AlertTemplate template = AlertTemplateSerializer.deserialize(templateJson);
+				logger.fine("Processed template update:" + template);
 				if (delete) {
 					templateMap.remove(template.getTemplateId());
 					logger.info("Deleted template:" + template.getTemplateId());

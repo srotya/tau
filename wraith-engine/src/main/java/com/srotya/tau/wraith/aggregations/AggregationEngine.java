@@ -37,10 +37,17 @@ public interface AggregationEngine {
 	/**
 	 * Flush results to the external state store
 	 * 
+	 * @param aggregationWindow
+	 * @param ruleActionId
+	 * @throws IOException
+	 */
+	public void flush(int aggregationWindow, String ruleActionId) throws IOException;
+
+	/**
 	 * @throws IOException
 	 */
 	public void flush() throws IOException;
-
+	
 	/**
 	 * Gracefully shutdown the engine
 	 * 

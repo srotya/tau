@@ -49,6 +49,15 @@ public class JavaRegexCondition extends AbstractSimpleCondition {
 		return false;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof JavaRegexCondition) {
+			JavaRegexCondition condition = (JavaRegexCondition)obj;
+			return condition.getkey().equals(getkey()) && value.equals(condition.value);
+		}
+		return false;
+	}
+	
 	/**
 	 * @return the pattern
 	 */

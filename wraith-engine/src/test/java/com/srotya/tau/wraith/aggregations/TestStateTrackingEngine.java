@@ -134,19 +134,19 @@ public class TestStateTrackingEngine {
 		engine.track(1461272084000L, 10, raId, "series1");
 		engine.track(1461272090000L, 10, raId, "series1");
 		assertEquals(2, engine.getAggregationMap().size());
-		assertEquals(2, engine.getFlushAggregationMap().size());
+		assertEquals(2, engine.getFlushMap().size());
 		engine.flush();
 		assertEquals(2, TestStateAggregationStore.store.size());
 		List<Event> emits = new ArrayList<>();
 		engine.emit(10, raId, emits);
 		assertEquals(1, emits.size());
 		assertEquals(1, engine.getAggregationMap().size());
-		assertEquals(1, engine.getFlushAggregationMap().size());
+		assertEquals(1, engine.getFlushMap().size());
 		assertEquals(1, TestStateAggregationStore.store.size());
 		engine = new StateTrackingEngine(factory, new TestStateFactory());
 		engine.initialize(conf, 1);
 		assertEquals(1, engine.getAggregationMap().size());
-		assertEquals(0, engine.getFlushAggregationMap().size());
+		assertEquals(0, engine.getFlushMap().size());
 		assertEquals(1, TestStateAggregationStore.store.size());
 	}
 

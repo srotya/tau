@@ -40,6 +40,15 @@ public class EqualsCondition extends AbstractSimpleCondition {
 	public boolean satisfiesCondition(Object val) {
 		return value.equals(val);
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof EqualsCondition) {
+			EqualsCondition condition = (EqualsCondition)obj;
+			return condition.getkey().equals(getkey()) && value.equals(condition.value);
+		}
+		return false;
+	}
 
 	/**
 	 * Getter for value

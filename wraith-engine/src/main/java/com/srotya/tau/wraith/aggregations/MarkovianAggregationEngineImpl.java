@@ -155,6 +155,24 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.srotya.tau.wraith.aggregations.AggregationEngine#flush(int,
+	 * java.lang.String)
+	 */
+	public void flush(int aggregationWindow, String ruleActionId) throws IOException {
+		for (Entry<String, Aggregator> entry : getFlushMap()
+				.subMap(Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
+						Utils.concat(ruleActionId, Constants.KEY_SEPARATOR, String.valueOf(Character.MAX_VALUE)))
+				.entrySet()) {
+			if (store != null) {
+				store.persist(taskId, entry.getKey(), entry.getValue());
+			}
+			entry.getValue().reset();
+		}
+	}
+
 	/**
 	 * Is this aggregator processing data for a supplied ruleActionId key
 	 * 
@@ -173,11 +191,11 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	 * @throws IOException
 	 */
 	public void emit(int aggregationWindow, String ruleActionId, List<Event> emits) throws IOException {
-		flush();
+		flush(aggregationWindow, ruleActionId);
 		SortedMap<String, Aggregator> map = getAggregationMap().subMap(
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR, String.valueOf(Character.MAX_VALUE)));
-		if(map.isEmpty()) {
+		if (map.isEmpty()) {
 			// no emits
 			return;
 		}

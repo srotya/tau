@@ -99,7 +99,6 @@ public class EmissionProcessor extends AbstractProcessor {
 				updateRule(event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString(),
 						event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString(),
 						((Boolean) event.getHeaders().get(Constants.FIELD_RULE_DELETE)));
-				logger.info("Processed rule update:" + event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString());
 			} else {
 				tickCounter++;
 				for (String ruleGroup : ruleGroupMap.keySet()) {
@@ -166,6 +165,7 @@ public class EmissionProcessor extends AbstractProcessor {
 				ruleGroupMap.put(ruleGroup, ruleMap);
 			}
 			Rule rule = StatelessRulesEngine.updateRuleMap(ruleMap, ruleJson, delete);
+			logger.info("Processed rule update:" + rule);
 			sendEmissionsForRule(ruleGroup, rule);
 		}
 	}

@@ -81,9 +81,7 @@ public class OmegaProcessor extends AbstractProcessor {
 				executor.updateRule(event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString(),
 						event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString(),
 						((Boolean) event.getHeaders().get(Constants.FIELD_RULE_DELETE)));
-				logger.info("Processed rule update:" + event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString());
 			} else {
-				// logger.info("Saw event:"+event);
 				executor.executeScript(event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString(),
 						(Short) event.getHeaders().get(Constants.FIELD_RULE_ID),
 						(Short) event.getHeaders().get(Constants.FIELD_ACTION_ID), (Event) event.getHeaders().get(Constants.FIELD_EVENT));

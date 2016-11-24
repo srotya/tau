@@ -64,7 +64,7 @@ public class ConditionValidator implements Validator<Condition> {
 					throw new ValidationException("Condition header key cannot be empty");
 				}
 				if (castedConditon instanceof NumericCondition) {
-					if (((NumericCondition) castedConditon).getValue() == Double.MIN_VALUE) {
+					if (((NumericCondition) castedConditon).getValue() == (Number)Double.MIN_VALUE) {
 						throw new ValidationException("Numeric conditions must have a value");
 					}
 				} else if (castedConditon instanceof EqualsCondition) {

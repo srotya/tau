@@ -33,7 +33,7 @@ public class AndCondition extends ComplexCondition {
 	public AndCondition(List<Condition> conditions) {
 		super(conditions);
 	}
-
+	
 	@Override
 	public boolean operator(boolean c1, boolean c2) {
 		return c1 && c2;

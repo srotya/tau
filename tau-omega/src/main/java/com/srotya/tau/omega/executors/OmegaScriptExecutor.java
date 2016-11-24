@@ -147,6 +147,7 @@ public class OmegaScriptExecutor {
 	 */
 	public void updateRule(String ruleGroup, String ruleJson, boolean delete) {
 		SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(ruleJson);
+		logger.fine("Processed rule update:" + rule);
 		filterAndUpdateRule(ruleGroup, rule, delete);
 	}
 

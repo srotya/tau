@@ -94,7 +94,7 @@ public class TestSerialization {
 		SimpleRule deserializedRule = RuleSerializer.deserializeJSONStringToRule(jsonRule);
 		assertEquals(rule, deserializedRule);
 		System.out.println(((AndCondition) deserializedRule.getCondition()).getConditions().get(0));
-		System.out.println();
+		assertEquals(((AndCondition) rule.getCondition()).getConditions().get(0), ((AndCondition) deserializedRule.getCondition()).getConditions().get(0));
 	}
 
 	@Test

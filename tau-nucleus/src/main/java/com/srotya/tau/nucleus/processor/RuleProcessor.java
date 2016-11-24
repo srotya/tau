@@ -107,7 +107,6 @@ public class RuleProcessor extends AbstractProcessor {
 				rulesEngine.updateRule(event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString(),
 						event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString(),
 						((Boolean) event.getHeaders().get(Constants.FIELD_RULE_DELETE)));
-				logger.info("Processed rule update:" + event.getHeaders().get(Constants.FIELD_RULE_CONTENT).toString());
 			} else {
 				rulesEngine.evaluateEventAgainstGroupedRules(null, null, event);
 				caller.ackEvent(event.getEventId());

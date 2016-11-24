@@ -34,8 +34,8 @@ public class GreaterThanCondition extends NumericCondition {
 	}
 
 	@Override
-	public boolean compare(double number, double val) {
-		return number > val;
+	public boolean compare(Number number, Number val) {
+		return number.doubleValue() > val.doubleValue();
 	}
 
 	/* (non-Javadoc)

@@ -21,6 +21,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
@@ -31,10 +34,6 @@ import com.srotya.tau.wraith.aggregators.AggregationRejectException;
 import com.srotya.tau.wraith.aggregators.StaleDataException;
 import com.srotya.tau.wraith.store.AggregationStore;
 import com.srotya.tau.wraith.store.StoreFactory;
-
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 /**
  * @author ambud_sharma
@@ -94,7 +93,7 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 			val = new MutableBoolean();
 			val.setVal(true);
 			getAggregationMap().put(key, val);
-			getFlushAggregationMap().put(key, val);
+			getFlushMap().put(key, val);
 		}
 	}
 
@@ -118,7 +117,7 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 	@Override
 	public void flush() throws IOException {
 		if (store != null) {
-			for (Entry<String, MutableBoolean> entry : getFlushAggregationMap().entrySet()) {
+			for (Entry<String, MutableBoolean> entry : getFlushMap().entrySet()) {
 				store.persistState(taskId, entry.getKey(), entry.getValue());
 			}
 		}
@@ -156,7 +155,7 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 			if (store != null) {
 				store.purgeState(taskId, entry.getKey());
 			}
-			getFlushAggregationMap().remove(entry.getKey());
+			getFlushMap().remove(entry.getKey());
 			iterator.remove();
 		}
 		getLastEmittedBucketMap().put(ruleActionId, lastTs);
@@ -186,7 +185,7 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 	/**
 	 * @return the flushAggregationMap
 	 */
-	public SortedMap<String, MutableBoolean> getFlushAggregationMap() {
+	public SortedMap<String, MutableBoolean> getFlushMap() {
 		return flushAggregationMap;
 	}
 
@@ -209,6 +208,18 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 	 */
 	public int getTaskId() {
 		return taskId;
+	}
+
+	@Override
+	public void flush(int aggregationWindow, String ruleActionId) throws IOException {
+		for (Entry<String, MutableBoolean> entry : getFlushMap()
+				.subMap(Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
+						Utils.concat(ruleActionId, Constants.KEY_SEPARATOR, String.valueOf(Character.MAX_VALUE)))
+				.entrySet()) {
+			if (store != null) {
+				store.persistState(taskId, entry.getKey(), entry.getValue());
+			}
+		}
 	}
 
 }

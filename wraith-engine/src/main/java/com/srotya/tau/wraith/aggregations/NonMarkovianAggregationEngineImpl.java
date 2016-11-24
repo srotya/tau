@@ -196,4 +196,17 @@ public class NonMarkovianAggregationEngineImpl implements NonMarkovianAggregatio
 		
 	}
 
+	@Override
+	public void flush(int aggregationWindow, String ruleActionId) throws IOException {
+		for (Entry<String, Aggregator> entry : getFlushMap()
+				.subMap(Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
+						Utils.concat(ruleActionId, Constants.KEY_SEPARATOR, String.valueOf(Character.MAX_VALUE)))
+				.entrySet()) {
+			if (store != null) {
+				store.persist(taskId, entry.getKey(), entry.getValue());
+			}
+			entry.getValue().reset();
+		}
+	}
+
 }

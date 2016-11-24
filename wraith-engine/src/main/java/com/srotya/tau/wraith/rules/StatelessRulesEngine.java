@@ -111,6 +111,7 @@ public class StatelessRulesEngine<K, C> implements Configurable {
 	public static Rule updateRuleMap(Map<Short, Rule> ruleMap, String ruleJson, boolean delete)
 			throws ValidationException {
 		SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(ruleJson);
+		logger.debug("Processed rule update:" + rule);
 		try {
 			RuleValidator.getInstance().validate(rule);
 		} catch (ValidationException e) {

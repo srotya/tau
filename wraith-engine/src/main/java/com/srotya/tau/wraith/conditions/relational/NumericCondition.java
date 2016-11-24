@@ -27,14 +27,14 @@ public abstract class NumericCondition extends AbstractSimpleCondition {
 
 	private static final long serialVersionUID = 1L;
 	@Required
-	private double value = Double.MIN_VALUE;
+	private Number value = Double.MIN_VALUE;
 
-	public NumericCondition(String headerKey, double value) {
+	public NumericCondition(String headerKey, Number value) {
 		super(headerKey);
 		this.value = value;
 	}
 
-	public abstract boolean compare(double number, double val);
+	public abstract boolean compare(Number number, Number val);
 
 	@Override
 	public final boolean satisfiesCondition(Object val) {
@@ -48,7 +48,7 @@ public abstract class NumericCondition extends AbstractSimpleCondition {
 	 * Getter for value
 	 * @return the value
 	 */
-	public double getValue() {
+	public Number getValue() {
 		return value;
 	}
 
@@ -56,7 +56,7 @@ public abstract class NumericCondition extends AbstractSimpleCondition {
 	 * Setter for value
 	 * @param value
 	 */
-	public void setValue(double value) {
+	public void setValue(Number value) {
 		this.value = value;
 	}
 
