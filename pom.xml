@@ -25,6 +25,7 @@
     <module>tau-ui</module>
     <module>tau-nucleus</module>
     <module>tau-omega</module>
+    <module>linea</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
