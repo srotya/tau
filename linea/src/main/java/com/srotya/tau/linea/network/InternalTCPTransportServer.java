@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.tau.linea;
+package com.srotya.tau.linea.network;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -49,6 +49,11 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
+/**
+ * 
+ * 
+ * @author ambud
+ */
 public class InternalTCPTransportServer {
 
 	public static final boolean COMPRESS = Boolean
@@ -100,13 +105,17 @@ public class InternalTCPTransportServer {
 
 	}
 
+	/**
+	 * IWC or Inter-Worker Communication Handler is the last Handler in the
+	 * Netty Pipeline for receiving {@link TauEvent}s from other workers.
+	 * 
+	 * @author ambud
+	 */
 	public static class IWCHandler extends ChannelInboundHandlerAdapter {
 
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) {
-			if ((Integer) ((TauEvent) msg).getHeaders().get("sequence") % 1000000 == 0) {
-				System.out.println(System.currentTimeMillis());
-			}
+			System.out.println(System.currentTimeMillis() + "\t" + msg);
 		}
 
 		@Override
@@ -121,6 +130,11 @@ public class InternalTCPTransportServer {
 
 	}
 
+	/**
+	 * {@link Kryo} serializes {@link TauEvent} for Netty transmission
+	 * 
+	 * @author ambud
+	 */
 	public static class KryoObjectEncoder extends MessageToByteEncoder<TauEvent> {
 
 		public static byte[] eventToByteArray(TauEvent event, boolean compress) throws IOException {
@@ -144,15 +158,30 @@ public class InternalTCPTransportServer {
 
 	}
 
+	/**
+	 * Decodes {@link Kryo} Serialized {@link TauEvent} objects. This Decoder
+	 * implementation has refactored utility methods that are used for both TCP
+	 * and UDP based transports.
+	 * 
+	 * @author ambud
+	 */
 	public static class KryoObjectDecoder extends LengthFieldBasedFrameDecoder {
 
 		public KryoObjectDecoder() {
 			super(Short.MAX_VALUE, 0, 4, 0, 4);
 		}
 
+		/**
+		 * Takes a Netty {@link ByteBuf} as input and returns a list of events
+		 * deserialized from the buffer. <br>
+		 * The buffer must be length prefixed to get the number of events in the
+		 * buffer.
+		 * 
+		 * @param in
+		 * @return list of tauEvents
+		 */
 		public static List<TauEvent> bytebufToEvents(ByteBuf in) {
 			short count = in.readShort();
-//			System.out.println("Reading " + count + " events");
 			ByteBufInputStream bis = new ByteBufInputStream(in);
 			InputStream stream = bis;
 			if (COMPRESS) {
@@ -163,7 +192,6 @@ public class InternalTCPTransportServer {
 			try {
 				for (int i = 0; i < count; i++) {
 					TauEvent event = kryoThreadLocal.get().readObject(input, TauEvent.class);
-//					System.out.println("Event:"+event);
 					events.add(event);
 				}
 				return events;
@@ -175,6 +203,13 @@ public class InternalTCPTransportServer {
 			}
 		}
 
+		/**
+		 * Deserializes a sinlge {@link TauEvent} from a Netty {@link ByteBuf}
+		 * 
+		 * @param in
+		 * @return tauEvent
+		 * @throws IOException
+		 */
 		public static TauEvent byteBufToEvent(ByteBuf in) throws IOException {
 			ByteBufInputStream bis = new ByteBufInputStream(in);
 			InputStream stream = bis;
@@ -184,6 +219,11 @@ public class InternalTCPTransportServer {
 			return streamToEvent(stream);
 		}
 
+		/**
+		 * @param stream
+		 * @return
+		 * @throws IOException
+		 */
 		public static TauEvent streamToEvent(InputStream stream) throws IOException {
 			Input input = new Input(stream);
 			try {
@@ -194,6 +234,17 @@ public class InternalTCPTransportServer {
 			}
 		}
 
+		/**
+		 * Deserializes {@link List} of {@link TauEvent}s from a byte array
+		 * 
+		 * @param bytes
+		 * @param skip
+		 *            prefix bytes to skip
+		 * @param count
+		 *            of events to read
+		 * @return list of tauEvents
+		 * @throws IOException
+		 */
 		public static List<TauEvent> bytesToEvent(byte[] bytes, int skip, int count) throws IOException {
 			List<TauEvent> events = new ArrayList<>();
 			Input input = new Input(bytes);

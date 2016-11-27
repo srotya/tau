@@ -30,6 +30,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.http.client.config.RequestConfig;
@@ -95,7 +96,7 @@ public class Utils {
 
 		private static final long serialVersionUID = 1L;
 		private Map<String, Object> headers;
-		private String eventId;
+		private Long eventId;
 
 		public WebEvent() {
 			headers = new HashMap<>();
@@ -121,13 +122,25 @@ public class Utils {
 		}
 
 		@Override
-		public String getEventId() {
+		public Long getEventId() {
 			return eventId;
 		}
 
 		@Override
-		public void setEventId(String eventId) {
+		public void setEventId(Long eventId) {
 			this.eventId = eventId;
+		}
+
+		@Override
+		public List<Long> getSourceIds() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void setSourceIds(List<Long> sourceIds) {
+			// TODO Auto-generated method stub
+			
 		}
 
 	}

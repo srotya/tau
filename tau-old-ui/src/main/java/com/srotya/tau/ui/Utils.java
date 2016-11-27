@@ -23,6 +23,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.http.client.config.RequestConfig;
@@ -133,13 +134,25 @@ public class Utils {
 		}
 
 		@Override
-		public String getEventId() {
+		public List<Long> getSourceIds() {
 			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
-		public void setEventId(String eventId) {
+		public void setSourceIds(List<Long> sourceIds) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public Long getEventId() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void setEventId(Long eventId) {
 			// TODO Auto-generated method stub
 			
 		}

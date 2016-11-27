@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.EventFactory;
+import com.srotya.tau.wraith.MurmurHash;
 
 import net.iharder.Base64;
 import oi.thekraken.grok.api.Grok;
@@ -57,7 +58,7 @@ public class GrokEventTranslator {
 				event.getHeaders().put(entry.getKey(), entry.getValue());
 			}
 		}
-		event.setEventId(Base64.encodeBytes(md5.digest(data.getBytes())));
+		event.setEventId(MurmurHash.hash64(Base64.encodeBytes(md5.digest(data.getBytes()))));
 		return event;
 	}
 

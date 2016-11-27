@@ -17,6 +17,7 @@ package com.srotya.tau.wraith;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.srotya.tau.wraith.Event;
@@ -31,7 +32,7 @@ public class TestEvent implements Event {
 	private static final long serialVersionUID = 1L;
 	private Map<String, Object> headers;
 	private byte[] body;
-	private String eventId;
+	private Long eventId;
 
 	public TestEvent() {
 		this.headers = new HashMap<String, Object>();
@@ -61,12 +62,12 @@ public class TestEvent implements Event {
 	}
 
 	@Override
-	public String getEventId() {
+	public Long getEventId() {
 		return eventId;
 	}
 
 	@Override
-	public void setEventId(String eventId) {
+	public void setEventId(Long eventId) {
 		this.eventId = eventId;
 	}
 
@@ -76,6 +77,18 @@ public class TestEvent implements Event {
 	@Override
 	public String toString() {
 		return "TestEvent [headers=" + headers + ", body=" + Arrays.toString(body) + ", eventId=" + eventId + "]";
+	}
+
+	@Override
+	public List<Long> getSourceIds() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setSourceIds(List<Long> sourceIds) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

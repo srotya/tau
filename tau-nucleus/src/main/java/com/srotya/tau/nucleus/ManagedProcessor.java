@@ -44,6 +44,10 @@ public interface ManagedProcessor extends Managed {
 	 * @param eventId
 	 * @throws IOException 
 	 */
-	public void ackEvent(String eventId) throws IOException;
+	public void ackEvent(long eventId) throws IOException;
+	
+	public void start() throws Exception;
+	
+	public void stop() throws Exception;
 
 }

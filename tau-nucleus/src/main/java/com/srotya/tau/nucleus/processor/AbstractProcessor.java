@@ -191,7 +191,7 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 	}
 
 	@Override
-	public final void ackEvent(String eventId) throws IOException {
+	public final void ackEvent(long eventId) throws IOException {
 		getProcessorWal().ackEvent(eventId);
 	}
 

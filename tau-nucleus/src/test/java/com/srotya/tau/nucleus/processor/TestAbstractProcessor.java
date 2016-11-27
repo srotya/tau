@@ -91,7 +91,7 @@ public class TestAbstractProcessor {
 		processor.start();
 		
 		Event event = factory.buildEvent();
-		event.setEventId("one");
+		event.setEventId(2L);
 		event.setBody("hello".getBytes());
 		processor.processEventWaled(event);
 		processor.processEventWaled(event);

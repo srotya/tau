@@ -17,7 +17,6 @@ package com.srotya.tau.nucleus.wal;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -59,7 +58,6 @@ import com.srotya.tau.wraith.EventFactory;
 public class RocksDBWALService implements WAL {
 
 	private static final Logger logger = Logger.getLogger(RocksDBWALService.class.getName());
-	private static final Charset charset = Charset.forName("utf-8");
 	private RocksDB wal;
 	private Options options;
 	private String walDirectory;
@@ -109,7 +107,7 @@ public class RocksDBWALService implements WAL {
 		try {
 			itr.seekToFirst();
 			while (itr.isValid() && itr.key() != null) {
-				String id = new String(itr.key(), charset);
+				Long id = Utils.byteToLong(itr.key());
 				Kryo kryo = kryoPool.get();
 				Input input = new Input(itr.value());
 				@SuppressWarnings("unchecked")
@@ -143,7 +141,7 @@ public class RocksDBWALService implements WAL {
 			Output output = new Output(bos);
 			kryo.writeObject(output, event.getHeaders());
 			output.close();
-			wal.put(event.getEventId().getBytes(charset), bos.toByteArray());
+			wal.put(Utils.longToBytes(event.getEventId()), bos.toByteArray());
 			bos.close();
 		} catch (RocksDBException e) {
 			throw new IOException(e);
@@ -158,22 +156,22 @@ public class RocksDBWALService implements WAL {
 	}
 
 	@Override
-	public void ackEvent(String eventId) throws IOException {
+	public void ackEvent(Long eventId) throws IOException {
 		try {
-			wal.remove(writeOptions, eventId.getBytes(charset));
+			wal.remove(writeOptions, Utils.longToBytes(eventId));
 		} catch (RocksDBException e) {
 			throw new IOException(e);
 		}
 	}
 
 	@Override
-	public String getEarliestEventId() throws IOException {
+	public Long getEarliestEventId() throws IOException {
 		RocksIterator itr = wal.newIterator();
 		itr.seekToFirst();
 		if (!itr.isValid()) {
 			return null;
 		}
-		String val = new String(itr.key(), charset);
+		long val = Utils.byteToLong(itr.key());
 		itr.close();
 		return val;
 	}

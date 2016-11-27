@@ -60,7 +60,7 @@ public interface WAL extends Managed {
 	 * @param eventId
 	 * @throws IOException
 	 */
-	public void ackEvent(String eventId) throws IOException;
+	public void ackEvent(Long eventId) throws IOException;
 
 	/**
 	 * Get the ID of the earliest {@link Event} that is still in the {@link WAL}
@@ -68,7 +68,7 @@ public interface WAL extends Managed {
 	 * @return
 	 * @throws IOException
 	 */
-	public String getEarliestEventId() throws IOException;
+	public Long getEarliestEventId() throws IOException;
 
 	/**
 	 * {@link WAL} directory that is written to a persistent media

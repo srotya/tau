@@ -90,7 +90,7 @@ public class EventReceiver extends PushIngresser {
 			intercept.validate(headers);
 			validateEvent(headers);
 			Event event = getFactory().buildEvent(headers);
-			event.setEventId(headers.get(Constants.FIELD_EVENT_ID).toString());
+			event.setEventId(((Double)headers.get(Constants.FIELD_EVENT_ID)).longValue());
 			getProcessor().processEventWaled(event);
 			counter.incrementAndGet();
 		} catch (Exception e) {

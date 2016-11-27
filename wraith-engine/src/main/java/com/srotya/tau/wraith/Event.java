@@ -16,6 +16,7 @@
 package com.srotya.tau.wraith;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,7 +29,13 @@ import java.util.Map;
  */
 public interface Event extends Serializable {
 	
-	public String getEventId();
+	public List<Long> getSourceIds();
+	
+	public void setSourceIds(List<Long> sourceIds);
+	
+	public Long getEventId();
+	
+	public void setEventId(Long eventId);
 
 	public Map<String, Object> getHeaders();
 	
@@ -37,7 +44,5 @@ public interface Event extends Serializable {
 	public byte[] getBody();
 	
 	public void setBody(byte[] body);
-	
-	public void setEventId(String eventId);
 	
 }

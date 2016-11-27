@@ -129,7 +129,7 @@ public class QAAlertRules {
 		Map<String, Object> eventHeaders = new HashMap<>();
 		eventHeaders.put("value", 1);
 		eventHeaders.put("@timestamp", "2014-04-23T13:40:29.000Z");
-		eventHeaders.put(Constants.FIELD_EVENT_ID, "1101");
+		eventHeaders.put(Constants.FIELD_EVENT_ID, 1101);
 
 		HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
 		eventUpload.addHeader("content-type", "application/json");
@@ -196,7 +196,7 @@ public class QAAlertRules {
 		Map<String, Object> eventHeaders = new HashMap<>();
 		eventHeaders.put("value", 3);
 		eventHeaders.put("@timestamp", "2014-04-23T13:40:29.000Z");
-		eventHeaders.put(Constants.FIELD_EVENT_ID, "1102");
+		eventHeaders.put(Constants.FIELD_EVENT_ID, 1102);
 
 		HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
 		eventUpload.addHeader("content-type", "application/json");
@@ -245,7 +245,7 @@ public class QAAlertRules {
 		Map<String, Object> eventHeaders = new HashMap<>();
 		eventHeaders.put("value", 4);
 		eventHeaders.put("@timestamp", "2014-04-23T13:40:29.000Z");
-		eventHeaders.put(Constants.FIELD_EVENT_ID, "1103");
+		eventHeaders.put(Constants.FIELD_EVENT_ID, 1103);
 
 		HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
 		eventUpload.addHeader("content-type", "application/json");

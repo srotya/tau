@@ -116,7 +116,7 @@ public class QACountingAggregationRules {
 			eventHeaders.put("host", "host1");
 			eventHeaders.put("value", 8.0);
 			eventHeaders.put("@timestamp", "2014-04-23T13:40:2" + i + ".000Z");
-			eventHeaders.put(Constants.FIELD_EVENT_ID, 1200 + String.valueOf(i));
+			eventHeaders.put(Constants.FIELD_EVENT_ID, 1200 + i);
 
 			HttpPost eventUpload = new HttpPost("http://localhost:8080/events");
 			eventUpload.addHeader("content-type", "application/json");

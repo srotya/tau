@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.tau.linea;
+package com.srotya.tau.linea.network;
 
 import java.net.Inet4Address;
+import java.net.NetworkInterface;
 import java.util.List;
+import java.util.logging.Logger;
 
-import com.srotya.tau.linea.InternalTCPTransportServer.IWCHandler;
-import com.srotya.tau.linea.InternalTCPTransportServer.KryoObjectDecoder;
-import com.srotya.tau.linea.InternalTCPTransportServer.KryoObjectEncoder;
+import com.srotya.tau.linea.network.InternalTCPTransportServer.IWCHandler;
+import com.srotya.tau.linea.network.InternalTCPTransportServer.KryoObjectDecoder;
+import com.srotya.tau.linea.network.InternalTCPTransportServer.KryoObjectEncoder;
+import com.srotya.tau.nucleus.utils.NetworkUtils;
 import com.srotya.tau.wraith.TauEvent;
 
 import io.netty.bootstrap.Bootstrap;
@@ -35,9 +38,14 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
 
+/**
+ * @author ambud
+ */
 public class InternalUDPTransportServer {
 
-	static final boolean SSL = System.getProperty("ssl") != null;
+	public static final short SERVER_PORT = 9999;
+	private static final Logger logger = Logger.getLogger(InternalUDPTransportServer.class.getName());
+	public static final boolean SSL = System.getProperty("ssl") != null;
 
 	private Channel channel;
 
@@ -46,6 +54,10 @@ public class InternalUDPTransportServer {
 	}
 
 	public void init() throws Exception {
+		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(true);
+		Inet4Address address = NetworkUtils.getIPv4Address(iface);
+		logger.info("Selected default interface:" + iface.getName() + "\twith address:" + address.getHostAddress());
+
 		EventLoopGroup workerGroup = new NioEventLoopGroup(2);
 
 		Bootstrap b = new Bootstrap();
@@ -55,7 +67,7 @@ public class InternalUDPTransportServer {
 			protected void initChannel(Channel ch) throws Exception {
 				ch.pipeline().addLast(new KryoDatagramDecoderWrapper()).addLast(new IWCHandler());
 			}
-		}).bind(Inet4Address.getByName("localhost"), 9999).sync().channel();
+		}).bind(address, SERVER_PORT).sync().channel();
 
 		channel.closeFuture().await();
 	}

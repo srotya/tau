@@ -66,7 +66,7 @@ public class StateProcessor extends AbstractProcessor {
 		private int taskId;
 		private StateProcessor caller;
 		private AbstractProcessor outputProcessor;
-		private List<String> batchEventIds;
+		private List<Long> batchEventIds;
 		private int batchSize;
 
 		public StateTrackingEngineHandler(StateProcessor caller, int taskId, MutableInt taskCount,
@@ -130,7 +130,7 @@ public class StateProcessor extends AbstractProcessor {
 		}
 
 		private void ackEventBatch() throws IOException {
-			for (String id : batchEventIds) {
+			for (Long id : batchEventIds) {
 				caller.ackEvent(id);
 			}
 			if (batchEventIds.size() > 0) {

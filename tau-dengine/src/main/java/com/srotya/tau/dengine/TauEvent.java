@@ -16,6 +16,7 @@
 package com.srotya.tau.dengine;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,7 +30,7 @@ import com.srotya.tau.wraith.Event;
 public class TauEvent implements Event {
 
 	private static final long serialVersionUID = 1L;
-	private String eventId;
+	private Long eventId;
 	private Map<String, Object> headers;
 	private byte[] body;
 
@@ -70,13 +71,25 @@ public class TauEvent implements Event {
 	}
 
 	@Override
-	public String getEventId() {
+	public Long getEventId() {
 		return eventId;
 	}
 
 	@Override
-	public void setEventId(String eventId) {
+	public void setEventId(Long eventId) {
 		this.eventId = eventId;
+	}
+
+	@Override
+	public List<Long> getSourceIds() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setSourceIds(List<Long> sourceIds) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

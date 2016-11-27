@@ -24,6 +24,7 @@ import com.srotya.tau.nucleus.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.ShuffleHandler;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
+import com.srotya.tau.wraith.MurmurHash;
 import com.srotya.tau.wraith.MutableInt;
 import com.srotya.tau.wraith.Utils;
 import com.srotya.tau.wraith.actions.Action;
@@ -137,7 +138,7 @@ public class RuleProcessor extends AbstractProcessor {
 			event.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
 			event.getHeaders().put(Constants.FIELD_RULE_NAME, ruleName);
 			event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
-			event.setEventId(outputEvent.getEventId() + Utils.combineRuleActionId(ruleId, actionId));
+			event.setEventId(MurmurHash.hash64(outputEvent.getEventId() + Utils.combineRuleActionId(ruleId, actionId)));
 			try {
 				alertProcessor.processEventWaled(event);
 			} catch (IOException e) {
@@ -175,7 +176,7 @@ public class RuleProcessor extends AbstractProcessor {
 				Object aggregationValue) {
 			if (action == FineCountingAggregationAction.class) {
 				Event event = factory.buildEvent();
-				event.setEventId(originalEvent.getEventId() + ruleActionId);
+				event.setEventId(MurmurHash.hash64(originalEvent.getEventId() + ruleActionId));
 				event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
 				event.getHeaders().put(Constants.FIELD_RULE_ACTION_ID, ruleActionId);
@@ -194,7 +195,7 @@ public class RuleProcessor extends AbstractProcessor {
 		public void emitStateTrackingEvent(Object eventCollector, Object eventContainer, Boolean track,
 				Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey) {
 			Event event = factory.buildEvent();
-			event.setEventId(originalEvent.getEventId() + ruleActionId);
+			event.setEventId(MurmurHash.hash64(originalEvent.getEventId() + ruleActionId));
 			event.getHeaders().put(Constants.FIELD_STATE_TRACK, track);
 			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 			event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, windowSize);
@@ -234,7 +235,7 @@ public class RuleProcessor extends AbstractProcessor {
 			event.getHeaders().put(Constants.FIELD_TIMESTAMP, timestamp);
 			event.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
 			event.getHeaders().put(Constants.FIELD_EVENT, outputEvent);
-			event.setEventId(outputEvent.getEventId() + Utils.combineRuleActionId(ruleId, actionId));
+			event.setEventId(MurmurHash.hash64(outputEvent.getEventId() + Utils.combineRuleActionId(ruleId, actionId)));
 			try {
 				omegaProcessor.processEventWaled(event);
 			} catch (IOException e) {

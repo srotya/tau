@@ -53,7 +53,7 @@ public class TestRocksDBWAL {
 			assertNotNull(instance);
 			instance.start();
 			Event eventW = factory.buildEvent();
-			eventW.setEventId("event1");
+			eventW.setEventId(3L);
 			eventW.getHeaders().put("event", "event1");
 			instance.writeEvent(eventW);
 			instance.stop();
@@ -62,11 +62,11 @@ public class TestRocksDBWAL {
 			long next = buffer.getCursor();
 			Event event = buffer.get(next);
 			assertNotNull(event);
-			assertEquals("event1", event.getEventId());
+			assertEquals(3L, (long)event.getEventId());
 			assertEquals("event1", event.getHeaders().get("event"));
 			
 			// ack event to remove it from the WAL
-			instance.ackEvent("event1");
+			instance.ackEvent(3L);
 			assertTrue(instance.getEarliestEventId()==null);
 			instance.stop();
 

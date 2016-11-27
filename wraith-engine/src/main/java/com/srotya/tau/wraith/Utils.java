@@ -69,7 +69,7 @@ public class Utils {
 					CLASSNAME_FORWARD_MAP.put(entry[0], entry[1]);
 					CLASSNAME_REVERSE_MAP.put(entry[1], entry[0]);
 				}
-			}else {
+			} else {
 				System.out.println("Couldn't load the default naming resource");
 			}
 		} catch (IOException e) {
@@ -98,7 +98,7 @@ public class Utils {
 		try {
 			String temp = null;
 			while ((temp = reader.readLine()) != null) {
-				if(temp.trim().isEmpty()) {
+				if (temp.trim().isEmpty()) {
 					continue;
 				}
 				lines.add(temp);
@@ -110,13 +110,13 @@ public class Utils {
 	}
 
 	public static void addDeclaredAndInheritedFields(Class<?> c, Collection<Field> fields) {
-	    fields.addAll(Arrays.asList(c.getDeclaredFields())); 
-	    Class<?> superClass = c.getSuperclass(); 
-	    if (superClass != null) { 
-	        addDeclaredAndInheritedFields(superClass, fields); 
-	    }       
+		fields.addAll(Arrays.asList(c.getDeclaredFields()));
+		Class<?> superClass = c.getSuperclass();
+		if (superClass != null) {
+			addDeclaredAndInheritedFields(superClass, fields);
+		}
 	}
-	
+
 	/**
 	 * @param timestamp
 	 * @param aggregationWindow
@@ -131,7 +131,7 @@ public class Utils {
 				.append(ruleActionId).append(Constants.KEY_SEPARATOR).append(ts).append(Constants.KEY_SEPARATOR)
 				.append(aggregationKey).toString();
 	}
-	
+
 	/**
 	 * @param timestamp
 	 * @param aggregationWindow
@@ -191,7 +191,7 @@ public class Utils {
 	public static int stringToInt(String val) {
 		return Integer.parseInt(val, 16);
 	}
-	
+
 	public static String longToString(long val) {
 		return Long.toHexString(val);
 	}
@@ -254,15 +254,17 @@ public class Utils {
 		return stringToInt(key.split(Constants.KEY_SEPARATOR)[1]);
 	}
 
-	public static Event buildAggregationEmitEvent(EventFactory eventFactory, int aggregationWindow, Entry<String, ?> entry) {
+	public static Event buildAggregationEmitEvent(EventFactory eventFactory, int aggregationWindow,
+			Entry<String, ?> entry) {
 		Event event = eventFactory.buildEvent();
 		String[] keyParts = splitMapKey(entry.getKey());
 		long ts = extractTsFromAggregationKey(entry.getKey());
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, keyParts[keyParts.length - 1]);
 		event.getHeaders().put(Constants.FIELD_TIMESTAMP, ts * 1000);
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_WINDOW, aggregationWindow);
-		event.setEventId(new StringBuilder().append(keyParts[keyParts.length - 1]).append("_").append(ts * 1000)
-				.toString());
+		String eventIdAggregateId = new StringBuilder().append(keyParts[keyParts.length - 1]).append("_")
+				.append(ts * 1000).toString();
+		event.setEventId(MurmurHash.hash64(eventIdAggregateId));
 		return event;
 	}
 

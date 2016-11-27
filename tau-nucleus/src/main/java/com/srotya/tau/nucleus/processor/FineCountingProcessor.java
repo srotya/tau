@@ -74,7 +74,7 @@ public class FineCountingProcessor extends AbstractProcessor {
 		private AbstractProcessor outputProcessor;
 		private AbstractProcessor caller;
 		private MarkovianAggregationEngineImpl engine;
-		private List<String> batchEventIds;
+		private List<Long> batchEventIds;
 		private int batchSize;
 
 		public FineCountingHandler(AbstractProcessor caller, int taskId, MutableInt taskCount,
@@ -134,7 +134,7 @@ public class FineCountingProcessor extends AbstractProcessor {
 		}
 
 		private void ackEventBatch() throws IOException {
-			for (String id : batchEventIds) {
+			for (Long id : batchEventIds) {
 				caller.ackEvent(id);
 			}
 			if (batchEventIds.size() > 0) {

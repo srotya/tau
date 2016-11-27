@@ -15,8 +15,10 @@
  */
 package com.srotya.tau.wraith;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,11 +33,13 @@ public class TauEvent implements Event {
 
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
 	private static final long serialVersionUID = 1L;
-	private String eventId;
+	private List<Long> sourceIds;
+	private Long eventId;
 	private Map<String, Object> headers;
 	private byte[] body;
 
 	public TauEvent() {
+		sourceIds = new ArrayList<>();
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
@@ -73,12 +77,22 @@ public class TauEvent implements Event {
 	}
 
 	@Override
-	public String getEventId() {
+	public Long getEventId() {
 		return eventId;
 	}
 
 	@Override
-	public void setEventId(String eventId) {
+	public void setEventId(Long eventId) {
 		this.eventId = eventId;
+	}
+
+	@Override
+	public List<Long> getSourceIds() {
+		return sourceIds;
+	}
+
+	@Override
+	public void setSourceIds(List<Long> sourceIds) {
+		this.sourceIds = sourceIds;
 	}
 }

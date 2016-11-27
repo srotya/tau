@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.tau.linea;
+package com.srotya.tau.linea.network;
 
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
+import java.util.logging.Logger;
 
 import com.lmax.disruptor.EventHandler;
+import com.srotya.tau.nucleus.utils.NetworkUtils;
 import com.srotya.tau.wraith.TauEvent;
 
 import io.netty.bootstrap.Bootstrap;
@@ -32,12 +36,20 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 
 public class InternalUDPTransportClient implements EventHandler<TauEvent> {
 
+	private static final Logger logger = Logger.getLogger(InternalUDPTransportClient.class.getName());
+	public static final short CLIENT_PORT = 9998;
 	private ByteBuffer buf = ByteBuffer.allocate(1024);
 	private Channel channel;
+	private short bufferEventCount;
 
 	public void init() throws Exception {
+		buf.putShort(bufferEventCount);
+		
+		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(true);
+		Inet4Address address = NetworkUtils.getIPv4Address(iface);
+		logger.info("Selected default interface:"+iface.getName()+"\twith address:"+address.getHostAddress());
+		
 		EventLoopGroup workerGroup = new NioEventLoopGroup(2);
-
 		Bootstrap b = new Bootstrap();
 		channel = b.group(workerGroup).channel(NioDatagramChannel.class).handler(new ChannelInitializer<Channel>() {
 
@@ -45,39 +57,30 @@ public class InternalUDPTransportClient implements EventHandler<TauEvent> {
 			protected void initChannel(Channel ch) throws Exception {
 				ch.pipeline();
 			}
-		}).bind(0).sync().channel();
+		}).bind(address, CLIENT_PORT).sync().channel();
+
+		TauEvent event = new TauEvent();
+		event.getHeaders().put("host", "xyz.srotya.com");
+		event.getHeaders().put("message",
+				"ix-dc9-19.ix.netcom.com - - [04/Sep/1995:00:00:28 -0400] \"GET		 /html/cgi.html HTTP/1.0\" 200 2217\r\n");
+		event.getHeaders().put("value", 10);
+		event.setEventId(13123134234L);
 		
+		for (int i = 0; i < 100; i++) {
+			onEvent(event, 0, true);
+		}
+
 		channel.closeFuture().await(3000);
 		workerGroup.shutdownGracefully().sync();
 	}
 
 	public static void main(String[] args) throws Exception {
-		// TauEvent event = new TauEvent();
-		// event.getHeaders().put("host", "xyz.srotya.com");
-		// event.getHeaders().put("message",
-		// "ix-dc9-19.ix.netcom.com - - [04/Sep/1995:00:00:28 -0400] \"GET
-		// /html/cgi.html HTTP/1.0\" 200 2217\r\n");
-		// event.getHeaders().put("value", 10);
-		// event.setEventId("13123134234");
-		// DatagramSocket soc = new DatagramSocket();
-		// for (int i = 0; i < 100; i++) {
-		// byte[] bytes =
-		// InternalTCPTransportServer.KryoObjectEncoder.eventToByteArray(event,
-		// InternalTCPTransportServer.COMPRESS);
-		// System.out.println("Writing event:"+i);
-		// soc.send(new DatagramPacket(bytes, 0, bytes.length,
-		// Inet4Address.getByName("localhost"), 9999));
-		// }
-		// soc.close();
-
 		InternalUDPTransportClient client = new InternalUDPTransportClient();
 		client.init();
 	}
 
 	@Override
 	public void onEvent(TauEvent event, long sequence, boolean endOfBatch) throws Exception {
-		short j = 0;
-		buf.putShort(j);
 		byte[] bytes = InternalTCPTransportServer.KryoObjectEncoder.eventToByteArray(event,
 				InternalTCPTransportServer.COMPRESS);
 		if (bytes.length > 1024) {
@@ -86,15 +89,16 @@ public class InternalUDPTransportClient implements EventHandler<TauEvent> {
 		}
 		if (buf.remaining() - bytes.length >= 0) {
 			buf.put(bytes);
-			j++;
+			bufferEventCount++;
 		} else {
-			buf.putShort(0, j);
+			buf.putShort(0, bufferEventCount);
 			buf.rewind();
+			System.out.println("Writing messages:"+bufferEventCount);
 			channel.writeAndFlush(
-					new DatagramPacket(Unpooled.copiedBuffer(buf), new InetSocketAddress("localhost", 9999)));
-			j = 0;
+					new DatagramPacket(Unpooled.copiedBuffer(buf), new InetSocketAddress("localhost", InternalUDPTransportServer.SERVER_PORT)));
+			bufferEventCount = 0;
 			buf.rewind();
-			buf.putShort(j);
+			buf.putShort(bufferEventCount);
 			buf.put(bytes);
 		}
 	}
