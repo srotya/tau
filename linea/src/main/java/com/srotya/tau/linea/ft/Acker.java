@@ -20,10 +20,10 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.srotya.tau.nucleus.disruptor.GroupByHandler;
+import com.srotya.tau.linea.processors.Bolt;
+import com.srotya.tau.nucleus.disruptor.ROUTING_TYPE;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
-import com.srotya.tau.wraith.MutableInt;
 
 /**
  * Inspired by the XOR Ledger concept of Apache Storm by Nathan Marz.
@@ -33,26 +33,43 @@ import com.srotya.tau.wraith.MutableInt;
  * 
  * @author ambud
  */
-public class Acker extends GroupByHandler {
+public class Acker implements Bolt {
 
 	private static final float ACKER_MAP_LOAD_FACTOR = 0.9f;
 	private static final int ACKER_MAP_SIZE = 1000000;
-	private RotatingMap<Long, AckerEntry> ackerMap;
+	private transient RotatingMap<Long, AckerEntry> ackerMap;
+	private transient Collector collector;
 
-	public Acker(int taskId, MutableInt taskCount) {
-		super(taskId, taskCount);
+	public Acker() {
+	}
+	
+	@Override
+	public void configure(Map<String, String> conf, Collector collector) {
+		this.collector = collector;
 		ackerMap = new RotatingMap<>(3);
 	}
 
 	@Override
-	public void consumeEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
-		Object sourceId = event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
-		if (sourceId == null) {
+	public ROUTING_TYPE getRoutingType() {
+		return ROUTING_TYPE.GROUPBY;
+	}
+
+	@Override
+	public String getProcessorName() {
+		return "_acker";
+	}
+
+	@Override
+	public void process(Event event) {
+		boolean isBroadcast = false;
+		if (isBroadcast) {
 			// tick event
 			expireEvents();
 		} else {
+			Object sourceId = event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
 			updateAckerMap((Long) sourceId, (Long) event.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
 		}
+		collector.ack(event);
 	}
 
 	public void expireEvents() {

@@ -46,6 +46,10 @@ public abstract class Constants {
 	public static final String FIELD_ALERT = "alert";
 	public static final String FIELD_ID = "_id";
 	public static final String FIELD_RULE_GROUP = "_rg";
+	
+	public static final String FIELD_DESTINATION_TASK_ID = "_dtid";
+	public static final String FIELD_DESTINATION_WORKER_ID = "_dwid";
+	
 	// public static final String FIELD_AGGREGATION_EMIT = "age";
 	public static final String FIELD_AGGREGATION_WINDOW = "_agw";
 	public static final String FIELD_RULE_ACTION_ID = "_ri";

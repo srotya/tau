@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.srotya.tau.wraith.Event;
@@ -39,11 +40,14 @@ public class TauEvent implements Event {
 	private byte[] body;
 
 	public TauEvent() {
+		eventId = UUID.randomUUID().getLeastSignificantBits();
 		sourceIds = new ArrayList<>();
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
 	TauEvent(Map<String, Object> headers) {
+		eventId = UUID.randomUUID().getLeastSignificantBits();
+		sourceIds = new ArrayList<>();
 		this.headers = headers;
 	}
 

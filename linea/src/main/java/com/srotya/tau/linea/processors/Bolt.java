@@ -13,8 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.tau.linea.clustering;
+package com.srotya.tau.linea.processors;
 
-public class Discovery {
+import java.util.Map;
 
+import com.srotya.tau.linea.ft.Collector;
+import com.srotya.tau.nucleus.disruptor.ROUTING_TYPE;
+import com.srotya.tau.wraith.Event;
+
+/**
+ * @author ambud
+ */
+public interface Bolt {
+	
+	public void configure(Map<String, String> conf, Collector collector);
+
+	public void process(Event event);
+	
+	public ROUTING_TYPE getRoutingType();
+	
+	public String getProcessorName();
+	
 }
