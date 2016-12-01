@@ -67,8 +67,8 @@ public class TauEvent implements Event {
 
 	@Override
 	public String toString() {
-		return "TauEvent [eventid:" + eventId + ",headers=" + headers.toString() + ", body=" + Arrays.toString(body)
-				+ "]";
+		return "TauEvent [eventid:" + eventId + ", sid:" + sourceIds + ",headers=" + headers.toString() + ", body="
+				+ Arrays.toString(body) + "]";
 	}
 
 	@Override

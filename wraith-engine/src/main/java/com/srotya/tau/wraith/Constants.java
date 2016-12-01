@@ -96,4 +96,5 @@ public abstract class Constants {
 	public static final String HEADER_EVENT_ERROR_FIELD = "_ef";
 	public static final String HEADER_EVENT_ERROR_VALUE = "_ev";
 	public static final String ERROR_EVENT_TYPE = "e";
+	public static final String NEXT_PROCESSOR = "_np";
 }

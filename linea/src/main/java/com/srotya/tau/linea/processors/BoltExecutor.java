@@ -16,8 +16,10 @@
 package com.srotya.tau.linea.processors;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +32,8 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
+import com.srotya.tau.linea.ft.Collector;
+import com.srotya.tau.linea.network.Router;
 import com.srotya.tau.nucleus.disruptor.CopyTranslator;
 import com.srotya.tau.wraith.Event;
 
@@ -44,13 +48,15 @@ public class BoltExecutor {
 	private Map<Integer, ProcessorWrapper> taskProcessorMap;
 	private CopyTranslator copyTranslator;
 	private int parallelism;
+	private Collector collector;
 
-	public BoltExecutor(Map<String, String> conf, DisruptorUnifiedFactory factory, byte[] processorObject,
-			int workerId, int workerCount, int parallelism) throws IOException, ClassNotFoundException {
+	public BoltExecutor(Map<String, String> conf, DisruptorUnifiedFactory factory, byte[] serializedBoltInstance,
+			int workerId, int workerCount, int parallelism, Router router) throws IOException, ClassNotFoundException {
 		this.parallelism = parallelism;
+		this.collector = new Collector(factory, router);
 		taskProcessorMap = new HashMap<>();
 
-		templateBoltInstance = deserializeProcessorInstance(processorObject);
+		templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
 		int localTasks = (parallelism / workerCount);
 		if (localTasks < 1) {
 			localTasks = 1;
@@ -74,7 +80,8 @@ public class BoltExecutor {
 		 */
 		for (int i = 0; i < localTasks; i++) {
 			int taskId = workerId * workerCount + i;
-			Bolt object = deserializeProcessorInstance(processorObject);
+			Bolt object = deserializeBoltInstance(serializedBoltInstance);
+			object.configure(conf, collector);
 			taskProcessorMap.put(taskId, new ProcessorWrapper(factory, es, object));
 		}
 		copyTranslator = new CopyTranslator();
@@ -94,12 +101,20 @@ public class BoltExecutor {
 		es.awaitTermination(100, TimeUnit.SECONDS);
 	}
 
-	public static Bolt deserializeProcessorInstance(byte[] processorObject)
+	public static Bolt deserializeBoltInstance(byte[] processorObject)
 			throws IOException, ClassNotFoundException {
 		ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(processorObject));
 		Bolt processor = (Bolt) ois.readObject();
 		ois.close();
 		return processor;
+	}
+	
+	public static byte[] serializeBoltInstance(Bolt boltInstance) throws IOException {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		ObjectOutputStream ois = new ObjectOutputStream(stream);
+		ois.writeObject(boltInstance);
+		ois.close();
+		return stream.toByteArray();
 	}
 
 	public void process(int taskId, Event event) {

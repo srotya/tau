@@ -28,6 +28,8 @@ import java.util.zip.DeflaterOutputStream;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.srotya.tau.wraith.Constants;
+import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.TauEvent;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -98,7 +100,7 @@ public class InternalTCPTransportServer {
 						p.addLast(new LoggingHandler(LogLevel.INFO));
 						p.addLast(new KryoObjectEncoder());
 						p.addLast(new KryoObjectDecoder());
-						p.addLast(new IWCHandler());
+						p.addLast(new IWCHandler(null)); //TODO add router
 					}
 
 				}).bind(Inet4Address.getByName("localhost"), 9999).sync().channel().closeFuture().await();
@@ -113,9 +115,18 @@ public class InternalTCPTransportServer {
 	 */
 	public static class IWCHandler extends ChannelInboundHandlerAdapter {
 
+		private Router router;
+
+		public IWCHandler(Router router) {
+			this.router = router;
+		}
+
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) {
-			System.out.println(System.currentTimeMillis() + "\t" + msg);
+			Event event = (Event) msg;
+			System.out.println(System.currentTimeMillis() + "\t" + event);
+			router.directLocalRouteEvent(event.getHeaders().get(Constants.NEXT_PROCESSOR).toString(),
+					(Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_TASK_ID), event);
 		}
 
 		@Override

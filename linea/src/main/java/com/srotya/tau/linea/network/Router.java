@@ -39,29 +39,39 @@ public class Router {
 	private ExecutorService pool;
 	private Disruptor<Event> networkTranmissionDisruptor;
 	private DisruptorUnifiedFactory factory;
-	private Map<String, BoltExecutor> processorMap;
+	private Map<String, BoltExecutor> executorMap;
 	private CopyTranslator translator;
 	private int workerCount;
 	private int workerId;
 
-	public Router(DisruptorUnifiedFactory factory, int workerId, int workerCount,
-			Map<String, BoltExecutor> executorMap) {
+	public Router(DisruptorUnifiedFactory factory, int workerId, int workerCount, Map<String, BoltExecutor> executorMap) {
 		this.factory = factory;
 		this.workerId = workerId;
 		this.workerCount = workerCount;
+		this.executorMap = executorMap;
 	}
 
-	public void init() throws Exception {
+	public void start() throws Exception {
 		pool = Executors.newSingleThreadExecutor();
 		networkTranmissionDisruptor = new Disruptor<>(factory, 1024, pool, ProducerType.MULTI,
 				new BlockingWaitStrategy());
 		translator = new CopyTranslator();
 	}
+	
+	public void stop() throws Exception {
+		networkTranmissionDisruptor.shutdown();
+		pool.shutdownNow();
+	}
+	
+	public void directLocalRouteEvent(String nextProcessorId, int taskId, Event event) {
+		executorMap.get(nextProcessorId).process(taskId, event);
+	}
 
 	public void routeEvent(String nextProcessorId, Event event) {
-		BoltExecutor nextProcessor = processorMap.get(nextProcessorId);
+		BoltExecutor nextProcessor = executorMap.get(nextProcessorId);
 		if (nextProcessor == null) {
 			// drop this event
+			System.err.println("Next processor null, droping event:"+event);
 			return;
 		}
 		int taskId = -1;
@@ -91,8 +101,9 @@ public class Router {
 
 		// check if this taskId is local to this worker
 		if (taskId / workerCount == workerId) {
-
+			nextProcessor.process(taskId, event);
 		} else {
+			event.getHeaders().put(Constants.NEXT_PROCESSOR, nextProcessorId);
 			event.getHeaders().put(Constants.FIELD_DESTINATION_TASK_ID, taskId);
 			event.getHeaders().put(Constants.FIELD_DESTINATION_WORKER_ID, taskId / workerCount);
 			networkTranmissionDisruptor.publishEvent(translator, event);

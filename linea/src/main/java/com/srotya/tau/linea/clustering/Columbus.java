@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Worker disovery service of Linea
+ * 
  * @author ambud
  */
 public class Columbus {

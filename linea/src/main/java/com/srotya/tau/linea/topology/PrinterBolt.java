@@ -13,26 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.tau.linea.processors;
+package com.srotya.tau.linea.topology;
 
-import java.io.Serializable;
 import java.util.Map;
 
 import com.srotya.tau.linea.ft.Collector;
+import com.srotya.tau.linea.processors.Bolt;
 import com.srotya.tau.nucleus.disruptor.ROUTING_TYPE;
 import com.srotya.tau.wraith.Event;
 
-/**
- * @author ambud
- */
-public interface Bolt extends Serializable {
-	
-	public void configure(Map<String, String> conf, Collector collector);
+public class PrinterBolt implements Bolt {
 
-	public void process(Event event);
-	
-	public ROUTING_TYPE getRoutingType();
-	
-	public String getProcessorName();
-	
+	private static final long serialVersionUID = 1L;
+	private transient Collector collector;
+
+	@Override
+	public void configure(Map<String, String> conf, Collector collector) {
+		this.collector = collector;
+
+	}
+
+	@Override
+	public void process(Event event) {
+		System.out.println("Print event:" + event);
+		collector.ack(event);
+	}
+
+	@Override
+	public ROUTING_TYPE getRoutingType() {
+		return ROUTING_TYPE.SHUFFLE;
+	}
+
+	@Override
+	public String getProcessorName() {
+		return "jsonbolt";
+	}
+
 }

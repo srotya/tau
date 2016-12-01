@@ -48,9 +48,14 @@ public class InternalUDPTransportServer {
 	public static final boolean SSL = System.getProperty("ssl") != null;
 
 	private Channel channel;
+	private Router router;
+	
+	public InternalUDPTransportServer(Router router) {
+		this.router = router;
+	}
 
 	public static void main(String[] args) throws Exception {
-		new InternalUDPTransportServer().init();
+		new InternalUDPTransportServer(null).init();
 	}
 
 	public void init() throws Exception {
@@ -65,7 +70,7 @@ public class InternalUDPTransportServer {
 
 			@Override
 			protected void initChannel(Channel ch) throws Exception {
-				ch.pipeline().addLast(new KryoDatagramDecoderWrapper()).addLast(new IWCHandler());
+				ch.pipeline().addLast(new KryoDatagramDecoderWrapper()).addLast(new IWCHandler(router));
 			}
 		}).bind(address, SERVER_PORT).sync().channel();
 

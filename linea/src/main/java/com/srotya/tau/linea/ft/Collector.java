@@ -28,7 +28,6 @@ public class Collector {
 	public static final String FIELD_ACK_EVENT = "_ack";
 	private EventFactory factory;
 	private Router router;
-	private Acker acker;
 
 	public Collector(EventFactory factory, Router router) {
 		this.factory = factory;
@@ -46,7 +45,7 @@ public class Collector {
 		event.getHeaders().put(FIELD_ACK_EVENT, true); // for debug purposes
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, sourceEventId);
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, currentEventId);
-		router.routeEvent(acker.getProcessorName(), event);
+		router.routeEvent(Acker.ACKER_BOLT_NAME, event);
 	}
 
 	public void emit(String nextProcessorId, Event outputEvent, Event anchorEvent) {

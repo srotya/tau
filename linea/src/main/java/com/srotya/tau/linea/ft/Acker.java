@@ -35,17 +35,19 @@ import com.srotya.tau.wraith.Event;
  */
 public class Acker implements Bolt {
 
+	private static final long serialVersionUID = 1L;
+	public static final String ACKER_BOLT_NAME = "_acker";
 	private static final float ACKER_MAP_LOAD_FACTOR = 0.9f;
 	private static final int ACKER_MAP_SIZE = 1000000;
 	private transient RotatingMap<Long, AckerEntry> ackerMap;
-	private transient Collector collector;
+//	private transient Collector collector;
 
 	public Acker() {
 	}
 	
 	@Override
 	public void configure(Map<String, String> conf, Collector collector) {
-		this.collector = collector;
+//		this.collector = collector;
 		ackerMap = new RotatingMap<>(3);
 	}
 
@@ -56,7 +58,7 @@ public class Acker implements Bolt {
 
 	@Override
 	public String getProcessorName() {
-		return "_acker";
+		return ACKER_BOLT_NAME;
 	}
 
 	@Override
@@ -69,7 +71,6 @@ public class Acker implements Bolt {
 			Object sourceId = event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
 			updateAckerMap((Long) sourceId, (Long) event.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
 		}
-		collector.ack(event);
 	}
 
 	public void expireEvents() {
@@ -92,8 +93,10 @@ public class Acker implements Bolt {
 		AckerEntry trackerValue = ackerMap.get(sourceId);
 		if (trackerValue == null) {
 			// this is the first time we are seeing this event
-			trackerValue = new AckerEntry(nextEvent);
+			trackerValue = new AckerEntry(sourceId);
 			ackerMap.put(sourceId, trackerValue);
+
+//			System.err.println("New tracking event:"+sourceId+"\t"+nextEvent);
 		} else {
 			// event tree xor logic
 			trackerValue.setValue(trackerValue.getValue() ^ nextEvent);
@@ -104,6 +107,8 @@ public class Acker implements Bolt {
 
 				// remove entry from ackerMap
 				ackerMap.remove(sourceId);
+				System.err.println("Event:"+sourceId+"\tacknowledged");
+//				collector.emit(nextProcessorId, outputEvent, anchorEvent);
 			}
 		}
 	}
@@ -147,6 +152,11 @@ public class Acker implements Bolt {
 				}
 			}
 			return null;
+		}
+		
+		@Override
+		public String toString() {
+			return buckets.toString();
 		}
 
 	}
