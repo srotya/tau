@@ -94,13 +94,6 @@ public class InternalUDPTransportClient implements EventHandler<TauEvent> {
 		workerGroup.shutdownGracefully().sync();
 	}
 
-	public static void main(String[] args) throws Exception {
-		Columbus columbus = new Columbus();
-		columbus.getWorkerMap().put(0, "localhost");
-		InternalUDPTransportClient client = new InternalUDPTransportClient(columbus, 1, 1);
-		client.init();
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -125,7 +118,7 @@ public class InternalUDPTransportClient implements EventHandler<TauEvent> {
 			buf.rewind();
 			System.out.println("Writing messages:" + bufferEventCount+"\t"+columbus.getWorkerMap().get(workerId));
 			channel.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(buf), new InetSocketAddress(
-					columbus.getWorkerMap().get(workerId), InternalUDPTransportServer.SERVER_PORT)));
+					columbus.getWorkerMap().get(workerId).getWorkerAddress(), InternalUDPTransportServer.SERVER_PORT)));
 			bufferEventCount = 0;
 			buf.rewind();
 			buf.putShort(bufferEventCount);
