@@ -24,6 +24,7 @@ public class IWCHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
 		Event event = (Event) msg;
+		System.out.println("Rcvd:"+event.getOriginEventId()+"\t"+event);
 		router.directLocalRouteEvent(event.getHeaders().get(Constants.NEXT_PROCESSOR).toString(),
 				(Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_TASK_ID), event);
 	}

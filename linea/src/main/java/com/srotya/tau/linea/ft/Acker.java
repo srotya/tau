@@ -103,7 +103,7 @@ public class Acker implements Bolt {
 			// this is the first time we are seeing this event
 			trackerValue = new AckerEntry(source, sourceId);
 			ackerMap.put(sourceId, trackerValue);
-			System.err.println("Initial ack revd:"+sourceId+"\t"+source);
+			System.err.println("Initial ack revd:"+sourceId+"\t"+source+"\t"+taskId);
 		} else {
 			// event tree xor logic
 			trackerValue.setValue(trackerValue.getValue() ^ nextEvent);

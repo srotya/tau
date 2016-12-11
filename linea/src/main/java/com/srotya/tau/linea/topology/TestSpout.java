@@ -15,7 +15,9 @@
  */
 package com.srotya.tau.linea.topology;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.srotya.tau.linea.ft.Collector;
 import com.srotya.tau.linea.processors.Spout;
@@ -28,10 +30,14 @@ public class TestSpout extends Spout {
 
 	private static final long serialVersionUID = 1L;
 	private transient Collector collector;
+	private transient Set<Long> emittedEvents;
+	private transient int taskId;
 
 	@Override
 	public void configure(Map<String, String> conf, int taskId, Collector collector) {
+		this.taskId = taskId;
 		this.collector = collector;
+		emittedEvents = new HashSet<>();
 	}
 
 	@Override
@@ -43,21 +49,22 @@ public class TestSpout extends Spout {
 	public void ready() {
 		for(int i=0;i<5;i++) {
 			Event event = collector.getFactory().buildEvent();
+			event.getHeaders().put("uuid", "host"+i);
+			emittedEvents.add(event.getEventId());
 			collector.spoutEmit("testSpout", "jsonbolt", event);
 		}
 	}
 
 	@Override
 	public void ack(Long eventId) {
-		// TODO Auto-generated method stub
-		System.out.println("Spout acking event:"+eventId);
+		emittedEvents.remove(eventId);
+		System.out.println("Spout acking event:"+eventId+"\tremaining:"+emittedEvents.size()+"\tspoutid:"+taskId);
 
 	}
 
 	@Override
 	public void fail(Long eventId) {
-		// TODO Auto-generated method stub
-		System.out.println("Spout failing event");
+		System.out.println("Spout failing event:"+eventId);
 	}
 
 }

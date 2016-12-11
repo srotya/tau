@@ -118,7 +118,7 @@ public class InternalUDPTransportClient implements EventHandler<Event> {
 				buf.put(bytes);
 			}
 		} catch (Exception e) {
-			System.out.println("Exception:"+event+"\tSelf worker ID:"+columbus.getSelfWorkerId()+"\t"+workerId);
+			System.out.println("Exception:"+event+"\tSelf worker ID:"+columbus.getSelfWorkerId()+"\t"+workerId+"\t"+columbus.getWorkerMap());
 			throw e;
 		}
 	}

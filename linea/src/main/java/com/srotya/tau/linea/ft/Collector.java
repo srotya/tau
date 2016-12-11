@@ -43,6 +43,7 @@ public class Collector {
 
 	protected void ack(String spoutName, Long originalEventId, Long sourceEventId, Long currentEventId) {
 		Event event = factory.buildEvent();
+		event.setOriginEventId(originalEventId);
 		event.getHeaders().put(FIELD_ACK_EVENT, true); // for debug purposes
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, originalEventId);
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_TYPE, sourceEventId);
