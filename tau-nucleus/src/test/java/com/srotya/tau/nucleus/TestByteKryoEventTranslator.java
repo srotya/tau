@@ -44,7 +44,7 @@ public class TestByteKryoEventTranslator {
 		Kryo kryo = new Kryo();
 		kryo.register(TauEvent.class);
 
-		byte[] buffer = new byte[100];
+		byte[] buffer = new byte[500];
 		ByteBufferOutput output = new ByteBufferOutput(ByteBuffer.wrap(buffer));
 		kryo.writeObject(output, event);
 		output.close();
