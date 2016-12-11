@@ -15,19 +15,23 @@
  */
 package com.srotya.tau.linea.topology;
 
+import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import com.srotya.tau.linea.clustering.Columbus;
 import com.srotya.tau.linea.ft.Acker;
-import com.srotya.tau.linea.ft.Collector;
 import com.srotya.tau.linea.network.Router;
 import com.srotya.tau.linea.processors.BoltExecutor;
 import com.srotya.tau.linea.processors.DisruptorUnifiedFactory;
-import com.srotya.tau.wraith.Event;
 
 /**
- * Simple test topology to validate how Linea will launch and run pipelines and acking.
+ * Simple test topology to validate how Linea will launch and run pipelines and
+ * acking.
  * 
  * Fixed bugs with copy translator causing issues in acking.
  * 
@@ -35,48 +39,68 @@ import com.srotya.tau.wraith.Event;
  */
 public class SimpleTopology {
 
-	public static void main(String[] args) throws Exception {
-
+	public static Router workerInitialize(int i) throws Exception {
 		Map<String, String> conf = new HashMap<>();
+		Columbus columbus = new Columbus("localhost", 9920 + i, 5000+i, 1, 1000 * 60, i);
+		ExecutorService bg = Executors.newFixedThreadPool(1);
+		bg.submit(columbus);
+		columbus.addKnownPeer(0, InetAddress.getByName("localhost"), 9920, 5000);
+		int w = 0;
+		while(columbus.getWorkerCount()!=2) {
+			StringBuilder builder = new StringBuilder();
+			w++;
+			for(int k=0;k<w%5;k++) {
+				builder.append(".");
+			}
+			System.out.print("\rWaiting for worker discovery:"+builder.toString());
+			Thread.sleep(1000);
+		}
 
-		DisruptorUnifiedFactory factory = new DisruptorUnifiedFactory();
-		int workerId = 0;
-		int workerCount = 1;
-		int parallelism = 1;
+		System.out.println("Nodes discovered each other!");
 		
-		Map<String, BoltExecutor> executorMap = new HashMap<>();
-		Router router = new Router(factory, workerId, workerCount, executorMap);
+		DisruptorUnifiedFactory factory = new DisruptorUnifiedFactory();
+		int parallelism = 1;
+
+		Map<String, BoltExecutor> executorMap = new LinkedHashMap<>();
+		Router router = new Router(factory, columbus, executorMap);
 
 		PrinterBolt bolt = new PrinterBolt();
 		byte[] serializeBolt = BoltExecutor.serializeBoltInstance(bolt);
-		BoltExecutor transformerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, workerId, workerCount,
-				parallelism, router);
+		BoltExecutor transformerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism * 2,
+				router);
 
 		Acker ackerBolt = new Acker();
 		serializeBolt = BoltExecutor.serializeBoltInstance(ackerBolt);
-		BoltExecutor ackerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, workerId, workerCount,
-				parallelism, router);
+		BoltExecutor ackerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism, router);
+		
+		TestSpout spout = new TestSpout();
+		serializeBolt = BoltExecutor.serializeBoltInstance(spout);
+		BoltExecutor spoutExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism, router);
 
 		executorMap.put(transformerBoltExecutor.getTemplateBoltInstance().getProcessorName(), transformerBoltExecutor);
 		executorMap.put(ackerBoltExecutor.getTemplateBoltInstance().getProcessorName(), ackerBoltExecutor);
+		executorMap.put(spoutExecutor.getTemplateBoltInstance().getProcessorName(), spoutExecutor);
 
 		router.start();
 		
 		for (Entry<String, BoltExecutor> entry : executorMap.entrySet()) {
 			entry.getValue().start();
 		}
-		
-		Collector collector = new Collector(factory, router);
-		for (int i = 0; i < 10; i++) {
-			Event event = factory.buildEvent();
-			event.getHeaders().put("host", "test"+i);
-//			collector.ack(event);
-			collector.emit(bolt.getProcessorName(), event, event);
-		}
+		return router;
+	}
+
+	public static void main(String[] args) throws Exception {
+		Executors.newCachedThreadPool().submit(()->{
+			try {
+				workerInitialize(0);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		workerInitialize(1);
 		Thread.sleep(1000);
-		
-		for (Entry<String, BoltExecutor> entry : executorMap.entrySet()) {
-			entry.getValue().stop();
-		}
+
+		System.exit(1);
 	}
 }

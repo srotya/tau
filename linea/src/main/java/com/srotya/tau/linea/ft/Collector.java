@@ -36,30 +36,55 @@ public class Collector {
 
 	public void ack(Event event) {
 		for (Long sourceEventId : event.getSourceIds()) {
-			ack(sourceEventId, event.getEventId());
+			ack((String) event.getHeaders().get(Constants.FIELD_SPOUT_NAME), event.getOriginEventId(), sourceEventId,
+					event.getEventId());
 		}
 	}
 
-	protected void ack(Long sourceEventId, Long currentEventId) {
+	protected void ack(String spoutName, Long originalEventId, Long sourceEventId, Long currentEventId) {
 		Event event = factory.buildEvent();
 		event.getHeaders().put(FIELD_ACK_EVENT, true); // for debug purposes
-		event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, sourceEventId);
+		event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, originalEventId);
+		event.getHeaders().put(Constants.FIELD_AGGREGATION_TYPE, sourceEventId);
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, currentEventId);
+		event.getHeaders().put(Constants.FIELD_SPOUT_NAME, spoutName);
 		router.routeEvent(Acker.ACKER_BOLT_NAME, event);
+	}
+
+	public void spoutEmit(String spoutName, String nextProcessorId, Event event) {
+		event.getHeaders().put(Constants.FIELD_SPOUT_NAME, spoutName);
+		event.setOriginEventId(event.getEventId());
+		emit(nextProcessorId, event, event);
+	}
+
+	public void emit(String nextProcessorId, Event outputEvent) {
+		router.routeEvent(nextProcessorId, outputEvent);
 	}
 
 	public void emit(String nextProcessorId, Event outputEvent, Event anchorEvent) {
 		outputEvent.getSourceIds().add(anchorEvent.getEventId());
-		ack(anchorEvent.getEventId(), outputEvent.getEventId());
+		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
+		outputEvent.getHeaders().put(Constants.FIELD_SPOUT_NAME,
+				(String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME));
+		ack((String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME), anchorEvent.getOriginEventId(),
+				anchorEvent.getEventId(), outputEvent.getEventId());
 		router.routeEvent(nextProcessorId, outputEvent);
 	}
 
 	public void emit(String nextProcessorId, Event outputEvent, Event... anchorEvents) {
 		for (Event anchorEvent : anchorEvents) {
 			outputEvent.getSourceIds().add(anchorEvent.getEventId());
-			ack(anchorEvent.getEventId(), outputEvent.getEventId());
+			outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
+			outputEvent.getHeaders().put(Constants.FIELD_SPOUT_NAME,
+					(String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME));
+			ack((String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME), anchorEvent.getOriginEventId(),
+					anchorEvent.getEventId(), outputEvent.getEventId());
 		}
 		router.routeEvent(nextProcessorId, outputEvent);
+	}
+
+	public EventFactory getFactory() {
+		return factory;
 	}
 
 }

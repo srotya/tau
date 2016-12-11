@@ -28,7 +28,6 @@ import java.util.zip.DeflaterOutputStream;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.TauEvent;
 
@@ -36,7 +35,6 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
@@ -108,47 +106,13 @@ public class InternalTCPTransportServer {
 	}
 
 	/**
-	 * IWC or Inter-Worker Communication Handler is the last Handler in the
-	 * Netty Pipeline for receiving {@link TauEvent}s from other workers.
-	 * 
-	 * @author ambud
-	 */
-	public static class IWCHandler extends ChannelInboundHandlerAdapter {
-
-		private Router router;
-
-		public IWCHandler(Router router) {
-			this.router = router;
-		}
-
-		@Override
-		public void channelRead(ChannelHandlerContext ctx, Object msg) {
-			Event event = (Event) msg;
-			System.out.println(System.currentTimeMillis() + "\t" + event);
-			router.directLocalRouteEvent(event.getHeaders().get(Constants.NEXT_PROCESSOR).toString(),
-					(Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_TASK_ID), event);
-		}
-
-		@Override
-		public void channelReadComplete(ChannelHandlerContext ctx) {
-		}
-
-		@Override
-		public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-			cause.printStackTrace();
-			ctx.close();
-		}
-
-	}
-
-	/**
 	 * {@link Kryo} serializes {@link TauEvent} for Netty transmission
 	 * 
 	 * @author ambud
 	 */
-	public static class KryoObjectEncoder extends MessageToByteEncoder<TauEvent> {
+	public static class KryoObjectEncoder extends MessageToByteEncoder<Event> {
 
-		public static byte[] eventToByteArray(TauEvent event, boolean compress) throws IOException {
+		public static byte[] eventToByteArray(Event event, boolean compress) throws IOException {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
 			OutputStream os = bos;
 			if (compress) {
@@ -161,7 +125,7 @@ public class InternalTCPTransportServer {
 		}
 
 		@Override
-		protected void encode(ChannelHandlerContext ctx, TauEvent event, ByteBuf out) throws Exception {
+		protected void encode(ChannelHandlerContext ctx, Event event, ByteBuf out) throws Exception {
 			byte[] byteArray = eventToByteArray(event, COMPRESS);
 			out.writeInt(byteArray.length);
 			out.writeBytes(byteArray);

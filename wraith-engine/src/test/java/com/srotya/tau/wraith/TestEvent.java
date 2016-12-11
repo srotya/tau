@@ -91,4 +91,16 @@ public class TestEvent implements Event {
 		
 	}
 
+	@Override
+	public Long getOriginEventId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setOriginEventId(Long eventId) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

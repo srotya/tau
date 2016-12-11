@@ -37,7 +37,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import com.srotya.tau.dengine.Constants;
-import com.srotya.tau.dengine.TauEvent;
+import com.srotya.tau.dengine.DEngineEvent;
 import com.srotya.tau.dengine.MockTupleHelpers;
 import com.srotya.tau.dengine.TestUtils;
 import com.srotya.tau.dengine.bolts.JSONTranslatorBolt;
@@ -96,7 +96,7 @@ public class TestJSONTranslatorBolt {
 			bolt.execute(input);
 			assertNotNull(processedEventContainer.get());
 			assertTrue(processedEventContainer.get().size()>0);
-			TauEvent processedEvent = (TauEvent) processedEventContainer.get().get(0);
+			DEngineEvent processedEvent = (DEngineEvent) processedEventContainer.get().get(0);
 			assertTrue(processedEvent.getHeaders().size() > 0);
 			// validate timestamp exists
 			assertTrue(processedEvent.getHeaders().containsKey(Constants.FIELD_TIMESTAMP));

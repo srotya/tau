@@ -18,20 +18,26 @@ package com.srotya.tau.linea.clustering;
 import java.io.Serializable;
 import java.net.InetAddress;
 
+import com.srotya.tau.nucleus.utils.NetUtils;
+
 /**
  * @author ambud
  */
-public class WorkerEntry implements Serializable {
+public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 
 	private static final long serialVersionUID = 1L;
 	private InetAddress workerAddress;
 	private long lastContactTimestamp;
-	
+	private int discoveryPort;
+	private int dataPort;
+
 	public WorkerEntry() {
 	}
-	
-	public WorkerEntry(InetAddress workerAddress, long lastContactTimestamp) {
+
+	public WorkerEntry(InetAddress workerAddress, int discoveryPort, int dataPort, long lastContactTimestamp) {
 		this.workerAddress = workerAddress;
+		this.discoveryPort = discoveryPort;
+		this.dataPort = dataPort;
 		this.lastContactTimestamp = lastContactTimestamp;
 	}
 
@@ -43,7 +49,8 @@ public class WorkerEntry implements Serializable {
 	}
 
 	/**
-	 * @param workerAddress the workerAddress to set
+	 * @param workerAddress
+	 *            the workerAddress to set
 	 */
 	public void setWorkerAddress(InetAddress workerAddress) {
 		this.workerAddress = workerAddress;
@@ -57,10 +64,63 @@ public class WorkerEntry implements Serializable {
 	}
 
 	/**
-	 * @param lastContactTimestamp the lastContactTimestamp to set
+	 * @param lastContactTimestamp
+	 *            the lastContactTimestamp to set
 	 */
 	public void setLastContactTimestamp(long lastContactTimestamp) {
 		this.lastContactTimestamp = lastContactTimestamp;
 	}
-	
+
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof WorkerEntry) {
+			WorkerEntry param = (WorkerEntry)obj;
+			return workerAddress == param.workerAddress && discoveryPort == param.discoveryPort; 
+		}
+		return false;
+	}
+
+	/**
+	 * @return the discoveryPort
+	 */
+	public int getDiscoveryPort() {
+		return discoveryPort;
+	}
+
+	/**
+	 * @param discoveryPort the discoveryPort to set
+	 */
+	public void setDiscoveryPort(int discoveryPort) {
+		this.discoveryPort = discoveryPort;
+	}
+
+	/**
+	 * @return the dataPort
+	 */
+	public int getDataPort() {
+		return dataPort;
+	}
+
+	/**
+	 * @param dataPort the dataPort to set
+	 */
+	public void setDataPort(int dataPort) {
+		this.dataPort = dataPort;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "WorkerEntry [workerAddress=" + workerAddress + ", lastContactTimestamp=" + lastContactTimestamp
+				+ ", port=" + discoveryPort + "]";
+	}
+
+	@Override
+	public int compareTo(WorkerEntry o) {
+		return Integer.compare(NetUtils.stringIPtoInt(getWorkerAddress().getHostAddress()),
+				NetUtils.stringIPtoInt(o.getWorkerAddress().getHostAddress()));
+	}
+
 }

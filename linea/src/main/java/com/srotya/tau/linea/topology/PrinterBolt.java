@@ -28,14 +28,14 @@ public class PrinterBolt implements Bolt {
 	private transient Collector collector;
 
 	@Override
-	public void configure(Map<String, String> conf, Collector collector) {
+	public void configure(Map<String, String> conf, int taskId, Collector collector) {
 		this.collector = collector;
 
 	}
 
 	@Override
 	public void process(Event event) {
-		System.out.println("Print event:" + event);
+//		System.out.println("Print event:" + event);
 		collector.ack(event);
 	}
 
@@ -47,6 +47,12 @@ public class PrinterBolt implements Bolt {
 	@Override
 	public String getProcessorName() {
 		return "jsonbolt";
+	}
+
+	@Override
+	public void ready() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

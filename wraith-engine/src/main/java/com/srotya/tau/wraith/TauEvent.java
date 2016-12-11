@@ -34,19 +34,20 @@ public class TauEvent implements Event {
 
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
 	private static final long serialVersionUID = 1L;
+	private Long originEventId;
 	private List<Long> sourceIds;
 	private Long eventId;
 	private Map<String, Object> headers;
 	private byte[] body;
 
 	public TauEvent() {
-		eventId = UUID.randomUUID().getLeastSignificantBits();
+		eventId = UUID.randomUUID().getMostSignificantBits();
 		sourceIds = new ArrayList<>();
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
 	TauEvent(Map<String, Object> headers) {
-		eventId = UUID.randomUUID().getLeastSignificantBits();
+		eventId = UUID.randomUUID().getMostSignificantBits();
 		sourceIds = new ArrayList<>();
 		this.headers = headers;
 	}
@@ -98,5 +99,19 @@ public class TauEvent implements Event {
 	@Override
 	public void setSourceIds(List<Long> sourceIds) {
 		this.sourceIds = sourceIds;
+	}
+
+	/**
+	 * @return the originEventId
+	 */
+	public Long getOriginEventId() {
+		return originEventId;
+	}
+
+	/**
+	 * @param originEventId the originEventId to set
+	 */
+	public void setOriginEventId(Long originEventId) {
+		this.originEventId = originEventId;
 	}
 }

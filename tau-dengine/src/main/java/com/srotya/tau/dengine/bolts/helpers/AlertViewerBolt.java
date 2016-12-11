@@ -28,7 +28,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import com.google.gson.Gson;
-import com.srotya.tau.dengine.TauEvent;
+import com.srotya.tau.dengine.DEngineEvent;
 import com.srotya.tau.dengine.StormContextUtil;
 import com.srotya.tau.dengine.Utils;
 import com.srotya.tau.wraith.Constants;
@@ -77,7 +77,7 @@ public class AlertViewerBolt extends BaseRichBolt {
 		try {
 			ruleId = tuple.getShortByField(Constants.FIELD_RULE_ID);
 			String endPoint = uiEndpoint+ruleId;
-			TauEvent event = (TauEvent)tuple.getValueByField(Constants.FIELD_EVENT);
+			DEngineEvent event = (DEngineEvent)tuple.getValueByField(Constants.FIELD_EVENT);
 			HttpPost req = new HttpPost(endPoint);
 			req.setEntity(new StringEntity(new Gson().toJson(event.getHeaders()), ContentType.APPLICATION_JSON));
 			CloseableHttpResponse resp = client.execute(req);

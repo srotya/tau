@@ -20,7 +20,6 @@ import java.net.NetworkInterface;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.srotya.tau.linea.network.InternalTCPTransportServer.IWCHandler;
 import com.srotya.tau.linea.network.InternalTCPTransportServer.KryoObjectDecoder;
 import com.srotya.tau.linea.network.InternalTCPTransportServer.KryoObjectEncoder;
 import com.srotya.tau.nucleus.utils.NetworkUtils;
@@ -43,22 +42,19 @@ import io.netty.handler.codec.MessageToMessageEncoder;
  */
 public class InternalUDPTransportServer {
 
-	public static final short SERVER_PORT = 9999;
 	private static final Logger logger = Logger.getLogger(InternalUDPTransportServer.class.getName());
 	public static final boolean SSL = System.getProperty("ssl") != null;
 
 	private Channel channel;
 	private Router router;
+	private int port;
 	
-	public InternalUDPTransportServer(Router router) {
+	public InternalUDPTransportServer(Router router, int port) {
 		this.router = router;
+		this.port = port;
 	}
 
-	public static void main(String[] args) throws Exception {
-		new InternalUDPTransportServer(null).init();
-	}
-
-	public void init() throws Exception {
+	public void start() throws Exception {
 		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(true);
 		Inet4Address address = NetworkUtils.getIPv4Address(iface);
 		logger.info("Selected default interface:" + iface.getName() + "\twith address:" + address.getHostAddress());
@@ -72,9 +68,11 @@ public class InternalUDPTransportServer {
 			protected void initChannel(Channel ch) throws Exception {
 				ch.pipeline().addLast(new KryoDatagramDecoderWrapper()).addLast(new IWCHandler(router));
 			}
-		}).bind(address, SERVER_PORT).sync().channel();
-
-		channel.closeFuture().await();
+		}).bind(address, port).sync().channel();
+	}
+	
+	public void stop() throws InterruptedException {
+		channel.close().await();
 	}
 
 	public static class KryoDatagramDecoderWrapper extends MessageToMessageDecoder<DatagramPacket> {

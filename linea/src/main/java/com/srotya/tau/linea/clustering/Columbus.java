@@ -21,13 +21,13 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,20 +49,24 @@ public class Columbus implements Runnable {
 														// string
 	private AtomicBoolean loopControl = new AtomicBoolean(true);
 	private AtomicInteger timer = new AtomicInteger(0);
-	private SortedMap<Integer, WorkerEntry> workerMap;
+	private AtomicInteger workerCount = new AtomicInteger(0);
+	private Map<Integer, WorkerEntry> workerMap;
 	private ExecutorService esReceiver = Executors.newSingleThreadExecutor();
 	private InetAddress address;
-	private int port;
+	private int discoveryPort;
 	private Random rand = new Random();
 	private int evictionTimeThreshold;
+	private int selfWorkerId;
 
-	public Columbus(String bindAddress, int port, int initialTimer, int evictionTimeThreshold)
+	public Columbus(String bindAddress, int discoveryPort, int dataPort, int initialTimer, int evictionTimeThreshold, int selfWorkerId)
 			throws UnknownHostException {
 		this.evictionTimeThreshold = evictionTimeThreshold;
+		this.selfWorkerId = selfWorkerId;
 		this.address = InetAddress.getByName(bindAddress);
-		this.port = port;
+		this.discoveryPort = discoveryPort;
 		this.timer.set(initialTimer);
-		workerMap = new ConcurrentSkipListMap<>();
+		workerMap = new ConcurrentHashMap<>();
+		addKnownPeer(selfWorkerId, address, discoveryPort, dataPort);
 	}
 
 	protected void startReceptionServer(final DatagramSocket dgSocket) {
@@ -78,31 +82,44 @@ public class Columbus implements Runnable {
 	protected void startTransmissionServer(final DatagramSocket dgSocket, int destPort)
 			throws SocketException, InvalidStateException, InterruptedException {
 		try {
+			// startReceptionServer(dgSocket);
 			logger.info("Starting Gossip transmission server");
-			byte[] buffer = new byte[PACKET_PAYLOAD_SIZE];
-			DatagramPacket packet = new DatagramPacket(buffer, PACKET_PAYLOAD_SIZE);
 			while (loopControl.get()) {
 				// send gossip
-				List<Integer> pruneList = new ArrayList<>();
-				packet.setPort(destPort);
+				System.out.println("Sending pings:"+workerMap);
+				List<Entry<Integer, WorkerEntry>> pruneList = new ArrayList<>();
 				for (Entry<Integer, WorkerEntry> peer : workerMap.entrySet()) {
 					if ((System.currentTimeMillis()
 							- peer.getValue().getLastContactTimestamp()) > evictionTimeThreshold) {
-						pruneList.add(peer.getKey());
+						if (peer.getValue().getWorkerAddress() != address) {
+							pruneList.add(peer);
+						}
 					} else {
 						for (Entry<Integer, WorkerEntry> unicast : workerMap.entrySet()) {
 							try {
+								ByteBuffer buf = ByteBuffer.allocate(8);
+								buf.putInt(unicast.getKey());
+								buf.putInt(
+										NetUtils.stringIPtoInt(unicast.getValue().getWorkerAddress().getHostAddress()));
+								buf.putInt(unicast.getValue().getDiscoveryPort());
+								buf.putInt(unicast.getValue().getDataPort());
+								DatagramPacket packet = new DatagramPacket(buf.array(), PACKET_PAYLOAD_SIZE);
 								packet.setAddress(peer.getValue().getWorkerAddress());
-								packet.setData(unicast.getValue().getWorkerAddress().getHostAddress().getBytes());
+								packet.setPort(peer.getValue().getDiscoveryPort());
 								dgSocket.send(packet);
+								logger.info("Sending packets to:" + unicast.getValue().getWorkerAddress());
 							} catch (IOException e) {
 								logger.log(Level.SEVERE, "Failed to send gossip packet", e);
 							}
 						}
 					}
 				}
-				for (Integer pruneItem : pruneList) {
-					workerMap.remove(pruneItem);
+				for (Entry<Integer, WorkerEntry> pruneItem : pruneList) {
+					boolean remove = workerMap.remove(pruneItem.getKey(), pruneItem.getValue());
+					if (remove) {
+						workerCount.decrementAndGet();
+						logger.log(Level.INFO, "Lost worker:" + pruneItem);
+					}
 				}
 				Thread.sleep(timer.get() + rand.nextInt(100));
 			}
@@ -117,20 +134,18 @@ public class Columbus implements Runnable {
 		while (loopControl.get()) {
 			try {
 				dgSocket.receive(packet);
-				byte[] data = packet.getData();
-				if (!workerMap.containsKey(packet.getAddress())) {
-					logger.info("Added direct peer:" + packet.getAddress().getHostAddress());
-				}
-				workerMap.put(NetUtils.stringIPtoInt(packet.getAddress().getHostAddress()),
-						new WorkerEntry(packet.getAddress(), System.currentTimeMillis()));
-				InetAddress payloadAddress = InetAddress.getByAddress(data);
-				if (!workerMap.containsKey(payloadAddress)) {
-					logger.info("Discovered new peer:" + payloadAddress.getHostAddress());
-					workerMap.put(NetUtils.stringIPtoInt(payloadAddress.getHostAddress()),
-							new WorkerEntry(payloadAddress, -1L));
-				}
+				ByteBuffer data = ByteBuffer.wrap(packet.getData());
+				int workerId = data.getInt();
+				InetAddress payloadAddress = InetAddress.getByName(NetUtils.toStringIP(data.getInt()));
+				int discoveryPort = data.getInt();
+				int dataPort = data.getInt();
+				addKnownPeer(workerId, payloadAddress, discoveryPort, dataPort);
+				Thread.sleep(1000);
 			} catch (IOException e) {
 				logger.log(Level.SEVERE, "Error receiving gossip packet", e);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
@@ -142,22 +157,22 @@ public class Columbus implements Runnable {
 				throw new InvalidStateException(
 						"Either multicast needs to be turned on or a seed of unicast must be provided");
 			}
-			final DatagramSocket dgSocket = new DatagramSocket(port, address);
+			final DatagramSocket dgSocket = new DatagramSocket(discoveryPort, address);
 			dgSocket.setTrafficClass(0x04);
-			startTransmissionServer(dgSocket, port);
+			startTransmissionServer(dgSocket, discoveryPort);
 		} catch (SocketException | InvalidStateException e) {
 			logger.log(Level.SEVERE, "Exception starting server", e);
 		} catch (InterruptedException e) {
 			logger.log(Level.SEVERE, "Broadcast loop interrupted", e);
 		}
-		port = -1;
+		discoveryPort = -1;
 	}
 
 	public void stop(boolean wait) throws InterruptedException {
 		loopControl.set(false);
 		esReceiver.shutdown();
 		while (wait) {
-			if (port == -1) {
+			if (discoveryPort == -1) {
 				return;
 			} else {
 				Thread.sleep(100);
@@ -166,20 +181,22 @@ public class Columbus implements Runnable {
 		esReceiver.shutdownNow();
 	}
 
-	public void addKnownPeer(String peer) throws UnknownHostException {
-		InetAddress peerAddress = InetAddress.getByName(peer);
-		workerMap.put(NetUtils.stringIPtoInt(InetAddress.getByName(peer).getHostAddress()),
-				new WorkerEntry(peerAddress, -1L));
+	public void addKnownPeer(int workerId, InetAddress peer, int discoveryPort, int dataPort) {
+		WorkerEntry entry = new WorkerEntry(peer, discoveryPort, dataPort, System.currentTimeMillis());
+		workerMap.put(workerId, entry);
+		workerCount.incrementAndGet();
 	}
 
-	public Set<Integer> getPeers() {
-		return workerMap.keySet();
+	public Integer getSelfWorkerId() {
+		return selfWorkerId;
 	}
 
-	/**
-	 * @return
-	 */
-	public SortedMap<Integer, WorkerEntry> getWorkerMap() {
+	public Map<Integer, WorkerEntry> getWorkerMap() {
 		return workerMap;
 	}
+
+	public int getWorkerCount() {
+		return workerCount.get();
+	}
+	
 }

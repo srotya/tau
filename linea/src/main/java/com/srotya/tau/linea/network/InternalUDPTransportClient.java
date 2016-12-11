@@ -27,7 +27,7 @@ import com.lmax.disruptor.EventHandler;
 import com.srotya.tau.linea.clustering.Columbus;
 import com.srotya.tau.nucleus.utils.NetworkUtils;
 import com.srotya.tau.wraith.Constants;
-import com.srotya.tau.wraith.TauEvent;
+import com.srotya.tau.wraith.Event;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
@@ -42,22 +42,25 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
  * @author ambud
  *
  */
-public class InternalUDPTransportClient implements EventHandler<TauEvent> {
+public class InternalUDPTransportClient implements EventHandler<Event> {
 
 	private static final Logger logger = Logger.getLogger(InternalUDPTransportClient.class.getName());
-	public static final short CLIENT_PORT = 9998;
 	private Channel channel;
 	private short bufferEventCount;
 	private Map<Integer, ByteBuffer> bufferMap;
 	private Columbus columbus;
+	private int port;
 
-	public InternalUDPTransportClient(Columbus columbus, int workerCount, int workerId) {
+	public InternalUDPTransportClient(Columbus columbus, int port) {
 		this.columbus = columbus;
+		this.port = port;
+		int selfId = columbus.getSelfWorkerId();
 		bufferMap = new HashMap<>();
-		for (int i = 0; i < workerCount; i++) {
-			if (i != workerId) {
+		for (int i = 0; i < columbus.getWorkerCount(); i++) {
+			if (i != selfId) {
 				ByteBuffer buf = ByteBuffer.allocate(1024);
 				buf.putShort(bufferEventCount);
+				System.err.println("Buffer map:" + i);
 				bufferMap.put(i, buf);
 			}
 		}
@@ -76,22 +79,9 @@ public class InternalUDPTransportClient implements EventHandler<TauEvent> {
 			protected void initChannel(Channel ch) throws Exception {
 				ch.pipeline();
 			}
-		}).bind(address, CLIENT_PORT).sync().channel();
+		}).bind(address, port).sync().channel();
 
-		TauEvent event = new TauEvent();
-		event.getHeaders().put("host", "xyz.srotya.com");
-		event.getHeaders().put(Constants.FIELD_DESTINATION_WORKER_ID, 0);
-		event.getHeaders().put("message",
-				"ix-dc9-19.ix.netcom.com - - [04/Sep/1995:00:00:28 -0400] \"GET		 /html/cgi.html HTTP/1.0\" 200 2217\r\n");
-		event.getHeaders().put("value", 10);
-		event.setEventId(13123134234L);
-
-		for (int i = 0; i < 100; i++) {
-			onEvent(event, 0, true);
-		}
-
-		channel.closeFuture().await(3000);
-		workerGroup.shutdownGracefully().sync();
+//		workerGroup.shutdownGracefully().sync();
 	}
 
 	/*
@@ -101,28 +91,35 @@ public class InternalUDPTransportClient implements EventHandler<TauEvent> {
 	 * boolean)
 	 */
 	@Override
-	public void onEvent(TauEvent event, long sequence, boolean endOfBatch) throws Exception {
+	public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 		Integer workerId = (Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_WORKER_ID);
-		ByteBuffer buf = bufferMap.get(workerId);
-		byte[] bytes = InternalTCPTransportServer.KryoObjectEncoder.eventToByteArray(event,
-				InternalTCPTransportServer.COMPRESS);
-		if (bytes.length > 1024) {
-			// discard
-			System.err.println("Discarded event");
-		}
-		if (buf.remaining() - bytes.length >= 0) {
-			buf.put(bytes);
-			bufferEventCount++;
-		} else {
-			buf.putShort(0, bufferEventCount);
-			buf.rewind();
-			System.out.println("Writing messages:" + bufferEventCount+"\t"+columbus.getWorkerMap().get(workerId));
-			channel.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(buf), new InetSocketAddress(
-					columbus.getWorkerMap().get(workerId).getWorkerAddress(), InternalUDPTransportServer.SERVER_PORT)));
-			bufferEventCount = 0;
-			buf.rewind();
-			buf.putShort(bufferEventCount);
-			buf.put(bytes);
+		try {
+			ByteBuffer buf = bufferMap.get(workerId);
+			byte[] bytes = InternalTCPTransportServer.KryoObjectEncoder.eventToByteArray(event,
+					InternalTCPTransportServer.COMPRESS);
+			if (bytes.length > 1024) {
+				// discard
+				System.err.println("Discarded event");
+			}
+			if (buf.remaining() - bytes.length >= 0) {
+				buf.put(bytes);
+				bufferEventCount++;
+			} else {
+				buf.putShort(0, bufferEventCount);
+				buf.rewind();
+//				System.out
+//						.println("Writing messages:" + bufferEventCount + "\t" + columbus.getWorkerMap().get(workerId));
+				channel.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(buf),
+						new InetSocketAddress(columbus.getWorkerMap().get(workerId).getWorkerAddress(),
+								columbus.getWorkerMap().get(workerId).getDataPort())));
+				bufferEventCount = 0;
+				buf.rewind();
+				buf.putShort(bufferEventCount);
+				buf.put(bytes);
+			}
+		} catch (Exception e) {
+			System.out.println("Exception:"+event+"\tSelf worker ID:"+columbus.getSelfWorkerId()+"\t"+workerId);
+			throw e;
 		}
 	}
 

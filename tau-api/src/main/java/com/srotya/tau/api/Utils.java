@@ -143,6 +143,18 @@ public class Utils {
 			
 		}
 
+		@Override
+		public Long getOriginEventId() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void setOriginEventId(Long eventId) {
+			// TODO Auto-generated method stub
+			
+		}
+
 	}
 
 	public static String getPrettyRuleJson(String ruleJson) {

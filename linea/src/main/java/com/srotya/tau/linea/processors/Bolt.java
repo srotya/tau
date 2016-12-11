@@ -27,7 +27,9 @@ import com.srotya.tau.wraith.Event;
  */
 public interface Bolt extends Serializable {
 	
-	public void configure(Map<String, String> conf, Collector collector);
+	public void configure(Map<String, String> conf, int taskId, Collector collector);
+	
+	public void ready();
 
 	public void process(Event event);
 	

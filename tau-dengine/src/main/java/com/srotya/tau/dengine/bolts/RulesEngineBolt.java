@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 import com.google.gson.Gson;
 import com.srotya.tau.dengine.Constants;
-import com.srotya.tau.dengine.TauEvent;
+import com.srotya.tau.dengine.DEngineEvent;
 import com.srotya.tau.dengine.StormContextUtil;
 import com.srotya.tau.dengine.UnifiedFactory;
 import com.srotya.tau.dengine.Utils;
@@ -110,7 +110,7 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 			}
 		} else {
 			try {
-				TauEvent event = (TauEvent) tuple.getValueByField(Constants.FIELD_EVENT);
+				DEngineEvent event = (DEngineEvent) tuple.getValueByField(Constants.FIELD_EVENT);
 				// call rules engine to evaluate this event and then trigger
 				// appropriate actions
 				rulesEngine.evaluateRules(collector, tuple, event);

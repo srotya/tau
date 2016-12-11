@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.srotya.tau.dengine.TauEvent;
+import com.srotya.tau.dengine.DEngineEvent;
 import com.srotya.tau.dengine.MockTupleHelpers;
 import com.srotya.tau.dengine.TestUtils;
 import com.srotya.tau.dengine.bolts.RulesEngineBolt;
@@ -127,7 +127,7 @@ public class TestRulesEngineBolt {
 			}
 			Tuple input = MockTupleHelpers.mockEventTuple(testEvent);
 			bolt.execute(input);
-			TauEvent processedEvent = (TauEvent) processedEventContainer.get().get(0);
+			DEngineEvent processedEvent = (DEngineEvent) processedEventContainer.get().get(0);
 			assertTrue(processedEvent.getHeaders().containsKey(Constants.FIELD_ALERT_TEMPLATE_ID));
 			assertEquals((short) 1, processedEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID));
 			verify(mockCollector, times(1)).ack(input);

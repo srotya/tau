@@ -29,6 +29,10 @@ import java.util.Map;
  */
 public interface Event extends Serializable {
 	
+	public Long getOriginEventId();
+	
+	public void setOriginEventId(Long eventId);
+	
 	public List<Long> getSourceIds();
 	
 	public void setSourceIds(List<Long> sourceIds);

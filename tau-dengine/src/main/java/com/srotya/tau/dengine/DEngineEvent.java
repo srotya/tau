@@ -27,18 +27,18 @@ import com.srotya.tau.wraith.Event;
  * 
  * @author ambud_sharma
  */
-public class TauEvent implements Event {
+public class DEngineEvent implements Event {
 
 	private static final long serialVersionUID = 1L;
 	private Long eventId;
 	private Map<String, Object> headers;
 	private byte[] body;
 
-	TauEvent() {
+	DEngineEvent() {
 		headers = new ConcurrentHashMap<>(Constants.AVG_EVENT_FIELD_COUNT);
 	}
 
-	TauEvent(Map<String, Object> headers) {
+	DEngineEvent(Map<String, Object> headers) {
 		this.headers = headers;
 	}
 
@@ -88,6 +88,18 @@ public class TauEvent implements Event {
 
 	@Override
 	public void setSourceIds(List<Long> sourceIds) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Long getOriginEventId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setOriginEventId(Long eventId) {
 		// TODO Auto-generated method stub
 		
 	}

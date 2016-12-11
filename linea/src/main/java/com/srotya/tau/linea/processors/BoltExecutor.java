@@ -32,6 +32,7 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
+import com.srotya.tau.linea.clustering.Columbus;
 import com.srotya.tau.linea.ft.Collector;
 import com.srotya.tau.linea.network.Router;
 import com.srotya.tau.nucleus.disruptor.CopyTranslator;
@@ -49,50 +50,42 @@ public class BoltExecutor {
 	private CopyTranslator copyTranslator;
 	private int parallelism;
 	private Collector collector;
+	private Columbus columbus;
 
 	public BoltExecutor(Map<String, String> conf, DisruptorUnifiedFactory factory, byte[] serializedBoltInstance,
-			int workerId, int workerCount, int parallelism, Router router) throws IOException, ClassNotFoundException {
+			Columbus columbus, int parallelism, Router router) throws IOException, ClassNotFoundException {
+		this.columbus = columbus;
 		this.parallelism = parallelism;
 		this.collector = new Collector(factory, router);
 		taskProcessorMap = new HashMap<>();
 
 		templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
-		int localTasks = (parallelism / workerCount);
-		if (localTasks < 1) {
-			localTasks = 1;
-		}
 
-		es = Executors.newFixedThreadPool(localTasks);
+		es = Executors.newFixedThreadPool(parallelism);
 
 		/**
-		 *First worker
-		 * 0*4+0 = 0
-		 * 0*4+1 = 1
-		 * 0*4+2 = 2
-		 *      = 3
-		 *Second worker
-		 * 1*4+0 = 4
-		 * 1*4+1 = 5
-		 * 1*4+2 = 6
+		 * First worker 0*4+0 = 0 0*4+1 = 1 0*4+2 = 2 = 3 Second worker 1*4+0 =
+		 * 4 1*4+1 = 5 1*4+2 = 6
 		 *
-		 *Third worker
-		 * 2*3+0 = 6
+		 * Third worker 2*3+0 = 6
+		 * 
+		 * Or First worker 0*2+0 = 0 Second worker 1*2+0 = 2
 		 */
-		for (int i = 0; i < localTasks; i++) {
-			int taskId = workerId * workerCount + i;
+		for (int i = 0; i < parallelism; i++) {
+			int taskId = columbus.getSelfWorkerId() * parallelism + i;
 			Bolt object = deserializeBoltInstance(serializedBoltInstance);
-			object.configure(conf, collector);
+			object.configure(conf, taskId, collector);
 			taskProcessorMap.put(taskId, new ProcessorWrapper(factory, es, object));
 		}
 		copyTranslator = new CopyTranslator();
 	}
-	
+
 	public void start() {
 		for (Entry<Integer, ProcessorWrapper> entry : taskProcessorMap.entrySet()) {
 			entry.getValue().start();
 		}
 	}
-	
+
 	public void stop() throws InterruptedException {
 		for (Entry<Integer, ProcessorWrapper> entry : taskProcessorMap.entrySet()) {
 			entry.getValue().stop();
@@ -101,14 +94,13 @@ public class BoltExecutor {
 		es.awaitTermination(100, TimeUnit.SECONDS);
 	}
 
-	public static Bolt deserializeBoltInstance(byte[] processorObject)
-			throws IOException, ClassNotFoundException {
+	public static Bolt deserializeBoltInstance(byte[] processorObject) throws IOException, ClassNotFoundException {
 		ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(processorObject));
 		Bolt processor = (Bolt) ois.readObject();
 		ois.close();
 		return processor;
 	}
-	
+
 	public static byte[] serializeBoltInstance(Bolt boltInstance) throws IOException {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		ObjectOutputStream ois = new ObjectOutputStream(stream);
@@ -121,13 +113,16 @@ public class BoltExecutor {
 		ProcessorWrapper wrapper = taskProcessorMap.get(taskId);
 		if (wrapper != null) {
 			wrapper.getBuffer().publishEvent(copyTranslator, event);
+		} else {
+			System.out.println("Executor not found for:" + taskId + "\t" + columbus.getSelfWorkerId() + "\t"
+					+ taskProcessorMap + "\t" + event);
 		}
 	}
-	
+
 	public Bolt getTemplateBoltInstance() {
 		return templateBoltInstance;
 	}
-	
+
 	public int getParallelism() {
 		return parallelism;
 	}
@@ -147,6 +142,7 @@ public class BoltExecutor {
 
 		public void start() {
 			buffer = disruptor.start();
+			processor.ready();
 		}
 
 		public void stop() {
@@ -164,6 +160,16 @@ public class BoltExecutor {
 
 		public Bolt getProcessor() {
 			return processor;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return "ProcessorWrapper [processor=" + processor.getProcessorName() + "]";
 		}
 	}
 

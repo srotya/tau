@@ -27,6 +27,7 @@ public abstract class Constants {
 	public static final String FIELD_EVENT_ID = "_i";
 	public static final String FIELD_RULE_ID = "_r";
 	public static final String FIELD_RULE_NAME = "_rn";
+	public static final String FIELD_SPOUT_NAME = "_sn";
 	public static final String FIELD_ACTION_ID = "_ai";
 	public static final String FIELD_STATE_TRACK = "_st";
 	public static final String FIELD_AGGREGATION_KEY = "_a";

@@ -20,6 +20,7 @@ import java.io.Serializable;
 public class AckerEntry implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
+	private String sourceSpout;
 	private long createTime;
 	private long value;
 	
@@ -27,8 +28,9 @@ public class AckerEntry implements Serializable {
 		createTime = System.currentTimeMillis();
 	}
 	
-	public AckerEntry(long value) {
+	public AckerEntry(String sourceSpout, long value) {
 		this();
+		this.sourceSpout = sourceSpout;
 		this.value = value;
 	}
 	
@@ -48,6 +50,20 @@ public class AckerEntry implements Serializable {
 		return createTime;
 	}
 	
+	/**
+	 * @return the sourceSpout
+	 */
+	public String getSourceSpout() {
+		return sourceSpout;
+	}
+
+	/**
+	 * @param sourceSpout the sourceSpout to set
+	 */
+	public void setSourceSpout(String sourceSpout) {
+		this.sourceSpout = sourceSpout;
+	}
+
 	@Override
 	public String toString() {
 		return "{"+value+","+createTime+"}";

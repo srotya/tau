@@ -16,7 +16,7 @@
 package com.srotya.tau.dengine.bolts.helpers;
 
 import com.google.gson.Gson;
-import com.srotya.tau.dengine.TauEvent;
+import com.srotya.tau.dengine.DEngineEvent;
 import com.srotya.tau.wraith.Constants;
 
 import backtype.storm.tuple.Tuple;
@@ -48,7 +48,7 @@ public class EventViewerTupleMapper implements TupleToKafkaMapper<String, String
 		if (gson == null) {
 			gson = new Gson();
 		}
-		TauEvent event = (TauEvent) tuple.getValueByField(Constants.FIELD_EVENT);
+		DEngineEvent event = (DEngineEvent) tuple.getValueByField(Constants.FIELD_EVENT);
 		return gson.toJson(event.getHeaders());
 	}
 

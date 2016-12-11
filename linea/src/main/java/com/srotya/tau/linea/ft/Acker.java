@@ -40,14 +40,16 @@ public class Acker implements Bolt {
 	private static final float ACKER_MAP_LOAD_FACTOR = 0.9f;
 	private static final int ACKER_MAP_SIZE = 1000000;
 	private transient RotatingMap<Long, AckerEntry> ackerMap;
-//	private transient Collector collector;
+	private transient int taskId;
+	private transient Collector collector;
 
 	public Acker() {
 	}
 	
 	@Override
-	public void configure(Map<String, String> conf, Collector collector) {
-//		this.collector = collector;
+	public void configure(Map<String, String> conf, int taskId, Collector collector) {
+		this.taskId = taskId;
+		this.collector = collector;
 		ackerMap = new RotatingMap<>(3);
 	}
 
@@ -68,8 +70,9 @@ public class Acker implements Bolt {
 			// tick event
 			expireEvents();
 		} else {
-			Object sourceId = event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
-			updateAckerMap((Long) sourceId, (Long) event.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
+			Object sourceId = event.getHeaders().get(Constants.FIELD_AGGREGATION_TYPE);
+			String source = (String) event.getHeaders().get(Constants.FIELD_SPOUT_NAME);
+			updateAckerMap(source, (Long) sourceId, (Long) event.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
 		}
 	}
 
@@ -80,6 +83,11 @@ public class Acker implements Bolt {
 				// exception; entry was asynchronously acked
 			} else {
 				// notify source
+				Event event = collector.getFactory().buildEvent();
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, entry.getKey());
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_TYPE, true);
+				event.getHeaders().put("sourceSpout", entry.getValue().getSourceSpout());
+				collector.emit(entry.getValue().getSourceSpout(), event);
 			}
 		}
 	}
@@ -89,14 +97,13 @@ public class Acker implements Bolt {
 	 * @param sourceId
 	 * @param nextEvent
 	 */
-	public void updateAckerMap(Long sourceId, Long nextEvent) {
+	public void updateAckerMap(String source, Long sourceId, Long nextEvent) {
 		AckerEntry trackerValue = ackerMap.get(sourceId);
 		if (trackerValue == null) {
 			// this is the first time we are seeing this event
-			trackerValue = new AckerEntry(sourceId);
+			trackerValue = new AckerEntry(source, sourceId);
 			ackerMap.put(sourceId, trackerValue);
-
-//			System.err.println("New tracking event:"+sourceId+"\t"+nextEvent);
+			System.err.println("Initial ack revd:"+sourceId+"\t"+source);
 		} else {
 			// event tree xor logic
 			trackerValue.setValue(trackerValue.getValue() ^ nextEvent);
@@ -107,8 +114,12 @@ public class Acker implements Bolt {
 
 				// remove entry from ackerMap
 				ackerMap.remove(sourceId);
-				System.err.println("Event:"+sourceId+"\tacknowledged");
-//				collector.emit(nextProcessorId, outputEvent, anchorEvent);
+				System.err.println("Event:"+sourceId+"\tacknowledged by:"+taskId);
+				Event event = collector.getFactory().buildEvent();
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, sourceId);
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_TYPE, true);
+				event.getHeaders().put("sourceSpout", trackerValue.getSourceSpout());
+				collector.emit(trackerValue.getSourceSpout(), event);
 			}
 		}
 	}
@@ -159,6 +170,10 @@ public class Acker implements Bolt {
 			return buckets.toString();
 		}
 
+	}
+
+	@Override
+	public void ready() {
 	}
 
 }
