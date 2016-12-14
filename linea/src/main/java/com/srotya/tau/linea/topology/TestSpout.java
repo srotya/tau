@@ -56,7 +56,7 @@ public class TestSpout extends Spout {
 			emittedEvents.add(event.getEventId());
 			collector.spoutEmit("jsonbolt", event);
 			try {
-				if(i%2==0)
+				if(i%50==0)
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block

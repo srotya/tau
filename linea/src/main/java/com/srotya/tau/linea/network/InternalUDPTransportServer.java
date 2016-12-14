@@ -28,6 +28,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
@@ -59,10 +60,10 @@ public class InternalUDPTransportServer {
 		// logger.info("Selected default interface:" + iface.getName() + "\twith
 		// address:" + address.getHostAddress());
 
-		EventLoopGroup workerGroup = new NioEventLoopGroup(2);
+		EventLoopGroup workerGroup = new NioEventLoopGroup(4);
 
 		Bootstrap b = new Bootstrap();
-		channel = b.group(workerGroup).channel(NioDatagramChannel.class).handler(new ChannelInitializer<Channel>() {
+		channel = b.group(workerGroup).channel(NioDatagramChannel.class).option(ChannelOption.SO_RCVBUF, 1024*10).handler(new ChannelInitializer<Channel>() {
 
 			@Override
 			protected void initChannel(Channel ch) throws Exception {

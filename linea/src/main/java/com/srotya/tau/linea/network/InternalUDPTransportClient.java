@@ -61,7 +61,7 @@ public class InternalUDPTransportClient implements EventHandler<Event> {
 		bufferCounterMap = new HashMap<>();
 		for (int i = 0; i < columbus.getWorkerCount(); i++) {
 			if (i != selfId) {
-				ByteBuffer buf = ByteBuffer.allocate(1024);
+				ByteBuffer buf = ByteBuffer.allocate(1400);
 				buf.putShort((short) 0);
 				bufferMap.put(i, buf);
 				bufferCounterMap.put(i, new MutableShort((short) 0));

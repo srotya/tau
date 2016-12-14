@@ -44,9 +44,9 @@ public class SimpleTopology {
 		Columbus columbus = new Columbus("localhost", 9920 + i, 5000 + i, 1, 1000 * 60, i);
 		ExecutorService bg = Executors.newFixedThreadPool(1);
 		bg.submit(columbus);
-		columbus.addKnownPeer(seedId, InetAddress.getByName("localhost"), seedPort, seedDataPort);
+//		columbus.addKnownPeer(seedId, InetAddress.getByName("localhost"), seedPort, seedDataPort);
 		int w = 0;
-		while (columbus.getWorkerCount() != 2) {
+		while (columbus.getWorkerCount() != 1) {
 			StringBuilder builder = new StringBuilder();
 			w++;
 			for (int k = 0; k < w % 5; k++) {
@@ -59,14 +59,14 @@ public class SimpleTopology {
 		System.out.println("Nodes discovered each other!:" + columbus.getWorkerMap());
 
 		DisruptorUnifiedFactory factory = new DisruptorUnifiedFactory();
-		int parallelism = 2;
+		int parallelism = 6;
 
 		Map<String, BoltExecutor> executorMap = new LinkedHashMap<>();
 		Router router = new Router(factory, columbus, executorMap);
 
 		PrinterBolt bolt = new PrinterBolt();
 		byte[] serializeBolt = BoltExecutor.serializeBoltInstance(bolt);
-		BoltExecutor transformerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism,
+		BoltExecutor transformerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism/2,
 				router);
 
 		Acker ackerBolt = new Acker();
@@ -90,16 +90,17 @@ public class SimpleTopology {
 	}
 
 	public static void main(String[] args) throws Exception {
-		Executors.newCachedThreadPool().submit(() -> {
-			try {
-				workerInitialize(0, 1, 9921, 5001);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
-		workerInitialize(1, 0, 9920, 5000);
-		Thread.sleep(20000);
+//		Executors.newCachedThreadPool().submit(() -> {
+//			try {
+//				workerInitialize(0, 1, 9921, 5001);
+//			} catch (Exception e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		});
+//		workerInitialize(1, 0, 9920, 5000);
+		workerInitialize(0, 0, 9920, 5000);
+		Thread.sleep(10000);
 
 		System.exit(1);
 	}
