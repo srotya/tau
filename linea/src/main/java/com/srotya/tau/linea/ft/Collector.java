@@ -26,63 +26,69 @@ import com.srotya.tau.wraith.EventFactory;
 public class Collector {
 
 	public static final String FIELD_ACK_EVENT = "_ack";
+	private int lTaskId;
+	private String lComponentId;
 	private EventFactory factory;
 	private Router router;
 
-	public Collector(EventFactory factory, Router router) {
+	public Collector(EventFactory factory, Router router, String lComponentId, int taskId) {
 		this.factory = factory;
 		this.router = router;
+		this.lComponentId = lComponentId;
+		this.lTaskId = taskId;
 	}
 
 	public void ack(Event event) {
 		for (Long sourceEventId : event.getSourceIds()) {
-			ack((String) event.getHeaders().get(Constants.FIELD_SPOUT_NAME), event.getOriginEventId(), sourceEventId,
-					event.getEventId());
+			ack(lComponentId, sourceEventId, event.getEventId(), lTaskId);
 		}
 	}
 
-	protected void ack(String spoutName, Long originalEventId, Long sourceEventId, Long currentEventId) {
+	protected void ack(String spoutName, Long sourceEventId, Long currentEventId, Integer taskId) {
 		Event event = factory.buildEvent();
-		event.setOriginEventId(originalEventId);
 		event.getHeaders().put(FIELD_ACK_EVENT, true); // for debug purposes
-		event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, originalEventId);
-		event.getHeaders().put(Constants.FIELD_AGGREGATION_TYPE, sourceEventId);
+		event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, sourceEventId);
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, currentEventId);
 		event.getHeaders().put(Constants.FIELD_SPOUT_NAME, spoutName);
+		event.getHeaders().put(Constants.FIELD_TASK_ID, taskId);
 		router.routeEvent(Acker.ACKER_BOLT_NAME, event);
 	}
 
-	public void spoutEmit(String spoutName, String nextProcessorId, Event event) {
-		event.getHeaders().put(Constants.FIELD_SPOUT_NAME, spoutName);
+	public void spoutEmit(String nextProcessorId, Event event) {
+		event.getHeaders().put(Constants.FIELD_SPOUT_NAME, lComponentId);
+		event.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
 		event.setOriginEventId(event.getEventId());
 		emit(nextProcessorId, event, event);
 	}
 
-	public void emit(String nextProcessorId, Event outputEvent) {
-		router.routeEvent(nextProcessorId, outputEvent);
+	public void emitDirect(String nextProcessor, Integer destinationTaskId, Event event) {
+		event.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
+		router.routeToTaskId(nextProcessor, event, null, destinationTaskId);
 	}
 
 	public void emit(String nextProcessorId, Event outputEvent, Event anchorEvent) {
-		outputEvent.getSourceIds().add(anchorEvent.getEventId());
-		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-		outputEvent.getHeaders().put(Constants.FIELD_SPOUT_NAME,
-				(String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME));
+		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
+		outputEvent.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
+		outputEvent.getHeaders().put(Constants.FIELD_SPOUT_NAME, lComponentId);
 		ack((String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME), anchorEvent.getOriginEventId(),
-				anchorEvent.getEventId(), outputEvent.getEventId());
+				outputEvent.getEventId(), (Integer) anchorEvent.getHeaders().get(Constants.FIELD_TASK_ID));
 		router.routeEvent(nextProcessorId, outputEvent);
 	}
 
-	public void emit(String nextProcessorId, Event outputEvent, Event... anchorEvents) {
-		for (Event anchorEvent : anchorEvents) {
-			outputEvent.getSourceIds().add(anchorEvent.getEventId());
-			outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-			outputEvent.getHeaders().put(Constants.FIELD_SPOUT_NAME,
-					(String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME));
-			ack((String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME), anchorEvent.getOriginEventId(),
-					anchorEvent.getEventId(), outputEvent.getEventId());
-		}
-		router.routeEvent(nextProcessorId, outputEvent);
-	}
+	// public void emit(String nextProcessorId, Event outputEvent, Event...
+	// anchorEvents) {
+	// outputEvent.getHeaders().put(Constants.FIELD_TASK_ID, taskId);
+	// for (Event anchorEvent : anchorEvents) {
+	// outputEvent.getSourceIds().add(anchorEvent.getEventId());
+	// outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
+	// outputEvent.getHeaders().put(Constants.FIELD_SPOUT_NAME,
+	// (String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME));
+	// ack((String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME),
+	// anchorEvent.getOriginEventId(),
+	// anchorEvent.getEventId(), outputEvent.getEventId());
+	// }
+	// router.routeEvent(nextProcessorId, outputEvent);
+	// }
 
 	public EventFactory getFactory() {
 		return factory;

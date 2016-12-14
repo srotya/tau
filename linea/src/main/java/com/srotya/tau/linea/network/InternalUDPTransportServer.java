@@ -18,9 +18,7 @@ package com.srotya.tau.linea.network;
 import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.util.List;
-import java.util.logging.Logger;
 
-import com.srotya.tau.linea.network.InternalTCPTransportServer.KryoObjectDecoder;
 import com.srotya.tau.linea.network.InternalTCPTransportServer.KryoObjectEncoder;
 import com.srotya.tau.nucleus.utils.NetworkUtils;
 import com.srotya.tau.wraith.TauEvent;
@@ -42,22 +40,24 @@ import io.netty.handler.codec.MessageToMessageEncoder;
  */
 public class InternalUDPTransportServer {
 
-	private static final Logger logger = Logger.getLogger(InternalUDPTransportServer.class.getName());
+	// private static final Logger logger =
+	// Logger.getLogger(InternalUDPTransportServer.class.getName());
 	public static final boolean SSL = System.getProperty("ssl") != null;
 
 	private Channel channel;
 	private Router router;
 	private int port;
-	
+
 	public InternalUDPTransportServer(Router router, int port) {
 		this.router = router;
 		this.port = port;
 	}
 
 	public void start() throws Exception {
-		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(true);
+		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(false);
 		Inet4Address address = NetworkUtils.getIPv4Address(iface);
-		logger.info("Selected default interface:" + iface.getName() + "\twith address:" + address.getHostAddress());
+		// logger.info("Selected default interface:" + iface.getName() + "\twith
+		// address:" + address.getHostAddress());
 
 		EventLoopGroup workerGroup = new NioEventLoopGroup(2);
 
@@ -70,7 +70,7 @@ public class InternalUDPTransportServer {
 			}
 		}).bind(address, port).sync().channel();
 	}
-	
+
 	public void stop() throws InterruptedException {
 		channel.close().await();
 	}

@@ -58,8 +58,8 @@ public class Columbus implements Runnable {
 	private int evictionTimeThreshold;
 	private int selfWorkerId;
 
-	public Columbus(String bindAddress, int discoveryPort, int dataPort, int initialTimer, int evictionTimeThreshold, int selfWorkerId)
-			throws UnknownHostException {
+	public Columbus(String bindAddress, int discoveryPort, int dataPort, int initialTimer, int evictionTimeThreshold,
+			int selfWorkerId) throws UnknownHostException {
 		this.evictionTimeThreshold = evictionTimeThreshold;
 		this.selfWorkerId = selfWorkerId;
 		this.address = InetAddress.getByName(bindAddress);
@@ -79,14 +79,15 @@ public class Columbus implements Runnable {
 		});
 	}
 
-	protected void startTransmissionServer(final DatagramSocket dgSocket, int destPort)
+	protected void startTransmissionServer(int destPort)
 			throws SocketException, InvalidStateException, InterruptedException {
+		DatagramSocket dgSocket = new DatagramSocket(discoveryPort+new Random().nextInt(), address);
 		try {
-			// startReceptionServer(dgSocket);
+			dgSocket.setTrafficClass(0x04);
 			logger.info("Starting Gossip transmission server");
 			while (loopControl.get()) {
 				// send gossip
-				System.out.println("Sending pings:"+workerMap);
+				System.out.println("Sending pings:" + workerMap);
 				List<Entry<Integer, WorkerEntry>> pruneList = new ArrayList<>();
 				for (Entry<Integer, WorkerEntry> peer : workerMap.entrySet()) {
 					if ((System.currentTimeMillis()
@@ -158,8 +159,12 @@ public class Columbus implements Runnable {
 						"Either multicast needs to be turned on or a seed of unicast must be provided");
 			}
 			final DatagramSocket dgSocket = new DatagramSocket(discoveryPort, address);
+			if (dgSocket.isClosed()) {
+				System.exit(-1);
+			}
+			startReceptionServer(dgSocket);
 			dgSocket.setTrafficClass(0x04);
-			startTransmissionServer(dgSocket, discoveryPort);
+			startTransmissionServer(discoveryPort);
 		} catch (SocketException | InvalidStateException e) {
 			logger.log(Level.SEVERE, "Exception starting server", e);
 		} catch (InterruptedException e) {
@@ -198,5 +203,5 @@ public class Columbus implements Runnable {
 	public int getWorkerCount() {
 		return workerCount.get();
 	}
-	
+
 }

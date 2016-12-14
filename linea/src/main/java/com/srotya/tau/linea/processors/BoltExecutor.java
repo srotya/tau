@@ -49,19 +49,17 @@ public class BoltExecutor {
 	private Map<Integer, ProcessorWrapper> taskProcessorMap;
 	private CopyTranslator copyTranslator;
 	private int parallelism;
-	private Collector collector;
 	private Columbus columbus;
 
 	public BoltExecutor(Map<String, String> conf, DisruptorUnifiedFactory factory, byte[] serializedBoltInstance,
 			Columbus columbus, int parallelism, Router router) throws IOException, ClassNotFoundException {
 		this.columbus = columbus;
 		this.parallelism = parallelism;
-		this.collector = new Collector(factory, router);
 		taskProcessorMap = new HashMap<>();
 
 		templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
 
-		es = Executors.newFixedThreadPool(parallelism);
+		es = Executors.newFixedThreadPool(parallelism*2);
 
 		/**
 		 * First worker 0*4+0 = 0 0*4+1 = 1 0*4+2 = 2 = 3 Second worker 1*4+0 =
@@ -74,7 +72,7 @@ public class BoltExecutor {
 		for (int i = 0; i < parallelism; i++) {
 			int taskId = columbus.getSelfWorkerId() * parallelism + i;
 			Bolt object = deserializeBoltInstance(serializedBoltInstance);
-			object.configure(conf, taskId, collector);
+			object.configure(conf, taskId, new Collector(factory, router, object.getProcessorName(), taskId));
 			taskProcessorMap.put(taskId, new ProcessorWrapper(factory, es, object));
 		}
 		copyTranslator = new CopyTranslator();
@@ -132,9 +130,11 @@ public class BoltExecutor {
 		private Bolt processor;
 		private Disruptor<Event> disruptor;
 		private RingBuffer<Event> buffer;
+		private ExecutorService pool;
 
 		@SuppressWarnings("unchecked")
 		public ProcessorWrapper(DisruptorUnifiedFactory factory, ExecutorService pool, Bolt processor) {
+			this.pool = pool;
 			this.processor = processor;
 			disruptor = new Disruptor<>(factory, 1024, pool, ProducerType.MULTI, new BlockingWaitStrategy());
 			disruptor.handleEventsWith(this);
@@ -142,7 +142,7 @@ public class BoltExecutor {
 
 		public void start() {
 			buffer = disruptor.start();
-			processor.ready();
+			pool.submit(()->processor.ready());
 		}
 
 		public void stop() {

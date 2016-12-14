@@ -39,40 +39,40 @@ import com.srotya.tau.linea.processors.DisruptorUnifiedFactory;
  */
 public class SimpleTopology {
 
-	public static Router workerInitialize(int i) throws Exception {
+	public static Router workerInitialize(int i, int seedId, int seedPort, int seedDataPort) throws Exception {
 		Map<String, String> conf = new HashMap<>();
-		Columbus columbus = new Columbus("localhost", 9920 + i, 5000+i, 1, 1000 * 60, i);
+		Columbus columbus = new Columbus("localhost", 9920 + i, 5000 + i, 1, 1000 * 60, i);
 		ExecutorService bg = Executors.newFixedThreadPool(1);
 		bg.submit(columbus);
-		columbus.addKnownPeer(0, InetAddress.getByName("localhost"), 9920, 5000);
+		columbus.addKnownPeer(seedId, InetAddress.getByName("localhost"), seedPort, seedDataPort);
 		int w = 0;
-		while(columbus.getWorkerCount()!=2) {
+		while (columbus.getWorkerCount() != 2) {
 			StringBuilder builder = new StringBuilder();
 			w++;
-			for(int k=0;k<w%5;k++) {
+			for (int k = 0; k < w % 5; k++) {
 				builder.append(".");
 			}
-			System.out.print("\rWaiting for worker discovery:"+builder.toString());
+			System.out.print("\rWaiting for worker discovery:" + builder.toString());
 			Thread.sleep(1000);
 		}
+		Thread.sleep(5000);
+		System.out.println("Nodes discovered each other!:" + columbus.getWorkerMap());
 
-		System.out.println("Nodes discovered each other!");
-		
 		DisruptorUnifiedFactory factory = new DisruptorUnifiedFactory();
-		int parallelism = 1;
+		int parallelism = 2;
 
 		Map<String, BoltExecutor> executorMap = new LinkedHashMap<>();
 		Router router = new Router(factory, columbus, executorMap);
 
 		PrinterBolt bolt = new PrinterBolt();
 		byte[] serializeBolt = BoltExecutor.serializeBoltInstance(bolt);
-		BoltExecutor transformerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism * 2,
+		BoltExecutor transformerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism,
 				router);
 
 		Acker ackerBolt = new Acker();
 		serializeBolt = BoltExecutor.serializeBoltInstance(ackerBolt);
-		BoltExecutor ackerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism, router);
-		
+		BoltExecutor ackerBoltExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, 2, router);
+
 		TestSpout spout = new TestSpout();
 		serializeBolt = BoltExecutor.serializeBoltInstance(spout);
 		BoltExecutor spoutExecutor = new BoltExecutor(conf, factory, serializeBolt, columbus, parallelism, router);
@@ -82,7 +82,7 @@ public class SimpleTopology {
 		executorMap.put(spoutExecutor.getTemplateBoltInstance().getProcessorName(), spoutExecutor);
 
 		router.start();
-		
+
 		for (Entry<String, BoltExecutor> entry : executorMap.entrySet()) {
 			entry.getValue().start();
 		}
@@ -90,16 +90,16 @@ public class SimpleTopology {
 	}
 
 	public static void main(String[] args) throws Exception {
-		Executors.newCachedThreadPool().submit(()->{
+		Executors.newCachedThreadPool().submit(() -> {
 			try {
-				workerInitialize(0);
+				workerInitialize(0, 1, 9921, 5001);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		});
-		workerInitialize(1);
-		Thread.sleep(1000);
+		workerInitialize(1, 0, 9920, 5000);
+		Thread.sleep(20000);
 
 		System.exit(1);
 	}

@@ -23,7 +23,6 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.srotya.tau.linea.clustering.Columbus;
-import com.srotya.tau.linea.ft.Collector;
 import com.srotya.tau.linea.processors.BoltExecutor;
 import com.srotya.tau.linea.processors.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.CopyTranslator;
@@ -69,7 +68,7 @@ public class Router {
 		networkTranmissionDisruptor = new Disruptor<>(factory, 1024, pool, ProducerType.MULTI,
 				new BlockingWaitStrategy());
 		InternalUDPTransportClient client = new InternalUDPTransportClient(columbus,
-				columbus.getWorkerMap().get(columbus.getSelfWorkerId()).getDataPort() + 1000);
+				columbus.getWorkerMap().get(columbus.getSelfWorkerId()).getDataPort() + 1000, false);
 		client.init();
 		networkTranmissionDisruptor.handleEventsWith(client);
 		networkTranmissionDisruptor.start();
@@ -101,7 +100,6 @@ public class Router {
 																// local
 																// parallelism
 		totalParallelism = workerCount * totalParallelism;
-
 		switch (nextProcessor.getTemplateBoltInstance().getRoutingType()) {
 		case GROUPBY:
 			Object key = event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
@@ -112,11 +110,20 @@ public class Router {
 			}
 			break;
 		case SHUFFLE:
+//			taskId = columbus.getSelfWorkerId() * totalParallelism
+//					+ (Math.abs((int) (event.getEventId() % totalParallelism)));
 			taskId = Math.abs((int) (event.getEventId() % totalParallelism));
 			break;
 		}
 
 		// check if this taskId is local to this worker
+		routeToTaskId(nextProcessorId, event, nextProcessor, taskId);
+	}
+
+	public void routeToTaskId(String nextProcessorId, Event event, BoltExecutor nextProcessor, int taskId) {
+		if (nextProcessor == null) {
+			nextProcessor = executorMap.get(nextProcessorId);
+		}
 		int destinationWorker = 0;
 		if (taskId >= nextProcessor.getParallelism()) {
 			destinationWorker = taskId / nextProcessor.getParallelism();
@@ -125,13 +132,6 @@ public class Router {
 		if (destinationWorker == columbus.getSelfWorkerId()) {
 			nextProcessor.process(taskId, event);
 		} else {
-			if (event.getHeaders().containsKey(Collector.FIELD_ACK_EVENT)) {
-				// System.out.println("FROM:"+columbus.getSelfWorkerId()+"\tNetwork
-				// Routing:" + event + "\tTo worker:" + destinationWorker + "\t"
-				// + taskId
-				// + "\t" + workerCount);
-
-			}
 			event.getHeaders().put(Constants.NEXT_PROCESSOR, nextProcessorId);
 			event.getHeaders().put(Constants.FIELD_DESTINATION_TASK_ID, taskId);
 			event.getHeaders().put(Constants.FIELD_DESTINATION_WORKER_ID, destinationWorker);

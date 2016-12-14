@@ -18,38 +18,24 @@ package com.srotya.tau.linea.ft;
 import java.io.Serializable;
 
 public class AckerEntry implements Serializable {
-	
+
 	private static final long serialVersionUID = 1L;
 	private String sourceSpout;
-	private long createTime;
-	private long value;
-	
+	private Integer sourceTaskId;
+	private Long createTime;
+	private Long value;
+
 	public AckerEntry() {
 		createTime = System.currentTimeMillis();
 	}
-	
-	public AckerEntry(String sourceSpout, long value) {
+
+	public AckerEntry(String sourceSpout, Integer sourceTaskId, Long value) {
 		this();
 		this.sourceSpout = sourceSpout;
+		this.sourceTaskId = sourceTaskId;
 		this.value = value;
 	}
-	
-	public boolean isComplete() {
-		return value == 0;
-	}
 
-	public long getValue() {
-		return value;
-	}
-
-	public void setValue(long value) {
-		this.value = value;
-	}
-	
-	public long getCreateTime() {
-		return createTime;
-	}
-	
 	/**
 	 * @return the sourceSpout
 	 */
@@ -58,14 +44,59 @@ public class AckerEntry implements Serializable {
 	}
 
 	/**
-	 * @param sourceSpout the sourceSpout to set
+	 * @param sourceSpout
+	 *            the sourceSpout to set
 	 */
 	public void setSourceSpout(String sourceSpout) {
 		this.sourceSpout = sourceSpout;
 	}
 
+	/**
+	 * @return the sourceTaskId
+	 */
+	public Integer getSourceTaskId() {
+		return sourceTaskId;
+	}
+
+	/**
+	 * @param sourceTaskId
+	 *            the sourceTaskId to set
+	 */
+	public void setSourceTaskId(Integer sourceTaskId) {
+		this.sourceTaskId = sourceTaskId;
+	}
+
+	/**
+	 * @return the value
+	 */
+	public Long getValue() {
+		return value;
+	}
+
+	/**
+	 * @param value
+	 *            the value to set
+	 */
+	public void setValue(Long value) {
+		this.value = value;
+	}
+
+	/**
+	 * @return the createTime
+	 */
+	public Long getCreateTime() {
+		return createTime;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean isComplete() {
+		return value == 0;
+	}
+
 	@Override
 	public String toString() {
-		return "{"+value+","+createTime+"}";
+		return "{" + value + "," + createTime + "}";
 	}
 }

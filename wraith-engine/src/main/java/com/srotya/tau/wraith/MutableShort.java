@@ -18,38 +18,38 @@ package com.srotya.tau.wraith;
 import java.io.Serializable;
 
 /**
- * Mutable boolean for hash value edits
+ * Mutable short for hash value edits
  * 
  * @author ambud_sharma
  */
-public class MutableInt implements Serializable {
+public class MutableShort implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
-	private int val;
+	private short val;
 	
-	public MutableInt() {
+	public MutableShort() {
 	}
 	
-	public MutableInt(int val) {
+	public MutableShort(short val) {
 		this.val = val;
 	}
 	
-	public int incrementAndGet() {
+	public short incrementAndGet() {
 		return ++val;
 	}
 
 	/**
 	 * @return the val
 	 */
-	public int getVal() {
+	public short getVal() {
 		return val;
 	}
 
 	/**
 	 * @param val the val to set
 	 */
-	public void setVal(int val) {
+	public void setVal(short val) {
 		this.val = val;
 	}
 	

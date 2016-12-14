@@ -26,10 +26,11 @@ import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 
 /**
- * Inspired by the XOR Ledger concept of Apache Storm by Nathan Marz.
- * <br><br>
- * Acker an efficient tracking mechanism for tracking "tuple trees" regardless of the
- * amount of branching there may be in a deterministic memory space using a fast XOR operator.
+ * Inspired by the XOR Ledger concept of Apache Storm by Nathan Marz. <br>
+ * <br>
+ * Acker an efficient tracking mechanism for tracking "tuple trees" regardless
+ * of the amount of branching there may be in a deterministic memory space using
+ * a fast XOR operator.
  * 
  * @author ambud
  */
@@ -42,10 +43,13 @@ public class Acker implements Bolt {
 	private transient RotatingMap<Long, AckerEntry> ackerMap;
 	private transient int taskId;
 	private transient Collector collector;
+	private int i;
+	private int j;
+	private int k;
 
 	public Acker() {
 	}
-	
+
 	@Override
 	public void configure(Map<String, String> conf, int taskId, Collector collector) {
 		this.taskId = taskId;
@@ -70,9 +74,12 @@ public class Acker implements Bolt {
 			// tick event
 			expireEvents();
 		} else {
-			Object sourceId = event.getHeaders().get(Constants.FIELD_AGGREGATION_TYPE);
+			Object sourceId = event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
+			// Object originalEventId =
+			// event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
 			String source = (String) event.getHeaders().get(Constants.FIELD_SPOUT_NAME);
-			updateAckerMap(source, (Long) sourceId, (Long) event.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
+			updateAckerMap(source, event.getHeaders().get(Constants.FIELD_TASK_ID), (Long) sourceId,
+					(Long) event.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
 		}
 	}
 
@@ -87,23 +94,34 @@ public class Acker implements Bolt {
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, entry.getKey());
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_TYPE, true);
 				event.getHeaders().put("sourceSpout", entry.getValue().getSourceSpout());
-				collector.emit(entry.getValue().getSourceSpout(), event);
+				collector.emitDirect(entry.getValue().getSourceSpout(), entry.getValue().getSourceTaskId(), event);
 			}
 		}
 	}
 
 	/**
-	 * 
+	 * @param source
+	 * @param sourceTaskId
 	 * @param sourceId
 	 * @param nextEvent
 	 */
-	public void updateAckerMap(String source, Long sourceId, Long nextEvent) {
+	public void updateAckerMap(String source, Object sourceTaskId, Long sourceId, Long nextEvent) {
 		AckerEntry trackerValue = ackerMap.get(sourceId);
 		if (trackerValue == null) {
+			if (!source.contains("Spout")) {
+				// reject message
+				System.out.println("Incorrect event ordering:" + source + "\t" + i + "\t" + taskId);
+				i++;
+				return;
+			}
+			j++;
+			if (j % 1000 == 0) {
+				System.out.println("Correct:" + j);
+			}
+			// System.out.println("Correct event ordering:"+source);
 			// this is the first time we are seeing this event
-			trackerValue = new AckerEntry(source, sourceId);
+			trackerValue = new AckerEntry(source, (Integer) sourceTaskId, sourceId);
 			ackerMap.put(sourceId, trackerValue);
-			System.err.println("Initial ack revd:"+sourceId+"\t"+source+"\t"+taskId);
 		} else {
 			// event tree xor logic
 			trackerValue.setValue(trackerValue.getValue() ^ nextEvent);
@@ -114,12 +132,17 @@ public class Acker implements Bolt {
 
 				// remove entry from ackerMap
 				ackerMap.remove(sourceId);
-				System.err.println("Event:"+sourceId+"\tacknowledged by:"+taskId);
+				k++;
+				if (k % 1000 == 0) {
+					System.err.println("Acked events:"+k+"\t"+taskId);
+//					System.err.println("Event:" + sourceId + "\tacknowledged by:" + taskId);
+				}
+
 				Event event = collector.getFactory().buildEvent();
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, sourceId);
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_TYPE, true);
 				event.getHeaders().put("sourceSpout", trackerValue.getSourceSpout());
-				collector.emit(trackerValue.getSourceSpout(), event);
+				collector.emitDirect(trackerValue.getSourceSpout(), trackerValue.getSourceTaskId(), event);
 			}
 		}
 	}
@@ -164,7 +187,7 @@ public class Acker implements Bolt {
 			}
 			return null;
 		}
-		
+
 		@Override
 		public String toString() {
 			return buckets.toString();

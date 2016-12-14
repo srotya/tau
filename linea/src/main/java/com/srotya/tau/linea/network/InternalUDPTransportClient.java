@@ -21,13 +21,13 @@ import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import com.lmax.disruptor.EventHandler;
 import com.srotya.tau.linea.clustering.Columbus;
 import com.srotya.tau.nucleus.utils.NetworkUtils;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
+import com.srotya.tau.wraith.MutableShort;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
@@ -44,32 +44,36 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
  */
 public class InternalUDPTransportClient implements EventHandler<Event> {
 
-	private static final Logger logger = Logger.getLogger(InternalUDPTransportClient.class.getName());
+//	private static final Logger logger = Logger.getLogger(InternalUDPTransportClient.class.getName());
 	private Channel channel;
-	private short bufferEventCount;
 	private Map<Integer, ByteBuffer> bufferMap;
+	private Map<Integer, MutableShort> bufferCounterMap;
 	private Columbus columbus;
 	private int port;
+	private boolean packingEnabled;
 
-	public InternalUDPTransportClient(Columbus columbus, int port) {
+	public InternalUDPTransportClient(Columbus columbus, int port, boolean packingEnabled) {
 		this.columbus = columbus;
 		this.port = port;
+		this.packingEnabled = packingEnabled;
 		int selfId = columbus.getSelfWorkerId();
 		bufferMap = new HashMap<>();
+		bufferCounterMap = new HashMap<>();
 		for (int i = 0; i < columbus.getWorkerCount(); i++) {
 			if (i != selfId) {
 				ByteBuffer buf = ByteBuffer.allocate(1024);
-				buf.putShort(bufferEventCount);
-				System.err.println("Buffer map:" + i);
+				buf.putShort((short) 0);
 				bufferMap.put(i, buf);
+				bufferCounterMap.put(i, new MutableShort((short) 0));
 			}
 		}
 	}
 
 	public void init() throws Exception {
-		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(true);
+		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(false);
 		Inet4Address address = NetworkUtils.getIPv4Address(iface);
-		logger.info("Selected default interface:" + iface.getName() + "\twith address:" + address.getHostAddress());
+		// logger.info("Selected default interface:" + iface.getName() + "\twith
+		// address:" + address.getHostAddress());
 
 		EventLoopGroup workerGroup = new NioEventLoopGroup(2);
 		Bootstrap b = new Bootstrap();
@@ -81,7 +85,7 @@ public class InternalUDPTransportClient implements EventHandler<Event> {
 			}
 		}).bind(address, port).sync().channel();
 
-//		workerGroup.shutdownGracefully().sync();
+		// workerGroup.shutdownGracefully().sync();
 	}
 
 	/*
@@ -95,30 +99,41 @@ public class InternalUDPTransportClient implements EventHandler<Event> {
 		Integer workerId = (Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_WORKER_ID);
 		try {
 			ByteBuffer buf = bufferMap.get(workerId);
+			MutableShort bufferEventCount = bufferCounterMap.get(workerId);
 			byte[] bytes = InternalTCPTransportServer.KryoObjectEncoder.eventToByteArray(event,
 					InternalTCPTransportServer.COMPRESS);
-			if (bytes.length > 1024) {
-				// discard
-				System.err.println("Discarded event");
-			}
-			if (buf.remaining() - bytes.length >= 0) {
-				buf.put(bytes);
-				bufferEventCount++;
+			if (packingEnabled) {
+				if (bytes.length > 1024) {
+					// discard
+					System.err.println("Discarded event");
+				}
+				if (buf.remaining() - bytes.length >= 0) {
+					buf.put(bytes);
+					bufferEventCount.incrementAndGet();
+				} else {
+					buf.putShort(0, bufferEventCount.getVal());
+					buf.rewind();
+					channel.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(buf),
+							new InetSocketAddress(columbus.getWorkerMap().get(workerId).getWorkerAddress(),
+									columbus.getWorkerMap().get(workerId).getDataPort())));
+					bufferEventCount.setVal((short) 0);
+					buf.rewind();
+					buf.putShort(bufferEventCount.getVal());
+					buf.put(bytes);
+				}
 			} else {
-				buf.putShort(0, bufferEventCount);
 				buf.rewind();
-//				System.out
-//						.println("Writing messages:" + bufferEventCount + "\t" + columbus.getWorkerMap().get(workerId));
+				buf.putShort((short) 1);
+				buf.put(bytes);
+				buf.rewind();
 				channel.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(buf),
 						new InetSocketAddress(columbus.getWorkerMap().get(workerId).getWorkerAddress(),
 								columbus.getWorkerMap().get(workerId).getDataPort())));
-				bufferEventCount = 0;
-				buf.rewind();
-				buf.putShort(bufferEventCount);
-				buf.put(bytes);
 			}
+
 		} catch (Exception e) {
-			System.out.println("Exception:"+event+"\tSelf worker ID:"+columbus.getSelfWorkerId()+"\t"+workerId+"\t"+columbus.getWorkerMap());
+			System.out.println("Exception:" + event + "\tSelf worker ID:" + columbus.getSelfWorkerId() + "\t" + workerId
+					+ "\t" + columbus.getWorkerMap());
 			throw e;
 		}
 	}

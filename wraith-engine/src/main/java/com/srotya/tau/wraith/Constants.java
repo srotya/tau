@@ -98,4 +98,5 @@ public abstract class Constants {
 	public static final String HEADER_EVENT_ERROR_VALUE = "_ev";
 	public static final String ERROR_EVENT_TYPE = "e";
 	public static final String NEXT_PROCESSOR = "_np";
+	public static final String FIELD_TASK_ID = "_tid";
 }

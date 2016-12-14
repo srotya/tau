@@ -15,13 +15,14 @@
  */
 package com.srotya.tau.linea.topology;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import com.srotya.tau.linea.ft.Collector;
 import com.srotya.tau.linea.processors.Spout;
 import com.srotya.tau.wraith.Event;
+
+import io.netty.util.internal.ConcurrentSet;
 
 /**
  * @author ambud.sharma
@@ -32,39 +33,68 @@ public class TestSpout extends Spout {
 	private transient Collector collector;
 	private transient Set<Long> emittedEvents;
 	private transient int taskId;
+	private transient volatile boolean processed;
 
 	@Override
 	public void configure(Map<String, String> conf, int taskId, Collector collector) {
 		this.taskId = taskId;
 		this.collector = collector;
-		emittedEvents = new HashSet<>();
+		emittedEvents = new ConcurrentSet<>();
 	}
 
 	@Override
 	public String getProcessorName() {
 		return "testSpout";
 	}
-	
+
 	@Override
 	public void ready() {
-		for(int i=0;i<5;i++) {
+		System.out.println("Running spout:" + taskId);
+		for (int i = 0; i < 10000; i++) {
 			Event event = collector.getFactory().buildEvent();
-			event.getHeaders().put("uuid", "host"+i);
+			event.getHeaders().put("uuid", taskId+"host" + i);
 			emittedEvents.add(event.getEventId());
-			collector.spoutEmit("testSpout", "jsonbolt", event);
+			collector.spoutEmit("jsonbolt", event);
+			try {
+				if(i%2==0)
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		System.out.println("Emitted all events");
+		processed = true;
+//		while(true) {
+//			System.err.println(emittedEvents.size());
+//			try {
+//				Thread.sleep(1000);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
 	}
 
 	@Override
 	public void ack(Long eventId) {
-		emittedEvents.remove(eventId);
-		System.out.println("Spout acking event:"+eventId+"\tremaining:"+emittedEvents.size()+"\tspoutid:"+taskId);
-
+		boolean removed = emittedEvents.remove(eventId);
+		if (!removed) {
+			System.err.println("Misrouted event:" + eventId + "\t" + emittedEvents.size());
+		} else {
+//			System.out.println(
+//					"Spout acking event:" + eventId + "\tremaining:" + emittedEvents.size() + "\tspoutid:" + taskId);
+		}
+		if (processed && emittedEvents.size() == 0) {
+			System.out.println("Processed 50k events"+"\ttaskid:"+taskId);
+		} else if (processed) {
+			System.out.println("Dropped data:" + emittedEvents.size()+"\ttaskid:"+taskId);
+		}
 	}
 
 	@Override
 	public void fail(Long eventId) {
-		System.out.println("Spout failing event:"+eventId);
+		System.out.println("Spout failing event:" + eventId);
 	}
 
 }

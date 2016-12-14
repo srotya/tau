@@ -27,6 +27,7 @@ public class CopyTranslator implements EventTranslatorOneArg<Event, Event>{
 	@Override
 	public void translateTo(Event outputEvent, long sequence, Event inputEvent) {
 		outputEvent.getHeaders().clear();
+		outputEvent.getSourceIds().clear();
 		outputEvent.getSourceIds().addAll(inputEvent.getSourceIds());
 		outputEvent.setEventId(inputEvent.getEventId());
 		outputEvent.setOriginEventId(inputEvent.getOriginEventId());
