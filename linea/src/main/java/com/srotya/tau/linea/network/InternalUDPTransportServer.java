@@ -18,6 +18,8 @@ package com.srotya.tau.linea.network;
 import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.srotya.tau.linea.network.InternalTCPTransportServer.KryoObjectEncoder;
 import com.srotya.tau.nucleus.utils.NetworkUtils;
@@ -57,19 +59,17 @@ public class InternalUDPTransportServer {
 	public void start() throws Exception {
 		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(false);
 		Inet4Address address = NetworkUtils.getIPv4Address(iface);
-		// logger.info("Selected default interface:" + iface.getName() + "\twith
-		// address:" + address.getHostAddress());
-
 		EventLoopGroup workerGroup = new NioEventLoopGroup(4);
 
 		Bootstrap b = new Bootstrap();
-		channel = b.group(workerGroup).channel(NioDatagramChannel.class).option(ChannelOption.SO_RCVBUF, 1024*10).handler(new ChannelInitializer<Channel>() {
+		channel = b.group(workerGroup).channel(NioDatagramChannel.class).option(ChannelOption.SO_RCVBUF, 1024 * 10)
+				.handler(new ChannelInitializer<Channel>() {
 
-			@Override
-			protected void initChannel(Channel ch) throws Exception {
-				ch.pipeline().addLast(new KryoDatagramDecoderWrapper()).addLast(new IWCHandler(router));
-			}
-		}).bind(address, port).sync().channel();
+					@Override
+					protected void initChannel(Channel ch) throws Exception {
+						ch.pipeline().addLast(new KryoDatagramDecoderWrapper()).addLast(new IWCHandler(router));
+					}
+				}).bind(address, port).sync().channel();
 	}
 
 	public void stop() throws InterruptedException {

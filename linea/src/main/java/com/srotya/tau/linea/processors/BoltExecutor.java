@@ -50,17 +50,27 @@ public class BoltExecutor {
 	private CopyTranslator copyTranslator;
 	private int parallelism;
 	private Columbus columbus;
+	private DisruptorUnifiedFactory factory;
+	private byte[] serializedBoltInstance;
+	private Map<String, String> conf;
+	private Router router;
 
 	public BoltExecutor(Map<String, String> conf, DisruptorUnifiedFactory factory, byte[] serializedBoltInstance,
 			Columbus columbus, int parallelism, Router router) throws IOException, ClassNotFoundException {
+		this.conf = conf;
+		this.factory = factory;
+		this.serializedBoltInstance = serializedBoltInstance;
 		this.columbus = columbus;
 		this.parallelism = parallelism;
-		taskProcessorMap = new HashMap<>();
+		this.router = router;
+		this.taskProcessorMap = new HashMap<>();
 
-		templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
+		this.templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
+		this.es = Executors.newFixedThreadPool((parallelism * 2) + 1);
+		this.copyTranslator = new CopyTranslator();
+	}
 
-		es = Executors.newFixedThreadPool(parallelism*2);
-
+	public void start() {
 		/**
 		 * First worker 0*4+0 = 0 0*4+1 = 1 0*4+2 = 2 = 3 Second worker 1*4+0 =
 		 * 4 1*4+1 = 5 1*4+2 = 6
@@ -69,19 +79,21 @@ public class BoltExecutor {
 		 * 
 		 * Or First worker 0*2+0 = 0 Second worker 1*2+0 = 2
 		 */
-		for (int i = 0; i < parallelism; i++) {
-			int taskId = columbus.getSelfWorkerId() * parallelism + i;
-			Bolt object = deserializeBoltInstance(serializedBoltInstance);
-			object.configure(conf, taskId, new Collector(factory, router, object.getProcessorName(), taskId));
-			taskProcessorMap.put(taskId, new ProcessorWrapper(factory, es, object));
-		}
-		copyTranslator = new CopyTranslator();
-	}
-
-	public void start() {
-		for (Entry<Integer, ProcessorWrapper> entry : taskProcessorMap.entrySet()) {
-			entry.getValue().start();
-		}
+		es.submit(() -> {
+			try {
+				for (int i = 0; i < parallelism; i++) {
+					int taskId = columbus.getSelfWorkerId() * parallelism + i;
+					Bolt object = deserializeBoltInstance(serializedBoltInstance);
+					object.configure(conf, taskId, new Collector(factory, router, object.getProcessorName(), taskId));
+					taskProcessorMap.put(taskId, new ProcessorWrapper(factory, es, object));
+				}
+				for (Entry<Integer, ProcessorWrapper> entry : taskProcessorMap.entrySet()) {
+					entry.getValue().start();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
 	}
 
 	public void stop() throws InterruptedException {
@@ -142,7 +154,15 @@ public class BoltExecutor {
 
 		public void start() {
 			buffer = disruptor.start();
-			pool.submit(()->processor.ready());
+			pool.submit(() -> {
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				processor.ready();
+			});
 		}
 
 		public void stop() {

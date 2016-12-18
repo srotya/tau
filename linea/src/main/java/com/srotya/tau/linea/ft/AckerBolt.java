@@ -34,7 +34,7 @@ import com.srotya.tau.wraith.Event;
  * 
  * @author ambud
  */
-public class Acker implements Bolt {
+public class AckerBolt implements Bolt {
 
 	private static final long serialVersionUID = 1L;
 	public static final String ACKER_BOLT_NAME = "_acker";
@@ -43,11 +43,8 @@ public class Acker implements Bolt {
 	private transient RotatingMap<Long, AckerEntry> ackerMap;
 	private transient int taskId;
 	private transient Collector collector;
-	private int i;
-	private int j;
-	private int k;
 
-	public Acker() {
+	public AckerBolt() {
 	}
 
 	@Override
@@ -110,15 +107,9 @@ public class Acker implements Bolt {
 		if (trackerValue == null) {
 			if (!source.contains("Spout")) {
 				// reject message
-				System.out.println("Incorrect event ordering:" + source + "\t" + i + "\t" + taskId);
-				i++;
+				System.out.println("Incorrect event ordering:" + source + "\t" + "\t" + taskId);
 				return;
 			}
-			j++;
-			if (j % 1000 == 0) {
-				System.out.println("Correct:" + j);
-			}
-			// System.out.println("Correct event ordering:"+source);
 			// this is the first time we are seeing this event
 			trackerValue = new AckerEntry(source, (Integer) sourceTaskId, sourceId);
 			ackerMap.put(sourceId, trackerValue);
@@ -132,12 +123,6 @@ public class Acker implements Bolt {
 
 				// remove entry from ackerMap
 				ackerMap.remove(sourceId);
-				k++;
-				if (k % 1000 == 0) {
-					System.err.println("Acked events:"+k+"\t"+taskId);
-//					System.err.println("Event:" + sourceId + "\tacknowledged by:" + taskId);
-				}
-
 				Event event = collector.getFactory().buildEvent();
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, sourceId);
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_TYPE, true);

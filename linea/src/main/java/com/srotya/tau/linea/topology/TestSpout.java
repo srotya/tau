@@ -17,6 +17,7 @@ package com.srotya.tau.linea.topology;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.srotya.tau.linea.ft.Collector;
 import com.srotya.tau.linea.processors.Spout;
@@ -29,15 +30,17 @@ import io.netty.util.internal.ConcurrentSet;
  */
 public class TestSpout extends Spout {
 
+	private static final int COUNT = 50000;
 	private static final long serialVersionUID = 1L;
 	private transient Collector collector;
 	private transient Set<Long> emittedEvents;
 	private transient int taskId;
-	private transient volatile boolean processed;
+	private transient AtomicBoolean processed;
 
 	@Override
 	public void configure(Map<String, String> conf, int taskId, Collector collector) {
 		this.taskId = taskId;
+		this.processed = new AtomicBoolean(false);
 		this.collector = collector;
 		emittedEvents = new ConcurrentSet<>();
 	}
@@ -50,46 +53,38 @@ public class TestSpout extends Spout {
 	@Override
 	public void ready() {
 		System.out.println("Running spout:" + taskId);
-		for (int i = 0; i < 10000; i++) {
+		for (int i = 0; i < COUNT; i++) {
 			Event event = collector.getFactory().buildEvent();
-			event.getHeaders().put("uuid", taskId+"host" + i);
+			event.getHeaders().put("uuid", taskId + "host" + i);
 			emittedEvents.add(event.getEventId());
 			collector.spoutEmit("jsonbolt", event);
+		}
+		System.out.println("Emitted all events");
+		processed.set(true);
+		while (true) {
+			if (emittedEvents.size() == 0) {
+				System.out.println("Completed processing " + COUNT + " events" + "\ttaskid:" + taskId);
+			} else {
+				System.out.println("Dropped data:" + emittedEvents.size() + "\ttaskid:" + taskId);
+			}
 			try {
-				if(i%50==0)
-				Thread.sleep(1);
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		System.out.println("Emitted all events");
-		processed = true;
-//		while(true) {
-//			System.err.println(emittedEvents.size());
-//			try {
-//				Thread.sleep(1000);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//		}
 	}
 
 	@Override
 	public void ack(Long eventId) {
-		boolean removed = emittedEvents.remove(eventId);
-		if (!removed) {
-			System.err.println("Misrouted event:" + eventId + "\t" + emittedEvents.size());
-		} else {
-//			System.out.println(
-//					"Spout acking event:" + eventId + "\tremaining:" + emittedEvents.size() + "\tspoutid:" + taskId);
-		}
-		if (processed && emittedEvents.size() == 0) {
-			System.out.println("Processed 50k events"+"\ttaskid:"+taskId);
-		} else if (processed) {
-			System.out.println("Dropped data:" + emittedEvents.size()+"\ttaskid:"+taskId);
-		}
+//		boolean removed = false;
+		emittedEvents.remove(eventId);
+//		if (!removed) {
+//			System.err.println("Misrouted event:" + eventId + "\t" + emittedEvents.size());
+//		} else {
+//			counter = counter + 1;
+//		}
 	}
 
 	@Override

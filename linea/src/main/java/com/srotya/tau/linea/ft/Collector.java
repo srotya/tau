@@ -51,7 +51,7 @@ public class Collector {
 		event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, currentEventId);
 		event.getHeaders().put(Constants.FIELD_SPOUT_NAME, spoutName);
 		event.getHeaders().put(Constants.FIELD_TASK_ID, taskId);
-		router.routeEvent(Acker.ACKER_BOLT_NAME, event);
+		router.routeEvent(AckerBolt.ACKER_BOLT_NAME, event);
 	}
 
 	public void spoutEmit(String nextProcessorId, Event event) {

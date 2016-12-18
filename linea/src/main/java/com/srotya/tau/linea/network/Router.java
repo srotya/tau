@@ -18,6 +18,7 @@ package com.srotya.tau.linea.network;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
@@ -37,22 +38,30 @@ import com.srotya.tau.wraith.MurmurHash;
  */
 public class Router {
 
-	private ExecutorService pool;
+	private static final Logger logger = Logger.getLogger(Router.class.getName());
 	private Disruptor<Event> networkTranmissionDisruptor;
 	private DisruptorUnifiedFactory factory;
 	private Map<String, BoltExecutor> executorMap;
 	private CopyTranslator translator;
 	private Columbus columbus;
 	private InternalUDPTransportServer server;
+	private int workerCount;
+	private ExecutorService pool;
 
-	public Router(DisruptorUnifiedFactory factory, Columbus columbus, Map<String, BoltExecutor> executorMap) {
+	public Router(DisruptorUnifiedFactory factory, Columbus columbus, int workerCount,
+			Map<String, BoltExecutor> executorMap) {
 		this.factory = factory;
 		this.columbus = columbus;
+		this.workerCount = workerCount;
 		this.executorMap = executorMap;
 	}
 
 	@SuppressWarnings("unchecked")
 	public void start() throws Exception {
+		while (columbus.getWorkerCount() < workerCount) {
+			Thread.sleep(2000);
+			logger.info("Waiting for worker discovery");
+		}
 		pool = Executors.newFixedThreadPool(2);
 		server = new InternalUDPTransportServer(this,
 				columbus.getWorkerMap().get(columbus.getSelfWorkerId()).getDataPort());
@@ -110,8 +119,8 @@ public class Router {
 			}
 			break;
 		case SHUFFLE:
-//			taskId = columbus.getSelfWorkerId() * totalParallelism
-//					+ (Math.abs((int) (event.getEventId() % totalParallelism)));
+			// taskId = columbus.getSelfWorkerId() * totalParallelism
+			// + (Math.abs((int) (event.getEventId() % totalParallelism)));
 			taskId = Math.abs((int) (event.getEventId() % totalParallelism));
 			break;
 		}
@@ -132,6 +141,7 @@ public class Router {
 		if (destinationWorker == columbus.getSelfWorkerId()) {
 			nextProcessor.process(taskId, event);
 		} else {
+			logger.info("Network routing");
 			event.getHeaders().put(Constants.NEXT_PROCESSOR, nextProcessorId);
 			event.getHeaders().put(Constants.FIELD_DESTINATION_TASK_ID, taskId);
 			event.getHeaders().put(Constants.FIELD_DESTINATION_WORKER_ID, destinationWorker);

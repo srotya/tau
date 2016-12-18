@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -36,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.srotya.tau.nucleus.utils.NetUtils;
+import com.srotya.tau.nucleus.utils.NetworkUtils;
 
 /**
  * Worker disovery service of Linea. Copied from Srotya-Gossip project.
@@ -58,11 +60,14 @@ public class Columbus implements Runnable {
 	private int evictionTimeThreshold;
 	private int selfWorkerId;
 
-	public Columbus(String bindAddress, int discoveryPort, int dataPort, int initialTimer, int evictionTimeThreshold,
-			int selfWorkerId) throws UnknownHostException {
+	public Columbus(int discoveryPort, int dataPort, int initialTimer, int evictionTimeThreshold, int selfWorkerId)
+			throws UnknownHostException, SocketException {
 		this.evictionTimeThreshold = evictionTimeThreshold;
 		this.selfWorkerId = selfWorkerId;
-		this.address = InetAddress.getByName(bindAddress);
+		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(false);
+		logger.info("Auto-selected network interface:" + iface);
+		this.address = NetworkUtils.getIPv4Address(iface);
+		logger.info("Auto-selected IP Address:" + address.getHostAddress());
 		this.discoveryPort = discoveryPort;
 		this.timer.set(initialTimer);
 		workerMap = new ConcurrentHashMap<>();
@@ -81,7 +86,7 @@ public class Columbus implements Runnable {
 
 	protected void startTransmissionServer(int destPort)
 			throws SocketException, InvalidStateException, InterruptedException {
-		DatagramSocket dgSocket = new DatagramSocket(discoveryPort+new Random().nextInt(), address);
+		DatagramSocket dgSocket = new DatagramSocket(discoveryPort + new Random().nextInt(), address);
 		try {
 			dgSocket.setTrafficClass(0x04);
 			logger.info("Starting Gossip transmission server");

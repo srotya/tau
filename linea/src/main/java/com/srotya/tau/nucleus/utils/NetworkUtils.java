@@ -28,27 +28,31 @@ public class NetworkUtils {
 
 	private NetworkUtils() {
 	}
-	
+
+	/**
+	 * @param loopback
+	 * @return
+	 * @throws SocketException
+	 */
 	public static NetworkInterface selectDefaultIPAddress(boolean loopback) throws SocketException {
 		Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
-		while(ifaces.hasMoreElements()) {
+		while (ifaces.hasMoreElements()) {
 			NetworkInterface iface = ifaces.nextElement();
-			if(loopback) {
+			if (loopback && iface.isLoopback()) {
 				return iface;
-			}
-			if(iface.isPointToPoint() || iface.isVirtual()) {
+			} else if (iface.isPointToPoint() || iface.isVirtual()) {
 				continue;
 			}
-			if(iface.isUp()) {
+			if (!iface.isLoopback() && iface.isUp()) {
 				return iface;
 			}
 		}
 		return null;
 	}
-	
+
 	public static Inet4Address getIPv4Address(NetworkInterface iface) {
 		for (InterfaceAddress interfaceAddress : iface.getInterfaceAddresses()) {
-			if(interfaceAddress.getAddress() instanceof Inet4Address) {
+			if (interfaceAddress.getAddress() instanceof Inet4Address) {
 				return (Inet4Address) interfaceAddress.getAddress();
 			}
 		}
