@@ -17,6 +17,11 @@ package com.srotya.tau.linea.ft;
 
 import java.io.Serializable;
 
+/**
+ * 
+ * 
+ * @author ambud
+ */
 public class AckerEntry implements Serializable {
 
 	private static final long serialVersionUID = 1L;

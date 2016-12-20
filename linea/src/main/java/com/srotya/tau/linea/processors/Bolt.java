@@ -23,18 +23,47 @@ import com.srotya.tau.nucleus.disruptor.ROUTING_TYPE;
 import com.srotya.tau.wraith.Event;
 
 /**
+ * Bolt is custom user defined code for processing {@link Event}s. <br>
+ * <br>
+ * Bolt interface should be implemented by user-code.
+ * 
  * @author ambud
  */
 public interface Bolt extends Serializable {
-	
+
+	/**
+	 * Configure method for initializing the bolt
+	 * 
+	 * @param conf
+	 * @param taskId
+	 * @param collector
+	 */
 	public void configure(Map<String, String> conf, int taskId, Collector collector);
-	
+
+	/**
+	 * Method asynchronously called just before events are started
+	 */
 	public void ready();
 
+	/**
+	 * Method called on each Event
+	 * 
+	 * @param event
+	 */
 	public void process(Event event);
-	
+
+	/**
+	 * Type of routing to this bolt i.e. Events processed by this bolt
+	 * 
+	 * @return
+	 */
 	public ROUTING_TYPE getRoutingType();
-	
-	public String getProcessorName();
-	
+
+	/**
+	 * Name of the bolt
+	 * 
+	 * @return name of bolt
+	 */
+	public String getBoltName();
+
 }

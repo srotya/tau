@@ -20,6 +20,9 @@ import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 
 /**
+ * Spout is a type of {@link Bolt} that generates data that is processed
+ * by the rest of the topology.
+ * 
  * @author ambud
  */
 public abstract class Spout implements Bolt {
@@ -41,8 +44,16 @@ public abstract class Spout implements Bolt {
 	
 	public abstract void ready();
 	
+	/**
+	 * Marking eventId as processed
+	 * @param eventId
+	 */
 	public abstract void ack(Long eventId);
 	
+	/**
+	 * Marking eventId as failed
+	 * @param eventId
+	 */
 	public abstract void fail(Long eventId);
 	
 	@Override

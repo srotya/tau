@@ -60,7 +60,7 @@ public class AckerBolt implements Bolt {
 	}
 
 	@Override
-	public String getProcessorName() {
+	public String getBoltName() {
 		return ACKER_BOLT_NAME;
 	}
 

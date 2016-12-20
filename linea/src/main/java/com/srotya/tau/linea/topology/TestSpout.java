@@ -46,7 +46,7 @@ public class TestSpout extends Spout {
 	}
 
 	@Override
-	public String getProcessorName() {
+	public String getBoltName() {
 		return "testSpout";
 	}
 

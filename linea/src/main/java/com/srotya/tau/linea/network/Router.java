@@ -27,12 +27,14 @@ import com.srotya.tau.linea.clustering.Columbus;
 import com.srotya.tau.linea.processors.BoltExecutor;
 import com.srotya.tau.linea.processors.DisruptorUnifiedFactory;
 import com.srotya.tau.nucleus.disruptor.CopyTranslator;
+import com.srotya.tau.nucleus.disruptor.ROUTING_TYPE;
 import com.srotya.tau.wraith.Constants;
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.MurmurHash;
 
 /**
- * {@link Event} router
+ * {@link Event} router that is responsible for sending messages across
+ * instances and workers in a topology.
  * 
  * @author ambud
  */
@@ -48,6 +50,12 @@ public class Router {
 	private int workerCount;
 	private ExecutorService pool;
 
+	/**
+	 * @param factory
+	 * @param columbus
+	 * @param workerCount
+	 * @param executorMap
+	 */
 	public Router(DisruptorUnifiedFactory factory, Columbus columbus, int workerCount,
 			Map<String, BoltExecutor> executorMap) {
 		this.factory = factory;
@@ -56,6 +64,11 @@ public class Router {
 		this.executorMap = executorMap;
 	}
 
+	/**
+	 * Start {@link Router}
+	 * 
+	 * @throws Exception
+	 */
 	@SuppressWarnings("unchecked")
 	public void start() throws Exception {
 		while (columbus.getWorkerCount() < workerCount) {
@@ -84,16 +97,36 @@ public class Router {
 		translator = new CopyTranslator();
 	}
 
+	/**
+	 * Stop {@link Router}
+	 * 
+	 * @throws Exception
+	 */
 	public void stop() throws Exception {
 		server.stop();
 		networkTranmissionDisruptor.shutdown();
 		pool.shutdownNow();
 	}
 
+	/**
+	 * Direct local routing
+	 * 
+	 * @param nextProcessorId
+	 * @param taskId
+	 * @param event
+	 */
 	public void directLocalRouteEvent(String nextProcessorId, int taskId, Event event) {
 		executorMap.get(nextProcessorId).process(taskId, event);
 	}
 
+	/**
+	 * {@link Router} method called for {@link Event} routing. This method uses
+	 * {@link ROUTING_TYPE} for the nextProcessorId to fetch the
+	 * {@link BoltExecutor} and get the taskId to route the message to.
+	 * 
+	 * @param nextProcessorId
+	 * @param event
+	 */
 	public void routeEvent(String nextProcessorId, Event event) {
 		BoltExecutor nextProcessor = executorMap.get(nextProcessorId);
 		if (nextProcessor == null) {
@@ -129,6 +162,14 @@ public class Router {
 		routeToTaskId(nextProcessorId, event, nextProcessor, taskId);
 	}
 
+	/**
+	 * Used to either local or network route an event based on worker id.
+	 * 
+	 * @param nextProcessorId
+	 * @param event
+	 * @param nextProcessor
+	 * @param taskId
+	 */
 	public void routeToTaskId(String nextProcessorId, Event event, BoltExecutor nextProcessor, int taskId) {
 		if (nextProcessor == null) {
 			nextProcessor = executorMap.get(nextProcessorId);
@@ -149,6 +190,9 @@ public class Router {
 		}
 	}
 
+	/**
+	 * @return columbus
+	 */
 	public Columbus getColumbus() {
 		return columbus;
 	}

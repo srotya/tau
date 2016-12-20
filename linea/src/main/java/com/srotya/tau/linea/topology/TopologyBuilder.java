@@ -65,7 +65,7 @@ public class TopologyBuilder {
 		byte[] serializeBoltInstance = BoltExecutor.serializeBoltInstance(bolt);
 		BoltExecutor boltExecutor = new BoltExecutor(conf, factory, serializeBoltInstance, columbus, parallelism,
 				router);
-		executorMap.put(boltExecutor.getTemplateBoltInstance().getProcessorName(), boltExecutor);
+		executorMap.put(boltExecutor.getTemplateBoltInstance().getBoltName(), boltExecutor);
 		return this;
 	}
 

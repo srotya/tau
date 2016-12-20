@@ -39,14 +39,15 @@ import com.srotya.tau.nucleus.disruptor.CopyTranslator;
 import com.srotya.tau.wraith.Event;
 
 /**
+ * Bolt Executor is wrapper that instantiates and executes bolt code.
+ * 
  * @author ambud
- *
  */
 public class BoltExecutor {
 
 	private ExecutorService es;
 	private Bolt templateBoltInstance;
-	private Map<Integer, ProcessorWrapper> taskProcessorMap;
+	private Map<Integer, BoltExecutorWrapper> taskProcessorMap;
 	private CopyTranslator copyTranslator;
 	private int parallelism;
 	private Columbus columbus;
@@ -55,6 +56,16 @@ public class BoltExecutor {
 	private Map<String, String> conf;
 	private Router router;
 
+	/**
+	 * @param conf
+	 * @param factory
+	 * @param serializedBoltInstance
+	 * @param columbus
+	 * @param parallelism
+	 * @param router
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
 	public BoltExecutor(Map<String, String> conf, DisruptorUnifiedFactory factory, byte[] serializedBoltInstance,
 			Columbus columbus, int parallelism, Router router) throws IOException, ClassNotFoundException {
 		this.conf = conf;
@@ -70,6 +81,9 @@ public class BoltExecutor {
 		this.copyTranslator = new CopyTranslator();
 	}
 
+	/**
+	 * Start method for this bolt executor
+	 */
 	public void start() {
 		/**
 		 * First worker 0*4+0 = 0 0*4+1 = 1 0*4+2 = 2 = 3 Second worker 1*4+0 =
@@ -84,10 +98,10 @@ public class BoltExecutor {
 				for (int i = 0; i < parallelism; i++) {
 					int taskId = columbus.getSelfWorkerId() * parallelism + i;
 					Bolt object = deserializeBoltInstance(serializedBoltInstance);
-					object.configure(conf, taskId, new Collector(factory, router, object.getProcessorName(), taskId));
-					taskProcessorMap.put(taskId, new ProcessorWrapper(factory, es, object));
+					object.configure(conf, taskId, new Collector(factory, router, object.getBoltName(), taskId));
+					taskProcessorMap.put(taskId, new BoltExecutorWrapper(factory, es, object));
 				}
-				for (Entry<Integer, ProcessorWrapper> entry : taskProcessorMap.entrySet()) {
+				for (Entry<Integer, BoltExecutorWrapper> entry : taskProcessorMap.entrySet()) {
 					entry.getValue().start();
 				}
 			} catch (Exception e) {
@@ -96,14 +110,26 @@ public class BoltExecutor {
 		});
 	}
 
+	/**
+	 * Stop method for this bolt executor
+	 * @throws InterruptedException
+	 */
 	public void stop() throws InterruptedException {
-		for (Entry<Integer, ProcessorWrapper> entry : taskProcessorMap.entrySet()) {
+		for (Entry<Integer, BoltExecutorWrapper> entry : taskProcessorMap.entrySet()) {
 			entry.getValue().stop();
 		}
 		es.shutdownNow();
 		es.awaitTermination(100, TimeUnit.SECONDS);
 	}
 
+	/**
+	 * Deserialize bolt instance from the byte array
+	 * 
+	 * @param processorObject
+	 * @return bolt instance
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
 	public static Bolt deserializeBoltInstance(byte[] processorObject) throws IOException, ClassNotFoundException {
 		ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(processorObject));
 		Bolt processor = (Bolt) ois.readObject();
@@ -111,6 +137,13 @@ public class BoltExecutor {
 		return processor;
 	}
 
+	/**
+	 * Serialize {@link Bolt} instance to byte array
+	 * 
+	 * @param boltInstance
+	 * @return byte array
+	 * @throws IOException
+	 */
 	public static byte[] serializeBoltInstance(Bolt boltInstance) throws IOException {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		ObjectOutputStream ois = new ObjectOutputStream(stream);
@@ -119,8 +152,13 @@ public class BoltExecutor {
 		return stream.toByteArray();
 	}
 
+	/**
+	 * Method called by Router
+	 * @param taskId
+	 * @param event
+	 */
 	public void process(int taskId, Event event) {
-		ProcessorWrapper wrapper = taskProcessorMap.get(taskId);
+		BoltExecutorWrapper wrapper = taskProcessorMap.get(taskId);
 		if (wrapper != null) {
 			wrapper.getBuffer().publishEvent(copyTranslator, event);
 		} else {
@@ -129,29 +167,43 @@ public class BoltExecutor {
 		}
 	}
 
+	/**
+	 * @return templatedBoltInstance
+	 */
 	public Bolt getTemplateBoltInstance() {
 		return templateBoltInstance;
 	}
 
+	/**
+	 * @return parallelism
+	 */
 	public int getParallelism() {
 		return parallelism;
 	}
 
-	public static class ProcessorWrapper implements EventHandler<Event> {
+	/**
+	 * Bolt Executor Wrapper
+	 * 
+	 * @author ambud
+	 */
+	public static class BoltExecutorWrapper implements EventHandler<Event> {
 
-		private Bolt processor;
+		private Bolt bolt;
 		private Disruptor<Event> disruptor;
 		private RingBuffer<Event> buffer;
 		private ExecutorService pool;
 
 		@SuppressWarnings("unchecked")
-		public ProcessorWrapper(DisruptorUnifiedFactory factory, ExecutorService pool, Bolt processor) {
+		public BoltExecutorWrapper(DisruptorUnifiedFactory factory, ExecutorService pool, Bolt processor) {
 			this.pool = pool;
-			this.processor = processor;
+			this.bolt = processor;
 			disruptor = new Disruptor<>(factory, 1024, pool, ProducerType.MULTI, new BlockingWaitStrategy());
 			disruptor.handleEventsWith(this);
 		}
 
+		/**
+		 * Start {@link BoltExecutorWrapper}
+		 */
 		public void start() {
 			buffer = disruptor.start();
 			pool.submit(() -> {
@@ -161,25 +213,34 @@ public class BoltExecutor {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				processor.ready();
+				bolt.ready();
 			});
 		}
 
+		/**
+		 * Stop {@link BoltExecutorWrapper}
+		 */
 		public void stop() {
 			disruptor.shutdown();
 		}
 
 		@Override
 		public void onEvent(Event event, long arg1, boolean arg2) throws Exception {
-			processor.process(event);
+			bolt.process(event);
 		}
 
+		/**
+		 * @return buffer
+		 */
 		public RingBuffer<Event> getBuffer() {
 			return buffer;
 		}
 
-		public Bolt getProcessor() {
-			return processor;
+		/**
+		 * @return processor
+		 */
+		public Bolt getBolt() {
+			return bolt;
 		}
 
 		/*
@@ -189,7 +250,7 @@ public class BoltExecutor {
 		 */
 		@Override
 		public String toString() {
-			return "ProcessorWrapper [processor=" + processor.getProcessorName() + "]";
+			return "ProcessorWrapper [processor=" + bolt.getBoltName() + "]";
 		}
 	}
 

@@ -22,6 +22,9 @@ import com.srotya.tau.linea.processors.Bolt;
 import com.srotya.tau.nucleus.disruptor.ROUTING_TYPE;
 import com.srotya.tau.wraith.Event;
 
+/**
+ * @author ambud
+ */
 public class PrinterBolt implements Bolt {
 
 	private static final long serialVersionUID = 1L;
@@ -45,7 +48,7 @@ public class PrinterBolt implements Bolt {
 	}
 
 	@Override
-	public String getProcessorName() {
+	public String getBoltName() {
 		return "jsonbolt";
 	}
 
