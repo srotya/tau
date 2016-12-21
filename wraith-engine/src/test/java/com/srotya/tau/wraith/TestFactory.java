@@ -96,4 +96,10 @@ public class TestFactory implements EventFactory, StoreFactory {
 		return null;
 	}
 
+	@Override
+	public Event buildEvent(String customId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

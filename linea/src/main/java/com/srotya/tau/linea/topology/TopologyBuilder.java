@@ -35,6 +35,8 @@ import com.srotya.tau.linea.processors.Spout;
  */
 public class TopologyBuilder {
 
+	private static final String DEFAULT_ACKER_PARALLELISM = "1";
+	public static final String ACKER_PARALLELISM = "acker.parallelism";
 	public static final String WORKER_COUNT = "worker.count";
 	public static final String WORKER_ID = "worker.id";
 	public static final String WORKER_DATA_PORT = "worker.data.port";
@@ -45,22 +47,24 @@ public class TopologyBuilder {
 	private Router router;
 	private Columbus columbus;
 	private int workerCount;
+	private int ackerCount;
 
 	public TopologyBuilder(Map<String, String> conf) throws Exception {
 		this.conf = conf;
 		factory = new DisruptorUnifiedFactory();
 		executorMap = new HashMap<>();
+		ackerCount = Integer.parseInt(conf.getOrDefault(ACKER_PARALLELISM, DEFAULT_ACKER_PARALLELISM));
 		columbus = new Columbus(Integer.parseInt(conf.getOrDefault(WORKER_DISCOVERY_PORT, "9920")),
 				Integer.parseInt(conf.getOrDefault(WORKER_DATA_PORT, "5000")), 1, 1000 * 60,
 				Integer.parseInt(conf.getOrDefault(WORKER_ID, "0")));
-		workerCount = Integer.parseInt(conf.getOrDefault(WORKER_COUNT, "1"));
+		workerCount = Integer.parseInt(conf.getOrDefault(WORKER_COUNT, DEFAULT_ACKER_PARALLELISM));
 		router = new Router(factory, columbus, workerCount, executorMap);
 	}
-	
+
 	public TopologyBuilder addSpout(Spout spout, int parallelism) throws IOException, ClassNotFoundException {
 		return addBolt(spout, parallelism);
 	}
- 
+
 	public TopologyBuilder addBolt(Bolt bolt, int parallelism) throws IOException, ClassNotFoundException {
 		byte[] serializeBoltInstance = BoltExecutor.serializeBoltInstance(bolt);
 		BoltExecutor boltExecutor = new BoltExecutor(conf, factory, serializeBoltInstance, columbus, parallelism,
@@ -70,7 +74,7 @@ public class TopologyBuilder {
 	}
 
 	public TopologyBuilder start() throws Exception {
-		addBolt(new AckerBolt(), 1);
+		addBolt(new AckerBolt(), ackerCount);
 		router.start();
 		for (Entry<String, BoltExecutor> entry : executorMap.entrySet()) {
 			entry.getValue().start();

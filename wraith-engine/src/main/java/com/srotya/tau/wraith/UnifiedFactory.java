@@ -47,6 +47,11 @@ public class UnifiedFactory implements StoreFactory, EventFactory {
 		return new TauEvent();
 	}
 	
+	@Override
+	public Event buildEvent(String eventId) {
+		return new TauEvent(eventId);
+	}
+	
 	/**
 	 * @param headers
 	 * @return

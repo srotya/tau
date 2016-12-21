@@ -73,4 +73,10 @@ public class UnifiedFactory implements StoreFactory, EventFactory {
 		return store;
 	}
 
+	@Override
+	public Event buildEvent(String eventId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

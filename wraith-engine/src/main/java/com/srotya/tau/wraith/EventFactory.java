@@ -24,4 +24,6 @@ public interface EventFactory {
 	
 	public Event buildEvent();
 	
+	public Event buildEvent(String eventId);
+	
 }

@@ -67,7 +67,7 @@ public class Columbus implements Runnable {
 		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(false);
 		logger.info("Auto-selected network interface:" + iface);
 		this.address = NetworkUtils.getIPv4Address(iface);
-		logger.info("Auto-selected IP Address:" + address.getHostAddress());
+//		logger.info("Auto-selected IP Address:" + address.getHostAddress());
 		this.discoveryPort = discoveryPort;
 		this.timer.set(initialTimer);
 		workerMap = new ConcurrentHashMap<>();

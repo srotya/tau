@@ -43,6 +43,7 @@ public class AckerBolt implements Bolt {
 	private transient RotatingMap<Long, AckerEntry> ackerMap;
 	private transient int taskId;
 	private transient Collector collector;
+	private transient int c;
 
 	public AckerBolt() {
 	}
@@ -119,6 +120,10 @@ public class AckerBolt implements Bolt {
 			if (trackerValue.isComplete()) {
 				// means event processing tree is complete
 
+				c++;
+				if(c%100000==0) {
+					System.out.println("acked 100k");
+				}
 				// notify source that event's completely processed
 
 				// remove entry from ackerMap

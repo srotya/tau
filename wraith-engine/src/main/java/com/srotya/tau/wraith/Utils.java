@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.AbstractMap;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +81,27 @@ public class Utils {
 	}
 
 	protected Utils() {
+	}
+
+	/**
+	 * @param loopback
+	 * @return
+	 * @throws SocketException
+	 */
+	public static NetworkInterface selectDefaultIPAddress(boolean loopback) throws SocketException {
+		Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+		while (ifaces.hasMoreElements()) {
+			NetworkInterface iface = ifaces.nextElement();
+			if (loopback && iface.isLoopback()) {
+				return iface;
+			} else if (iface.isPointToPoint() || iface.isVirtual()) {
+				continue;
+			}
+			if (!iface.isLoopback() && iface.isUp()) {
+				return iface;
+			}
+		}
+		return null;
 	}
 
 	public static byte[] eventToBytes(Event event) {

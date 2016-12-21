@@ -15,15 +15,16 @@
  */
 package com.srotya.tau.wraith;
 
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.srotya.tau.wraith.Event;
+import com.fasterxml.uuid.EthernetAddress;
+import com.fasterxml.uuid.Generators;
 
 /**
  * Event implementation.
@@ -32,6 +33,7 @@ import com.srotya.tau.wraith.Event;
  */
 public class TauEvent implements Event {
 
+	private static EthernetAddress RNG_ADDRESS;
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
 	private static final long serialVersionUID = 1L;
 	private Long originEventId;
@@ -39,15 +41,30 @@ public class TauEvent implements Event {
 	private Long eventId;
 	private Map<String, Object> headers;
 	private byte[] body;
+	
+	static{
+		try {
+			RNG_ADDRESS = EthernetAddress.valueOf(Utils.selectDefaultIPAddress(false).getHardwareAddress());
+		} catch (NumberFormatException | SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public TauEvent(String eventId) {
+		this.eventId = MurmurHash.hash64(eventId);
+		sourceIds = new ArrayList<>();
+		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
+	}
 
 	public TauEvent() {
-		eventId = UUID.randomUUID().getMostSignificantBits();
+		eventId = Generators.timeBasedGenerator(RNG_ADDRESS).generate().getMostSignificantBits();//UUID.randomUUID().getMostSignificantBits();
 		sourceIds = new ArrayList<>();
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
 	TauEvent(Map<String, Object> headers) {
-		eventId = UUID.randomUUID().getMostSignificantBits();
+		eventId = Generators.timeBasedGenerator(RNG_ADDRESS).generate().getMostSignificantBits();//UUID.randomUUID().getMostSignificantBits();
 		sourceIds = new ArrayList<>();
 		this.headers = headers;
 	}
@@ -109,7 +126,8 @@ public class TauEvent implements Event {
 	}
 
 	/**
-	 * @param originEventId the originEventId to set
+	 * @param originEventId
+	 *            the originEventId to set
 	 */
 	public void setOriginEventId(Long originEventId) {
 		this.originEventId = originEventId;

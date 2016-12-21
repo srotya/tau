@@ -30,7 +30,7 @@ import io.netty.util.internal.ConcurrentSet;
  */
 public class TestSpout extends Spout {
 
-	private static final int COUNT = 50000;
+	private static final int COUNT = 1000000;
 	private static final long serialVersionUID = 1L;
 	private transient Collector collector;
 	private transient Set<Long> emittedEvents;
@@ -53,17 +53,32 @@ public class TestSpout extends Spout {
 	@Override
 	public void ready() {
 		System.out.println("Running spout:" + taskId);
+		long timestamp = System.currentTimeMillis();
 		for (int i = 0; i < COUNT; i++) {
-			Event event = collector.getFactory().buildEvent();
+			Event event = collector.getFactory().buildEvent(taskId+"_"+i);
 			event.getHeaders().put("uuid", taskId + "host" + i);
 			emittedEvents.add(event.getEventId());
 			collector.spoutEmit("jsonbolt", event);
+			if(i%100000==0) {
+				System.err.println("Produced 100k events");
+			}
 		}
-		System.out.println("Emitted all events");
 		processed.set(true);
+		timestamp = System.currentTimeMillis() - timestamp;
+		System.out.println("Emitted all events in:"+timestamp+"ms");
+		timestamp = System.currentTimeMillis();
 		while (true) {
 			if (emittedEvents.size() == 0) {
 				System.out.println("Completed processing " + COUNT + " events" + "\ttaskid:" + taskId);
+				timestamp = System.currentTimeMillis() - timestamp;
+				System.out.println("Add additional:"+timestamp+"ms for buffer to be processed");
+				try {
+					Thread.sleep(5000);
+					System.exit(1);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			} else {
 				System.out.println("Dropped data:" + emittedEvents.size() + "\ttaskid:" + taskId);
 			}

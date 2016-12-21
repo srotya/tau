@@ -31,8 +31,9 @@ public class SimpleTopology {
 	public static void main(String[] args) throws Exception {
 		Map<String, String> conf = new HashMap<>();
 		conf.put(TopologyBuilder.WORKER_COUNT, "1");
+		conf.put(TopologyBuilder.ACKER_PARALLELISM, "4");
 		TopologyBuilder builder = new TopologyBuilder(conf);
-		builder = builder.addSpout(new TestSpout(), 2).addBolt(new PrinterBolt(), 3).start();
+		builder = builder.addSpout(new TestSpout(), 6).addBolt(new PrinterBolt(), 3).start();
 		// Executors.newCachedThreadPool().submit(() -> {
 		// try {
 		// workerInitialize(0, 1, 9921, 5001);
@@ -42,7 +43,7 @@ public class SimpleTopology {
 		// }
 		// });
 		// workerInitialize(1, 0, 9920, 5000);
-		Thread.sleep(5000);
+		Thread.sleep(50000);
 		System.exit(1);
 	}
 }
