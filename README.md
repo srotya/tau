@@ -2,6 +2,7 @@
 
 [![Join the chat at https://gitter.im/srotya/tau](https://badges.gitter.im/srotya/tau.svg)](https://gitter.im/srotya/tau?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/srotya/tau.svg?branch=master)](https://travis-ci.org/srotya/tau)
+[![codecov](https://codecov.io/gh/srotya/tau/branch/master/graph/badge.svg)](https://codecov.io/gh/srotya/tau)
 
 ## Project Description
 Tau is a Real-time event correlation system.
