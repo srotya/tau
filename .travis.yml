@@ -8,6 +8,7 @@ addons:
     - rpm
 script: mvn -q -T2 -DSTORM_TEST_TIMEOUT_MS=60000 clean test
 after_success:
+- bash <(curl -s https://codecov.io/bash)
 - curl -L -o /tmp/conditionalbuild.sh https://gist.github.com/ambud/3480192ce43fd35a4640201ba10794f5/raw/
 - chmod a+x /tmp/conditionalbuild.sh
 env:
