@@ -9,6 +9,12 @@ Tau is a rule-based Real-time event correlation system.
 
 Data continuously flows through the systems at all times and rules can be dynamically applied to evaluate and act on events.
 
+## New Features
+- [Omega](https://github.com/srotya/tau/tree/master/tau-omega) - script execution actions for Rules
+- [Nucleus](https://github.com/srotya/tau/tree/master/tau-nucleus) - single node engine
+- REST Command based rule updates
+- Counting aggregations
+
 ## Roadmap
 - Single node deployments (Nucleus)
 - Provide dockerized deployments (Nucleus / Linea)
