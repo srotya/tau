@@ -5,14 +5,21 @@
 [![codecov](https://codecov.io/gh/srotya/tau/branch/master/graph/badge.svg)](https://codecov.io/gh/srotya/tau)
 
 ## Project Description
-Tau is a Real-time event correlation system.
-![alt tag](https://github.com/srotya/tau/blob/master/docs/images/tau.png "Tau logo")
+Tau is a rule-based Real-time event correlation system.
+
+Data continuously flows through the systems at all times and rules can be dynamically applied to evaluate and act on events.
+
+## Roadmap
+- Single node deployments (Nucleus)
+- Provide dockerized deployments (Nucleus / Linea)
+- Remove dependencies on Storm to simplify footprint (Linea)
+- New user interface for Rule building
+- User interface for Rule-Chains
+
+Note: to see breakdown of roadmap items, please checkout issues page: https://github.com/srotya/tau/issues
 
 ## Documentation
 Please checkout out wiki for more details: https://github.com/srotya/tau/wiki
-
-## Download
-
 
 ## LICENSE
 
