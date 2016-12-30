@@ -25,7 +25,7 @@ Data continuously flows through the systems at all times and rules can be dynami
 Note: to see breakdown of roadmap items, please checkout issues page: https://github.com/srotya/tau/issues
 
 ## Documentation
-Please checkout out wiki for more details: https://github.com/srotya/tau/wiki
+Please checkout out wiki for more details: https://github.com/srotya/tau/wiki #
 
 ## LICENSE
 
