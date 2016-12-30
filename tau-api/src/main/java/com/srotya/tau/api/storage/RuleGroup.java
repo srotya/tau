@@ -83,7 +83,8 @@ public class RuleGroup implements Serializable {
 	}
 
 	/**
-	 * @param rule group name the ruleGroupName to set
+	 * Name the ruleGroupName to set
+	 * @param ruleGroupName
 	 */
 	public void setRuleGroupName(String ruleGroupName) {
 		this.ruleGroupName = ruleGroupName;

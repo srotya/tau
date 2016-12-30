@@ -143,7 +143,7 @@ public class OmegaScriptExecutor {
 	/**
 	 * @param ruleGroup
 	 * @param ruleJson
-	 * @param boolean1
+	 * @param delete
 	 */
 	public void updateRule(String ruleGroup, String ruleJson, boolean delete) {
 		SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(ruleJson);

@@ -52,7 +52,6 @@ public class IngressManager implements Managed {
 	/**
 	 * @param nextProcessor
 	 * @param factory
-	 * @param wal
 	 */
 	public IngressManager(AbstractProcessor nextProcessor, IngresserFactory factory) {
 		this.nextProcessor = nextProcessor;
@@ -127,7 +126,7 @@ public class IngressManager implements Managed {
 
 		/**
 		 * @param instance
-		 * @param outputBuffer
+		 * @param nextProcessor
 		 * @param ctrl
 		 */
 		public IngressRunner(PullIngresser instance, AbstractProcessor nextProcessor, AtomicBoolean ctrl) {

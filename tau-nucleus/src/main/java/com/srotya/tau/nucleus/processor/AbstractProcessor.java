@@ -156,7 +156,6 @@ public abstract class AbstractProcessor implements ManagedProcessor {
 
 	/**
 	 * @param event
-	 * @throws IOException
 	 */
 	public final void processEventNonWaled(Event event) {
 		getDisruptorBuffer().publishEvent(getCopyTranslator(), event);

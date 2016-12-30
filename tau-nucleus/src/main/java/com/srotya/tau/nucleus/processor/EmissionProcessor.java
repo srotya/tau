@@ -149,7 +149,6 @@ public class EmissionProcessor extends AbstractProcessor {
 		 * orphan entries in aggregation maps since rule update may change the
 		 * rule configuration.
 		 * 
-		 * @param tuple
 		 * @param ruleGroup
 		 * @param ruleJson
 		 * @param delete

@@ -76,7 +76,6 @@ public class EventReceiver extends PushIngresser {
 	/**
 	 * To receive a single event
 	 * 
-	 * @param eventId
 	 * @param eventJson
 	 */
 	@SuppressWarnings("unchecked")

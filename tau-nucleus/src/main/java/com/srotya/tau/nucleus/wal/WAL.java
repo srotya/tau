@@ -47,7 +47,6 @@ public interface WAL extends Managed {
 	/**
 	 * Write an event to the WAL
 	 * 
-	 * @param eventId
 	 * @param event
 	 * @throws IOException
 	 */
