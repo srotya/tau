@@ -13,4 +13,4 @@ while ! nc -z $API_HOST $API_PORT;do echo "Checking API connectivity";sleep 1;do
 
 envsubst < /opt/tau/template.conf > /opt/tau/nucleus.conf
 
-java -Xms2G -Xmx2G -jar /opt/tau/nucleus.jar server /opt/tau/nucleus.yml 
+java -Xms2G -Xmx2G -jar /usr/local/tau/nucleus.jar server /opt/tau/nucleus.yml 
