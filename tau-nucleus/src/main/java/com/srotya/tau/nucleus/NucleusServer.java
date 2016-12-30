@@ -69,9 +69,9 @@ public class NucleusServer extends Application<NucleusConfig> {
 				stateProcessor, omegaProcessor, fineCountingProcessor);
 		stateProcessor.setOutputProcessors(ruleProcessor);
 		fineCountingProcessor.setOutputProcessors(ruleProcessor);
-		if (!configuration.isIntegrationTest()) {
-			initializeIngressManager(configuration, environment, ruleProcessor);
-		}
+		// if (!configuration.isIntegrationTest()) {
+		// initializeIngressManager(configuration, environment, ruleProcessor);
+		// }
 		EmissionProcessor emissionProcessor = initializeEmissionController(configuration, environment, stateProcessor,
 				fineCountingProcessor);
 		registerAPIs(environment, ruleProcessor, alertingProcessor, emissionProcessor, omegaProcessor,
@@ -145,6 +145,7 @@ public class NucleusServer extends Application<NucleusConfig> {
 		return ruleProcessor;
 	}
 
+	@SuppressWarnings("unused")
 	private IngressManager initializeIngressManager(NucleusConfig configuration, Environment environment,
 			RuleProcessor ruleProcessor) throws ClassNotFoundException, InstantiationException, IllegalAccessException,
 			IOException, FileNotFoundException {
