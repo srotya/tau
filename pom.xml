@@ -8,7 +8,7 @@
   </parent>
   <groupId>com.srotya.tau</groupId>
   <artifactId>tau-parent</artifactId>
-  <version>0.0.7</version>
+  <version>0.0.8-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>tau</name>
   <description>Real-time correlation system for streaming data</description>
@@ -119,6 +119,6 @@
     <connection>scm:git:git@github.com:srotya/tau.git</connection>
     <developerConnection>scm:git:git@github.com:srotya/tau.git</developerConnection>
     <url>https://github.com/srotya/tau.git</url>
-    <tag>tau-parent-0.0.7</tag>
+    <tag>HEAD</tag>
   </scm>
 </project>
