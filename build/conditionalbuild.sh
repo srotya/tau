@@ -47,5 +47,5 @@ if [ "master" == "$TRAVIS_BRANCH" ]; then
     
     gpg --fast-import /tmp/secrets/secrets/codesign.asc >> /dev/null
     
-    mvn -q -T2 -B -DSTORM_TEST_TIMEOUT_MS=60000 -Darguments=-Dgpg.passphrase=$passphrase release:clean release:prepare release:perform --settings settings.xml
+    mvn -T2 -B -DSTORM_TEST_TIMEOUT_MS=60000 -Darguments=-Dgpg.passphrase=$passphrase release:clean release:prepare release:perform --settings settings.xml
 fi
