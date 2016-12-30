@@ -10,8 +10,26 @@
 ##############################################################################################################
 version: '2'
 services:
-  nucleus:
-    image: "tau-nucleus:${HVERSION}"
+ mail:
+    image: tvial/docker-mailserver:2.1
+    hostname: mail
+    container_name: mail
+    domainname: srotya.local
+    ports:
+    - "25:25"
+    - "143:143"
+    - "587:587"
+    - "993:993"
+    environment:
+    - ENABLE_SPAMASSASSIN=1
+    - ENABLE_CLAMAV=1
+    - ENABLE_FAIL2BAN=1
+    - ONE_DIR=1
+    - DMS_DEBUG=0
+    cap_add:
+    - NET_ADMIN
+ nucleus:
+    image: "ambuds/tau-nucleus:latest"
     ports:
       - "8080:8080"
     environment:
@@ -20,16 +38,18 @@ services:
       MYSQL_ADDRESS: mysqls:3306
       API_PORT: 9000
       API_HOST: api
+      SMTP_SERVER: mail
     depends_on:
       - api
-  mysqls:
+      - mail
+ mysqls:
     image: mysql:5.7.12
     ports:
       - "53306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-  api:
-    image: "tau-api:${HVERSION}"
+ api:
+    image: "ambuds/tau-api:latest"
     ports:
       - "9000:9000"
     environment:

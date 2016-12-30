@@ -27,6 +27,12 @@ Note: to see breakdown of roadmap items, please checkout issues page: https://gi
 ## Documentation
 Please checkout out wiki for more details: https://github.com/srotya/tau/wiki #
 
+## Deployment / Download
+Docker images for Tau are on Docker Hub and below is a preconfigured Docker file to deploy Tau (single node):
+```
+wget https://raw.githubusercontent.com/srotya/tau/master/install/configs/docker/docker-compose.yml
+docker-compose up
+```
 ## LICENSE
 
 Apache 2.0 License
