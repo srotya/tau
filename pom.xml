@@ -8,19 +8,16 @@
   </parent>
   <groupId>com.srotya.tau</groupId>
   <artifactId>tau-parent</artifactId>
-  <version>0.0.9-SNAPSHOT</version>
+  <version>0.0.9</version>
   <packaging>pom</packaging>
   <name>tau</name>
   <description>Real-time correlation system for streaming data</description>
   <modules>
-    
     <module>wraith-engine</module>
     <module>tau-old-ui</module>
-    
     <module>tau-api</module>
     <module>install</module>
     <module>wraith-silo</module>
-    
     <module>tau-interceptors</module>
     <module>tau-ui</module>
     <module>tau-nucleus</module>
@@ -119,6 +116,6 @@
     <connection>scm:git:git@github.com:srotya/tau.git</connection>
     <developerConnection>scm:git:git@github.com:srotya/tau.git</developerConnection>
     <url>https://github.com/srotya/tau.git</url>
-    <tag>HEAD</tag>
+    <tag>tau-parent-0.0.9</tag>
   </scm>
 </project>
