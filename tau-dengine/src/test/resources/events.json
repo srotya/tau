@@ -1,8 +1,0 @@
-{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "host" : "test1", "rule_group": "test" }
-{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "host" : "test2", "rule_group": "test" }
-{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "host" : "test3", "rule_group": "test" }
-{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "host" : "test5", "rule_group": "test" }
-{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "value": 10, "rule_group": "test" }
-{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "value": 10, "rule_group": "test" }
-{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "value": 10, "rule_group": "test" }
-{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "value": 10, "rule_group": "test" }

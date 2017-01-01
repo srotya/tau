@@ -13,14 +13,14 @@
   <name>tau</name>
   <description>Real-time correlation system for streaming data</description>
   <modules>
-    <module>tau-dengine</module>
+    
     <module>wraith-engine</module>
     <module>tau-old-ui</module>
-    <module>tau-alerts</module>
+    
     <module>tau-api</module>
     <module>install</module>
     <module>wraith-silo</module>
-    <module>tau-helpers</module>
+    
     <module>tau-interceptors</module>
     <module>tau-ui</module>
     <module>tau-nucleus</module>
