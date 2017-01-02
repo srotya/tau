@@ -94,8 +94,8 @@ public class NonMarkovianAggregationEngineImpl implements NonMarkovianAggregatio
 			getFlushMap().put(key, template.getInstance());
 		}
 		if (aggregator.disableLimitChecks() || (aggregator.size() < aggregator.getHardLimit())) {
-			if (aggregator.add(aggregationValue)) {
-				return getFlushMap().get(key).add(aggregationValue);
+			if (aggregator.add(timestamp, aggregationValue)) {
+				return getFlushMap().get(key).add(timestamp, aggregationValue);
 			} else {
 				return false;
 			}

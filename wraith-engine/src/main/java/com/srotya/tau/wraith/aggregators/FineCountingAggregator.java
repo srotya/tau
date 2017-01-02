@@ -84,7 +84,7 @@ public class FineCountingAggregator implements CountingAggregator {
 	}
 
 	@Override
-	public boolean add(Object aggregationValue) {
+	public boolean add(Long timestamp, Object aggregationValue) {
 		return set.add((Integer) aggregationValue);
 	}
 

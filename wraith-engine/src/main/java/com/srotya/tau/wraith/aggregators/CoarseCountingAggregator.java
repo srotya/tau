@@ -61,7 +61,7 @@ public class CoarseCountingAggregator implements CountingAggregator {
 	}
 
 	@Override
-	public boolean add(Object aggregationValue) {
+	public boolean add(Long timestamp, Object aggregationValue) {
 		return hll.offer((Integer) aggregationValue);
 	}
 

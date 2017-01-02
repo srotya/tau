@@ -38,7 +38,7 @@ public interface Aggregator extends Serializable {
 	/**
 	 * To populate the aggregator restored data
 	 * @param data
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void initialize(Object data) throws IOException;
 	
@@ -62,10 +62,11 @@ public interface Aggregator extends Serializable {
 	
 	/**
 	 * Add the aggregation value to the {@link Aggregator}
+	 * @param timestamp
 	 * @param aggregationValue
 	 * @return true if this value changed the internal state of the {@link Aggregator}
 	 */
-	public boolean add(Object aggregationValue);
+	public boolean add(Long timestamp, Object aggregationValue);
 	
 	/**
 	 * Optimization to disable checks on hard limits

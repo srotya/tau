@@ -75,7 +75,7 @@ public class SetAggregator implements Aggregator {
 	}
 
 	@Override
-	public boolean add(Object aggregationValue) {
+	public boolean add(Long timestamp, Object aggregationValue) {
 		return set.add(aggregationValue);
 	}
 

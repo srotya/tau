@@ -57,13 +57,13 @@ public class TestAggregationEngine {
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		for (int i = 0; i < 10; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
 		for (int i = 0; i < 15; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello2", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello2", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
@@ -75,13 +75,13 @@ public class TestAggregationEngine {
 		ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1234);
 		for (int i = 0; i < 10; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
 		for (int i = 0; i < 15; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello2", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello2", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
@@ -102,13 +102,13 @@ public class TestAggregationEngine {
 		int count = 1000000;
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello2", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello2", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
@@ -127,13 +127,13 @@ public class TestAggregationEngine {
 		aggregationEngine.initialize(conf, 1);
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello2", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello2", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
@@ -146,13 +146,13 @@ public class TestAggregationEngine {
 		aggregationEngine.initialize(conf, 1);
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello2", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello2", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
@@ -172,13 +172,13 @@ public class TestAggregationEngine {
 		aggregationEngine.initialize(conf, 1);
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", "hey" + i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello", "hey" + i);
 			} catch (AggregationRejectException e) {
 			}
 		}
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello2", "hey" + i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello2", "hey" + i);
 			} catch (AggregationRejectException e) {
 			}
 		}
@@ -199,13 +199,13 @@ public class TestAggregationEngine {
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello", i);
 			} catch (AggregationRejectException e) {
 			}
 		}
 		for (int i = 0; i < count; i++) {
 			try {
-				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello2", i);
+				aggregationEngine.aggregate(1L, 1, ruleActionId, "1233_hello2", i);
 			} catch (AggregationRejectException e) {
 			}
 		}

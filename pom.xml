@@ -15,16 +15,14 @@
   <modules>
     
     <module>wraith-engine</module>
-    <module>tau-old-ui</module>
-    
     <module>tau-api</module>
     <module>install</module>
     <module>wraith-silo</module>
-    
     <module>tau-interceptors</module>
     <module>tau-ui</module>
     <module>tau-nucleus</module>
     <module>tau-omega</module>
+    <module>tau-anomd</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

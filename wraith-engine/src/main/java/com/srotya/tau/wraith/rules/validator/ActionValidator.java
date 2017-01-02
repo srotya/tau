@@ -24,6 +24,7 @@ import com.srotya.tau.wraith.actions.aggregations.FineCountingAggregationAction;
 import com.srotya.tau.wraith.actions.aggregations.StateAggregationAction;
 import com.srotya.tau.wraith.actions.aggregations.ValueAggregationAction;
 import com.srotya.tau.wraith.actions.alerts.templated.TemplatedAlertAction;
+import com.srotya.tau.wraith.actions.anomalies.AnomalyAction;
 import com.srotya.tau.wraith.actions.omega.OmegaAction;
 import com.srotya.tau.wraith.rules.Rule;
 
@@ -60,7 +61,8 @@ public class ActionValidator implements Validator<Action> {
 			}
 		} else if (action instanceof AggregationAction) {
 			AggregationAction aggregationAction = (AggregationAction) action;
-			if (!(aggregationAction instanceof StateAggregationAction || aggregationAction instanceof FineCountingAggregationAction)) {
+			if (!(aggregationAction instanceof StateAggregationAction
+					|| aggregationAction instanceof FineCountingAggregationAction)) {
 				throw new ValidationException("Unsupported aggregation action type");
 			}
 			if (aggregationAction.getGroupBy() == null || aggregationAction.getGroupBy().isEmpty()) {
@@ -88,6 +90,8 @@ public class ActionValidator implements Validator<Action> {
 			}
 		} else if (action instanceof OmegaAction) {
 			// generic validation of omega action
+		} else if (action instanceof AnomalyAction) {
+			// generic validation of anomaly action
 		} else {
 			// unsupported action
 			throw new ValidationException("Unsupported action type");

@@ -21,7 +21,7 @@ import com.srotya.tau.wraith.Required;
 import com.srotya.tau.wraith.actions.Action;
 
 /**
- * @author ambud_sharma
+ * @author ambud
  */
 public class AnomalyAction implements Action {
 
@@ -31,17 +31,17 @@ public class AnomalyAction implements Action {
 	@Required
 	private String seriesName;
 	@Required
-	private String numericHeaderKey;
+	private String seriesValue;
 
-	public AnomalyAction(short actionId, String seriesName, String numericHeaderKey) {
+	public AnomalyAction(short actionId, String seriesName, String seriesValue) {
 		this.actionId = actionId;
 		this.seriesName = seriesName;
-		this.numericHeaderKey = numericHeaderKey;
+		this.seriesValue = seriesValue;
 	}
 
 	@Override
 	public Event actOnEvent(Event inputEvent) {
-		Object object = inputEvent.getHeaders().get(numericHeaderKey);
+		Object object = inputEvent.getHeaders().get(seriesValue);
 		if (object == null || !(object instanceof Number)) {
 			return null;
 		} else {
