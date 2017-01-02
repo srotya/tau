@@ -8,12 +8,11 @@
   </parent>
   <groupId>com.srotya.tau</groupId>
   <artifactId>tau-parent</artifactId>
-  <version>0.0.9-SNAPSHOT</version>
+  <version>0.0.10-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>tau</name>
   <description>Real-time correlation system for streaming data</description>
   <modules>
-    
     <module>wraith-engine</module>
     <module>tau-api</module>
     <module>install</module>
