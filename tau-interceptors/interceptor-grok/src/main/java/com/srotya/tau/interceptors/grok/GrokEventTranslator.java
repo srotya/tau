@@ -19,13 +19,13 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Map.Entry;
 
 import com.srotya.tau.wraith.Event;
 import com.srotya.tau.wraith.EventFactory;
 import com.srotya.tau.wraith.MurmurHash;
 
-import net.iharder.Base64;
 import oi.thekraken.grok.api.Grok;
 import oi.thekraken.grok.api.Match;
 import oi.thekraken.grok.api.exception.GrokException;
@@ -58,7 +58,7 @@ public class GrokEventTranslator {
 				event.getHeaders().put(entry.getKey(), entry.getValue());
 			}
 		}
-		event.setEventId(MurmurHash.hash64(Base64.encodeBytes(md5.digest(data.getBytes()))));
+		event.setEventId(MurmurHash.hash64(Base64.getEncoder().encodeToString(md5.digest(data.getBytes()))));
 		return event;
 	}
 
