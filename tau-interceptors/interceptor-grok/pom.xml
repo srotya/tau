@@ -4,7 +4,7 @@
   <parent>
     <groupId>com.srotya.tau</groupId>
     <artifactId>tau-interceptors</artifactId>
-    <version>0.0.11</version>
+    <version>0.0.12-SNAPSHOT</version>
   </parent>
   <artifactId>interceptor-grok</artifactId>
   <name>interceptor-grok</name>
@@ -20,7 +20,7 @@
     <dependency>
       <groupId>com.srotya.tau</groupId>
       <artifactId>wraith-engine</artifactId>
-      <version>0.0.11</version>
+      <version>0.0.12-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.thekraken</groupId>
