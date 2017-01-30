@@ -1,2 +1,2 @@
-Release Build number:69
-Release Commit number:68bfbc12e81e86f461cc04422117135f3e2970ad
+Release Build number:70
+Release Commit number:5de98c401c704589eed0bb89dfc9143147319e70
